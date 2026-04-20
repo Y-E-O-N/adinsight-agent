@@ -44,3 +44,4 @@
 - (Phase X) 무엇을 했나, 무엇이 막혔나, 어떤 수치가 나왔나
 - 다음: 무엇을 할 차례
 -->
+- 2026-04-20 Session 04: Phase 1 스택 기동 완료. make up 10.7s, 8컨테이너 healthy, Smoke DAG 1s 성공. 버그 3개 디버깅 (ARG 스코프·chmod·볼륨 재초기화). GitHub 푸시.

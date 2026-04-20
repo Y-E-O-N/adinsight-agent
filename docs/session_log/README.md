@@ -70,3 +70,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-04-16 · Session 01 · Bootstrap](2026-04-16_session-01_bootstrap.md) — 폴더 스켈레톤 / CLAUDE.md / Makefile / 메트릭 인프라 / 세션 로그 시스템 셋업
 - [2026-04-16 · Session 02 · Portfolio Workflow Setup](2026-04-16_session-02_portfolio-workflow.md) — CLAUDE.md 확장 (포트폴리오 First + Teaching-First) / portfolio_draft / daily_log / images 폴더
 - [2026-04-19 · Session 03 · Phase 1 docker-compose 스택](2026-04-19_session-03_phase1-compose.md) — 가이드 모드 전환 + 8개 파일 직접 작성 (smoke DAG / postgres init / airflow / superset / compose) + YAML 검증
+- [2026-04-20 · Session 04 · Phase 1 스택 기동 완료](2026-04-20_session-04_phase1-live.md) — make up 버그 3개 디버깅 + 전체 스택 healthy + Smoke DAG 성공 + 스크린샷 + GitHub 푸시
