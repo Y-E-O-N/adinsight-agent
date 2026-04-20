@@ -205,3 +205,44 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+logs/
+
+# =============================================================================
+# AdInsight Agent — 프로젝트 전용
+# =============================================================================
+
+# Docker volumes (Postgres data 등)
+pgdata/
+superset_home/
+
+# dbt
+dbt/profiles.yml
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# 합성/원시 데이터 (대용량)
+*.parquet
+data_generation/sdv_models/*.pkl
+raw/
+data/raw/
+
+# 에이전트 평가 결과
+agent/eval/results/
+agent/eval/failure_cases.md
+
+# 주간 리포트 산출물
+reports/
+!reports/.gitkeep
+
+# 메트릭 (인덱스 파일은 커밋, 누적 jsonl 은 커밋 — 의도적)
+# (run_results.jsonl 은 포트폴리오 증빙으로 의도적으로 커밋)
+
+# Superset 메타 export 임시
+dashboards/superset_exports/_tmp/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

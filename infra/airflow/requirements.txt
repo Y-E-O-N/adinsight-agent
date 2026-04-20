@@ -1,0 +1,12 @@
+# Airflow Postgres provider (SQLExecuteQueryOperator 포함)
+apache-airflow-providers-postgres
+
+# 공통 SQL provider (SQLExecuteQueryOperator가 속한 패키지)
+apache-airflow-providers-common-sql
+
+# Python <-> Postgres 드라이버
+psycopg2-binary==2.9.9
+
+# pgvector Python client (Phase 6 schema embedding)
+pgvector==0.3.1
+
