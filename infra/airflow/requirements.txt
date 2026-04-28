@@ -10,3 +10,5 @@ psycopg2-binary==2.9.9
 # pgvector Python client (Phase 6 schema embedding)
 pgvector==0.3.1
 
+# Apify Python SDK (Phase 2 Instagram 수집기)
+apify-client

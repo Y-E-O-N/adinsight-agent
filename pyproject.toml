@@ -12,7 +12,9 @@ authors = [{ name = "Yeon" }]
 # - Phase 3: dbt-postgres
 # - Phase 6: langchain, langgraph, sqlglot, sentence-transformers, pgvector
 # - Phase 7: matplotlib, jinja2, pydantic
-dependencies = []
+dependencies = [
+    "apify-client>=2.5.0",
+]
 
 [dependency-groups]
 dev = [
@@ -22,6 +24,7 @@ dev = [
     "pytest-cov>=5.0",
     "pre-commit>=3.8",
     "detect-secrets>=1.5",
+    "kaggle>=2.1.0",
 ]
 
 [tool.ruff]

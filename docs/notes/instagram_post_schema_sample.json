@@ -1,0 +1,86 @@
+{
+  "_meta": {
+    "source": "apify/instagram-hashtag-scraper",
+    "actor_run_id": "nzQGpuZMMb76tzxCe",
+    "collected_at": "2026-04-28T07:54:51Z",
+    "input": {
+      "hashtags": ["다이소화장품"],
+      "resultsLimit": 20
+    },
+    "items_returned": 20,
+    "purpose": "Stage 0 smoke 샘플. 응답 스키마 파악 및 raw.ig_posts 테이블 설계 기초 자료.",
+    "key_findings": [
+      "hashtags/mentions 배열은 비어있음 → caption 정규식 추출 필요",
+      "브랜드 공식 계정(*_official) 다수 등장 → username 블랙리스트 필요",
+      "likesCount = -1 인 케이스 존재 → '좋아요 숨김' 의미. NULL 처리 필요",
+      "광고 라벨 다양: #광고, #제품지원, #AKLover, paid partnership 등"
+    ]
+  },
+  "sample_post": {
+    "inputUrl": "https://www.instagram.com/explore/tags/다이소화장품",
+    "id": "3885077377655711449",
+    "type": "Sidecar",
+    "shortCode": "DXqkUp8EybZ",
+    "caption": "✨눈썹만 바꿨는데 분위기 뭐야…?✨\n\n👉 BEFORE → AFTER 차이 실화냐구요… 자연스럽게 또렷해지는 거 이거 하나면 끝😳🩷\n\n✔ 빈 곳은 슬림 아이브로우 펜슬로 결 살려서 채우고 ✔ 전체 쉐입은 소프트 브로우 카라로 쓱- 고정\n\n꾸안꾸 메이크업의 핵심 = 눈썹인 거 알지? 지금 당장 브로우 바꿔줘야 할 타이밍",
+    "hashtags": [],
+    "mentions": [],
+    "url": "https://www.instagram.com/p/DXqkUp8EybZ/",
+    "commentsCount": 2,
+    "firstComment": "",
+    "latestComments": [],
+    "dimensionsHeight": 1800,
+    "dimensionsWidth": 1440,
+    "displayUrl": "<media_cdn_url>",
+    "images": ["<image_1>", "<image_2>", "<image_3>"],
+    "likesCount": 4,
+    "timestamp": "2026-04-28T06:22:15.000Z",
+    "childPosts": [
+      {
+        "id": "3885076351275959224",
+        "type": "Image",
+        "productType": "carousel_item",
+        "timestamp": "2026-04-28T06:22:14.000Z"
+      }
+    ],
+    "ownerFullName": "플레이 101 • Play 101 by ETUDE",
+    "ownerUsername": "play101_official",
+    "ownerId": "70431341691",
+    "productType": "carousel_container",
+    "musicInfo": {
+      "audio_canonical_id": "0",
+      "audio_type": null,
+      "music_info": null,
+      "original_sound_info": null,
+      "pinned_media_ids": null
+    }
+  },
+  "field_inventory": {
+    "id": {"type": "string", "note": "Instagram 내부 게시물 ID. UNIQUE 후보 키"},
+    "shortCode": {"type": "string", "note": "URL 마지막 부분 (예: DXqkUp8EybZ)"},
+    "url": {"type": "string", "note": "https://www.instagram.com/p/{shortCode}/"},
+    "type": {"type": "enum", "values_seen": ["Sidecar", "Image", "Video"], "note": "미디어 타입"},
+    "productType": {"type": "enum", "values_seen": ["carousel_container", "clips", "feed"], "note": "carousel_container = 캐러셀, clips = 릴스"},
+    "caption": {"type": "string", "note": "본문 텍스트. 해시태그·멘션은 여기에서 정규식으로 추출 필요"},
+    "hashtags": {"type": "list[string]", "note": "현재 응답에서는 항상 빈 배열 (Actor가 채우지 않음)"},
+    "mentions": {"type": "list[string]", "note": "현재 응답에서는 항상 빈 배열 (Actor가 채우지 않음)"},
+    "commentsCount": {"type": "int", "note": "댓글 수"},
+    "likesCount": {"type": "int", "note": "좋아요 수. -1 = 숨김 계정. NULL 변환 필요"},
+    "timestamp": {"type": "ISO8601", "note": "UTC 게시 시각"},
+    "ownerUsername": {"type": "string", "note": "크리에이터 username (블랙리스트 필터 대상)"},
+    "ownerFullName": {"type": "string", "note": "크리에이터 표시명"},
+    "ownerId": {"type": "string", "note": "크리에이터 안정 ID (username 변경에도 유지)"},
+    "displayUrl": {"type": "url", "note": "대표 썸네일"},
+    "images": {"type": "list[url]", "note": "이미지 URL 리스트"},
+    "childPosts": {"type": "list[object]", "note": "캐러셀의 자식 게시물들"},
+    "musicInfo": {"type": "object", "note": "릴스의 음악 정보. clips 타입에서만 의미"},
+    "firstComment": {"type": "string", "note": "보통 빈 문자열 (별도 옵션 필요할 수 있음)"},
+    "latestComments": {"type": "list", "note": "보통 빈 리스트"}
+  },
+  "post_processing_rules": {
+    "hashtag_extraction": "re.findall(r'#([\\w가-힣]+)', caption or '')",
+    "mention_extraction": "re.findall(r'@([\\w._]+)', caption or '')",
+    "likes_normalization": "likesCount == -1 → NULL (좋아요 숨김)",
+    "is_sponsored_keywords": ["#광고", "#협찬", "#sponsored", "#ad", "#PR", "#제품지원", "#앰배서더"],
+    "brand_account_blacklist_pattern": "^.*_(official|korea|kr|brand)$"
+  }
+}

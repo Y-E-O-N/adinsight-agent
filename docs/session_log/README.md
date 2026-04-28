@@ -71,3 +71,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-04-16 · Session 02 · Portfolio Workflow Setup](2026-04-16_session-02_portfolio-workflow.md) — CLAUDE.md 확장 (포트폴리오 First + Teaching-First) / portfolio_draft / daily_log / images 폴더
 - [2026-04-19 · Session 03 · Phase 1 docker-compose 스택](2026-04-19_session-03_phase1-compose.md) — 가이드 모드 전환 + 8개 파일 직접 작성 (smoke DAG / postgres init / airflow / superset / compose) + YAML 검증
 - [2026-04-20 · Session 04 · Phase 1 스택 기동 완료](2026-04-20_session-04_phase1-live.md) — make up 버그 3개 디버깅 + 전체 스택 healthy + Smoke DAG 성공 + 스크린샷 + GitHub 푸시
+- [2026-04-28 · Session 05 · Phase 2 Stage 0 (Apify smoke + Airflow DAG)](2026-04-28_session-05_phase2-stage0.md) — 데이터 소싱 결정 (Apify+SDV) / 시드 3개 합의 / Apify 가입 / collect_hashtag 함수 + smoke DAG 가이드 모드 / 로컬·Airflow 양쪽 20건 수집 검증 / PYTHONPATH 디버깅 / 응답 스키마 적립

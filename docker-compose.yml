@@ -30,11 +30,14 @@ x-airflow-common: &airflow-common
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
     AIRFLOW_CONN_WAREHOUSE: >-
       postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    APIFY_TOKEN: ${APIFY_TOKEN}
+    PYTHONPATH: /opt/airflow
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./metrics:/opt/airflow/metrics
     - ./dbt:/opt/dbt
+    - ./data_generation:/opt/airflow/data_generation
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     postgres:

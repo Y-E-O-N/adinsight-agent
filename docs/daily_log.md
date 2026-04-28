@@ -45,3 +45,4 @@
 - 다음: 무엇을 할 차례
 -->
 - 2026-04-20 Session 04: Phase 1 스택 기동 완료. make up 10.7s, 8컨테이너 healthy, Smoke DAG 1s 성공. 버그 3개 디버깅 (ARG 스코프·chmod·볼륨 재초기화). GitHub 푸시.
+- 2026-04-28 Session 05: Phase 2 Stage 0 완료. Apify $29 구독, 시드 3개 합의 (#뷰티/#올리브영/#다이소화장품), 가이드 모드 5파일 작성. 로컬·Airflow 양쪽 20건 수집 성공. PYTHONPATH 함정 디버깅 1회. 응답 스키마 적립.
