@@ -23,7 +23,7 @@ select
     regexp_count(coalesce(p.caption, ''), '@[A-Za-z0-9._]+') as mention_count,
 
     p.likes_count as likes_count_raw,
-    (p.likes_count = -1) as likes_hidden,
+    coalesce(p.likes_count = -1, false) as likes_hidden,
     case
         when p.likes_count = -1 then null
         else p.likes_count

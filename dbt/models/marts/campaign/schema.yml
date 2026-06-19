@@ -87,3 +87,58 @@ models:
           - not_null
           - accepted_values:
               values: ['no_payment', 'negative_net', 'under_1x', 'one_to_two_x', 'two_x_plus']
+
+  - name: mart_campaign_roas_prediction_monitor
+    description: "Campaign ROAS baseline prediction 결과와 실제 synthetic ROAS를 나란히 비교하는 BI/모니터링용 mart."
+    columns:
+      - name: scoring_snapshot_date
+        description: "Prediction이 생성된 scoring feature snapshot 날짜."
+        data_tests:
+          - not_null
+
+      - name: model_name
+        description: "Prediction을 생성한 baseline/model 이름."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['objective_mean_roas_baseline_v1']
+
+      - name: campaign_id
+        description: "Synthetic campaign primary key."
+        data_tests:
+          - not_null
+
+      - name: campaign_name
+        description: "Campaign display name."
+        data_tests:
+          - not_null
+
+      - name: predicted_roas
+        description: "Baseline scoring script가 생성한 predicted ROAS."
+        data_tests:
+          - not_null
+
+      - name: actual_roas
+        description: "marts.mart_campaign_roi_summary의 synthetic actual ROAS."
+        data_tests:
+          - not_null
+
+      - name: roas_prediction_error
+        description: "actual_roas - predicted_roas. 양수면 실제가 예측보다 높고, 음수면 낮다."
+        data_tests:
+          - not_null
+
+      - name: absolute_roas_prediction_error
+        description: "ROAS prediction absolute error. MAE 계산에 쓰는 단위 오차다."
+        data_tests:
+          - not_null
+
+      - name: prediction_reason
+        description: "예측값을 만든 fallback/그룹 기준 설명."
+        data_tests:
+          - not_null
+
+      - name: training_rows_used
+        description: "해당 prediction run에서 사용한 training rows 수."
+        data_tests:
+          - not_null

@@ -119,9 +119,9 @@
 
 | 메트릭 | 값 |
 |---|---|
-| 대시보드 수 | **TBD** (목표 3) |
-| 차트 수 | **TBD** |
-| Virtual dataset 수 | **TBD** |
+| 대시보드 수 | **2** (`AdInsight Creator Review`, `AdInsight Campaign ROAS Prediction Monitor`) |
+| 차트 수 | **2** |
+| Virtual dataset 수 | **0** (현재는 dbt physical mart 기반) |
 | 캐시 hit rate | **TBD** |
 
 ### Before / After EXPLAIN — Case 1: 광고주 ROI
@@ -138,7 +138,20 @@
 
 상세: `metrics/query_optimization_log.md` (Phase 5 시 생성)
 
-**스크린샷**: `docs/images/05_dashboard_advertiser.png`, `docs/images/05_explain_before.png`, `docs/images/05_explain_after.png`
+**스크린샷**:
+- `docs/images/05_campaign_roas_prediction_monitor.png` — Superset campaign ROAS prediction monitoring table
+- `docs/images/05_explain_before.png`, `docs/images/05_explain_after.png` — 쿼리 최적화 단계에서 추가 예정
+
+**BI export**:
+- `dashboards/superset_exports/adinsight_creator_review_export.zip` — creator review dashboard export
+- `dashboards/superset_exports/adinsight_campaign_roas_prediction_export.zip` — campaign ROAS prediction monitoring dashboard export
+
+**Stage 5 증거**
+- Superset dataset: `marts.mart_campaign_roas_prediction_monitor`
+- Superset chart: `Campaign ROAS Prediction Monitor Table`
+- Superset dashboard: `AdInsight Campaign ROAS Prediction Monitor`
+- Dashboard rebuild script: `dashboards/scripts/create_campaign_roas_prediction_dashboard.py`
+- Dashboard design note: `docs/analysis/stage5_campaign_roas_prediction_dashboard.md`
 
 ---
 

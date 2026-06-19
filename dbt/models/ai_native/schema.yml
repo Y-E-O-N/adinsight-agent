@@ -148,3 +148,352 @@ models:
             - 우선 검토
         data_tests:
           - not_null
+
+  - name: ai_campaign_roi_summary
+    description: "Text2SQL Agent가 campaign별 synthetic payment 성과와 ROAS를 자연어 질문에서 바로 찾을 수 있게 정리한 AI-Native mart."
+    meta:
+      grain: "campaign 1개당 1행. campaign_id가 unique key다."
+      synonyms:
+        - campaign roi summary
+        - campaign payment performance
+        - campaign roas summary
+        - payment conversion campaign
+        - 캠페인 ROI 요약
+        - 캠페인 결제 성과
+        - 광고비 대비 결제 성과
+      example_questions:
+        - "Which campaigns have the highest ROAS?"
+        - "Show campaign payment performance by objective."
+        - "Which campaigns had payments but stayed under 1x ROAS?"
+        - "캠페인별 ROAS를 높은 순서로 보여줘."
+        - "전환 목적 캠페인의 결제 성과를 요약해줘."
+    columns:
+      - name: campaign_id
+        description: "Synthetic campaign primary key. 이 모델의 grain이자 unique key다."
+        meta:
+          synonyms:
+            - campaign
+            - campaign key
+            - campaign identifier
+            - 캠페인
+            - 캠페인 ID
+        data_tests:
+          - not_null
+          - unique
+
+      - name: campaign_name
+        description: "사람이 읽기 쉬운 campaign display name."
+        meta:
+          synonyms:
+            - campaign title
+            - campaign display name
+            - 캠페인명
+            - 캠페인 이름
+        data_tests:
+          - not_null
+
+      - name: campaign_region
+        description: "Campaign이 타깃으로 하는 region."
+        meta:
+          synonyms:
+            - region
+            - market
+            - target country
+            - 지역
+            - 시장
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['KR', 'JP']
+
+      - name: product_category
+        description: "Campaign이 속한 product category."
+        meta:
+          synonyms:
+            - category
+            - product vertical
+            - 카테고리
+            - 상품군
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['beauty', 'fashion', 'food']
+
+      - name: campaign_objective
+        description: "Campaign objective. awareness, traffic, conversion 같은 마케팅 목적이다."
+        meta:
+          synonyms:
+            - objective
+            - campaign goal
+            - marketing goal
+            - 캠페인 목적
+            - 광고 목적
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['conversion', 'traffic', 'awareness']
+
+      - name: campaign_budget_krw
+        description: "KRW 기준 synthetic campaign budget."
+        meta:
+          synonyms:
+            - budget
+            - spend
+            - campaign spend
+            - 광고비
+            - 캠페인 예산
+        data_tests:
+          - not_null
+
+      - name: campaign_start_date
+        description: "Campaign 시작일."
+        meta:
+          synonyms:
+            - start date
+            - launch date
+            - 시작일
+
+      - name: campaign_end_date
+        description: "Campaign 종료일."
+        meta:
+          synonyms:
+            - end date
+            - finish date
+            - 종료일
+
+      - name: campaign_duration_days
+        description: "Campaign 시작일부터 종료일까지의 일수."
+        meta:
+          synonyms:
+            - duration
+            - campaign days
+            - 집행 기간
+
+      - name: total_attributed_posts
+        description: "Campaign에 귀속된 observed Apify posts 수."
+        meta:
+          synonyms:
+            - attributed posts
+            - campaign posts
+            - linked posts
+            - 귀속 게시물
+        data_tests:
+          - not_null
+
+      - name: unique_attributed_posts
+        description: "Campaign에 귀속된 distinct post 수."
+        meta:
+          synonyms:
+            - distinct posts
+            - unique posts
+            - 고유 게시물
+
+      - name: unique_creators
+        description: "Campaign에 참여한 distinct creator 수."
+        meta:
+          synonyms:
+            - creators
+            - influencers
+            - participating creators
+            - 참여 크리에이터
+        data_tests:
+          - not_null
+
+      - name: paid_partnership_posts
+        description: "Paid partnership으로 표시된 campaign 귀속 post 수."
+        meta:
+          synonyms:
+            - paid partnership
+            - branded content posts
+            - 유료 파트너십 게시물
+
+      - name: avg_observed_engagement_count
+        description: "Likes와 comments 기반 campaign 귀속 post의 평균 observed engagement count."
+        meta:
+          synonyms:
+            - average engagement
+            - avg engagement
+            - 평균 참여
+
+      - name: high_engagement_posts
+        description: "High engagement tier로 분류된 campaign 귀속 post 수."
+        meta:
+          synonyms:
+            - high engagement
+            - high performing posts
+            - 고참여 게시물
+
+      - name: viral_engagement_posts
+        description: "Viral engagement tier로 분류된 campaign 귀속 post 수."
+        meta:
+          synonyms:
+            - viral posts
+            - viral engagement
+            - 바이럴 게시물
+
+      - name: total_payment_events
+        description: "Campaign에 귀속된 synthetic payment events 수."
+        meta:
+          synonyms:
+            - payment events
+            - conversions
+            - purchases
+            - 결제 이벤트
+            - 전환
+        data_tests:
+          - not_null
+
+      - name: attributed_posts_with_payment
+        description: "하나 이상의 payment event가 발생한 attributed posts 수."
+        meta:
+          synonyms:
+            - posts with payment
+            - converting posts
+            - 결제 발생 게시물
+
+      - name: paying_creators
+        description: "Payment event가 발생한 creator 수."
+        meta:
+          synonyms:
+            - converting creators
+            - creators with payments
+            - 결제 발생 크리에이터
+
+      - name: refunded_events
+        description: "Refund로 분류된 payment event 수."
+        meta:
+          synonyms:
+            - refunds
+            - refund events
+            - 환불 이벤트
+
+      - name: gross_payment_amount_krw
+        description: "Campaign별 gross payment amount."
+        meta:
+          synonyms:
+            - gross sales
+            - gross revenue
+            - gross payment
+            - 총 결제액
+        data_tests:
+          - not_null
+
+      - name: net_payment_amount_krw
+        description: "환불 이벤트를 음수로 반영한 campaign별 net payment amount."
+        meta:
+          synonyms:
+            - net sales
+            - net revenue
+            - net payment
+            - 순 결제액
+        data_tests:
+          - not_null
+
+      - name: avg_payment_amount_krw
+        description: "Campaign별 평균 payment amount."
+        meta:
+          synonyms:
+            - average order value
+            - avg payment
+            - 평균 결제액
+
+      - name: first_payment_ts_utc
+        description: "Campaign에서 처음 발생한 payment event timestamp. UTC 기준이다."
+        meta:
+          synonyms:
+            - first payment time
+            - first conversion time
+            - 첫 결제 시각
+
+      - name: last_payment_ts_utc
+        description: "Campaign에서 마지막으로 발생한 payment event timestamp. UTC 기준이다."
+        meta:
+          synonyms:
+            - last payment time
+            - last conversion time
+            - 마지막 결제 시각
+
+      - name: roas
+        description: "net_payment_amount_krw / campaign_budget_krw로 계산한 광고비 대비 결제 성과 지표."
+        meta:
+          synonyms:
+            - return on ad spend
+            - return on advertising spend
+            - roi
+            - 광고비 대비 매출
+            - ROAS
+        data_tests:
+          - not_null
+
+      - name: cost_per_payment_event_krw
+        description: "campaign_budget_krw / total_payment_events로 계산한 결제 이벤트당 비용."
+        meta:
+          synonyms:
+            - cost per conversion
+            - cost per payment
+            - cpa
+            - 전환당 비용
+
+      - name: payment_events_per_attributed_post
+        description: "Campaign 귀속 post 1개당 payment event 수."
+        meta:
+          synonyms:
+            - payment rate per post
+            - conversions per post
+            - 게시물당 결제 이벤트
+
+      - name: has_positive_net_payment
+        description: "Campaign net payment가 0보다 크면 true."
+        meta:
+          synonyms:
+            - has payment
+            - positive revenue
+            - 결제 있음
+        data_tests:
+          - not_null
+
+      - name: is_roas_over_1x
+        description: "ROAS가 1.0 이상이면 true."
+        meta:
+          synonyms:
+            - roas above 1
+            - profitable campaign
+            - 1배 이상 ROAS
+        data_tests:
+          - not_null
+
+      - name: is_roas_over_2x
+        description: "ROAS가 2.0 이상이면 true."
+        meta:
+          synonyms:
+            - roas above 2
+            - high roas campaign
+            - 2배 이상 ROAS
+        data_tests:
+          - not_null
+
+      - name: included_in_campaign_roi_review
+        description: "Campaign ROI review 화면과 AI 질문에서 우선 검토 대상으로 포함할 campaign인지 나타내는 boolean flag."
+        meta:
+          synonyms:
+            - review target
+            - roi review
+            - priority campaign
+            - 검토 대상
+            - ROI 리뷰
+        data_tests:
+          - not_null
+
+      - name: roas_performance_tier
+        description: "Campaign ROAS 성과 등급."
+        meta:
+          synonyms:
+            - roas tier
+            - performance tier
+            - performance bucket
+            - ROAS 등급
+            - 성과 구간
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['no_payment', 'negative_net', 'under_1x', 'one_to_two_x', 'two_x_plus']

@@ -1,0 +1,261 @@
+version: 2
+
+sources:
+  - name: feature_outputs
+    database: "{{ target.database }}"
+    schema: features
+    description: "Python scoring/evaluation jobs가 생성한 feature-layer output 테이블."
+    tables:
+      - name: campaign_roas_baseline_predictions
+        description: "Campaign ROAS baseline scoring script가 생성한 daily prediction output."
+        columns:
+          - name: scoring_snapshot_date
+            description: "Prediction이 생성된 scoring feature snapshot 날짜."
+            data_tests:
+              - not_null
+          - name: campaign_id
+            description: "Prediction 대상 synthetic campaign id."
+            data_tests:
+              - not_null
+          - name: model_name
+            description: "Prediction을 생성한 baseline/model 이름."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  values: ['objective_mean_roas_baseline_v1']
+          - name: predicted_roas
+            description: "Baseline scoring script가 생성한 predicted ROAS."
+            data_tests:
+              - not_null
+
+models:
+  - name: feature_campaign_roas_scoring_set
+    description: "Daily campaign ROAS scoring을 위한 campaign grain feature-only 테이블. label 컬럼을 제외해 운영 예측 입력으로 사용한다."
+    meta:
+      grain: "scoring_snapshot_date와 campaign_id 조합당 1행."
+      feature_layer_for: "daily campaign ROAS scoring"
+      excludes_labels: true
+      notes:
+        - "운영 scoring은 예측 시점에 알 수 있는 feature만 사용한다."
+        - "현재 로컬 구현은 current_date 기준 snapshot을 table로 materialize한다."
+    columns:
+      - name: scoring_snapshot_date
+        description: "Scoring feature snapshot 기준 날짜. 로컬 Postgres current_date 기준이다."
+        data_tests:
+          - not_null
+
+      - name: campaign_id
+        description: "Synthetic campaign primary key. scoring snapshot 안에서 campaign 1개를 식별한다."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: region
+        description: "Campaign target region categorical feature."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['KR', 'JP']
+
+      - name: category
+        description: "Campaign product category categorical feature."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['beauty', 'fashion', 'food']
+
+      - name: objective
+        description: "Campaign marketing objective categorical feature."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['conversion', 'traffic', 'awareness']
+
+      - name: campaign_budget_krw
+        description: "KRW 기준 campaign budget numeric feature."
+        data_tests:
+          - not_null
+
+      - name: duration_days
+        description: "Campaign duration in days numeric feature."
+        data_tests:
+          - not_null
+
+      - name: attributed_posts
+        description: "Campaign에 귀속된 observed Apify posts 수."
+        data_tests:
+          - not_null
+
+      - name: distinct_posts
+        description: "Campaign에 귀속된 distinct post 수."
+        data_tests:
+          - not_null
+
+      - name: distinct_creators
+        description: "Campaign에 참여한 distinct creator 수."
+        data_tests:
+          - not_null
+
+      - name: paid_partnership_posts
+        description: "Paid partnership으로 표시된 campaign 귀속 post 수."
+        data_tests:
+          - not_null
+
+      - name: avg_observed_engagement_count
+        description: "Likes와 comments 기반 campaign 귀속 post의 평균 observed engagement count."
+        data_tests:
+          - not_null
+
+      - name: high_engagement_posts
+        description: "High 또는 viral engagement tier로 분류된 campaign 귀속 post 수."
+        data_tests:
+          - not_null
+
+      - name: viral_engagement_posts
+        description: "Viral engagement tier로 분류된 campaign 귀속 post 수."
+        data_tests:
+          - not_null
+
+      - name: paid_partnership_post_rate
+        description: "Campaign 귀속 posts 중 paid partnership observed posts 비율."
+
+      - name: high_engagement_post_rate
+        description: "Campaign 귀속 posts 중 high/viral engagement posts 비율."
+
+      - name: viral_engagement_post_rate
+        description: "Campaign 귀속 posts 중 viral engagement posts 비율."
+
+      - name: creator_diversity_rate
+        description: "Campaign 귀속 posts 대비 distinct creator 비율."
+
+  - name: feature_campaign_roas_training_set
+    description: "Campaign ROAS 예측 실험을 위한 campaign grain feature/label training set 후보 테이블."
+    meta:
+      grain: "campaign 1개당 1행. campaign_id가 unique key다."
+      feature_layer_for: "campaign ROAS prediction"
+      label_columns:
+        - label_payment_events
+        - label_net_payment_amount_krw
+        - label_roas
+        - label_roas_performance_tier
+        - label_is_roas_over_1x
+        - label_has_positive_net_payment
+      notes:
+        - "현재 데이터는 synthetic payment 기반이므로 production ML 성능 주장이 아니라 feature pipeline 검증용이다."
+        - "payment outcome은 label 컬럼으로 분리해 feature leakage를 눈에 보이게 관리한다."
+    columns:
+      - name: campaign_id
+        description: "Synthetic campaign primary key. 이 모델의 grain이자 unique key다."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: region
+        description: "Campaign target region categorical feature."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['KR', 'JP']
+
+      - name: category
+        description: "Campaign product category categorical feature."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['beauty', 'fashion', 'food']
+
+      - name: objective
+        description: "Campaign marketing objective categorical feature."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['conversion', 'traffic', 'awareness']
+
+      - name: campaign_budget_krw
+        description: "KRW 기준 campaign budget numeric feature."
+        data_tests:
+          - not_null
+
+      - name: duration_days
+        description: "Campaign duration in days numeric feature."
+        data_tests:
+          - not_null
+
+      - name: attributed_posts
+        description: "Campaign에 귀속된 observed Apify posts 수."
+        data_tests:
+          - not_null
+
+      - name: distinct_posts
+        description: "Campaign에 귀속된 distinct post 수."
+        data_tests:
+          - not_null
+
+      - name: distinct_creators
+        description: "Campaign에 참여한 distinct creator 수."
+        data_tests:
+          - not_null
+
+      - name: paid_partnership_posts
+        description: "Paid partnership으로 표시된 campaign 귀속 post 수."
+        data_tests:
+          - not_null
+
+      - name: avg_observed_engagement_count
+        description: "Likes와 comments 기반 campaign 귀속 post의 평균 observed engagement count."
+        data_tests:
+          - not_null
+
+      - name: high_engagement_posts
+        description: "High 또는 viral engagement tier로 분류된 campaign 귀속 post 수."
+        data_tests:
+          - not_null
+
+      - name: viral_engagement_posts
+        description: "Viral engagement tier로 분류된 campaign 귀속 post 수."
+        data_tests:
+          - not_null
+
+      - name: paid_partnership_post_rate
+        description: "Campaign 귀속 posts 중 paid partnership observed posts 비율."
+
+      - name: high_engagement_post_rate
+        description: "Campaign 귀속 posts 중 high/viral engagement posts 비율."
+
+      - name: viral_engagement_post_rate
+        description: "Campaign 귀속 posts 중 viral engagement posts 비율."
+
+      - name: creator_diversity_rate
+        description: "Campaign 귀속 posts 대비 distinct creator 비율."
+
+      - name: label_payment_events
+        description: "Campaign에 귀속된 payment event 수. 예측 label 또는 평가용 outcome이다."
+        data_tests:
+          - not_null
+
+      - name: label_net_payment_amount_krw
+        description: "환불을 반영한 net payment amount. 회귀 label 후보이다."
+        data_tests:
+          - not_null
+
+      - name: label_roas
+        description: "net_payment_amount_krw / campaign_budget_krw. 회귀 label 후보이다."
+        data_tests:
+          - not_null
+
+      - name: label_roas_performance_tier
+        description: "ROAS 성과 구간. 분석 stratification 또는 다중분류 label 후보이다."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['no_payment', 'negative_net', 'under_1x', 'one_to_two_x', 'two_x_plus']
+
+      - name: label_is_roas_over_1x
+        description: "ROAS 1.0 이상 여부. 분류 label 후보이다."
+        data_tests:
+          - not_null
+
+      - name: label_has_positive_net_payment
+        description: "순 결제액이 0보다 큰지 여부. 분류 label 후보이다."
+        data_tests:
+          - not_null

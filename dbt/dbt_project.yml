@@ -30,3 +30,6 @@ models:
     ai_native:
       +schema: ai_native
       +materialized: table
+    features:
+      +schema: features
+      +materialized: table
