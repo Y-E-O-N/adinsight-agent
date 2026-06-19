@@ -12,3 +12,9 @@ pgvector==0.3.1
 
 # Apify Python SDK (Phase 2 Instagram 수집기)
 apify-client
+
+# dbt Postgres adapter (Phase 3 Transform)
+dbt-core~=1.8.0
+dbt-postgres~=1.8.0
+
+psycopg[binary]==3.2.3

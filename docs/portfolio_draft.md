@@ -5,7 +5,7 @@
 >
 > 이 문서가 충분히 채워지면 → `README.md`, 1-pager PDF, 이력서 bullet, 면접 토크포인트로 **거의 자동 변환** 됩니다.
 
-마지막 갱신: **2026-04-16** (Phase 0 진행 중)
+마지막 갱신: **2026-06-09** (Phase 3 creator mart + Superset table chart)
 
 ---
 
@@ -40,6 +40,12 @@
 
 | 메트릭 | 값 |
 |---|---|
+| Stage 0 Apify smoke | **20 items / 17.4s actor runtime** |
+| Stage 0 Airflow DAG smoke | **20 items / 20s DAG runtime** |
+| Stage 1 raw 적재 대상 | **`raw.ig_posts` + `raw.ig_post_sources`** |
+| Stage 1 첫 적재 | **inserted 20 / updated 0 / source_links_inserted 20** |
+| Stage 1 멱등 재실행 | **4회 반복: inserted 0 / updated 20 / source_links_inserted 0** |
+| Stage 1 최종 raw row count | **20 posts / 20 source links** |
 | dim_creator 행 수 (목표 10K) | **TBD** |
 | fact_post 행 수 (목표 2M) | **TBD** |
 | fact_post_metrics_daily 행 수 (목표 20M) | **TBD** |
@@ -47,10 +53,15 @@
 | Parquet 총 크기 | **TBD** |
 | 생성 소요 시간 (시드 42) | **TBD** |
 | `ingest_synthetic` DAG 실행 시간 | **TBD** |
-| **Idempotency** 5회 재실행 후 행 수 변화 | **TBD** |
+| **Idempotency** 5회 재실행 후 행 수 변화 | **20 posts / 20 source links 유지** |
 | 합성 vs 공개 데이터 비율 | **TBD** |
 
 **스크린샷**: `docs/images/02_dag_ingest.png`, `docs/images/02_country_distribution.png`
+
+**Stage 1 증거**
+- DAG run: `ig_collect_smoke` 5회 success (`2026-05-26T06:42:16+00:00` ~ `2026-05-26T06:48:15+00:00`)
+- Load metrics: 첫 실행 `inserted=20`, 이후 4회 `updated=20`, `source_links_inserted=0`
+- Known limitations: smoke 규모는 `#다이소화장품` 20건이며, Stage 2 본수집에서는 XCom 대신 task 내부 collect-and-load 또는 임시 landing 방식을 검토한다.
 
 ---
 
@@ -58,16 +69,31 @@
 
 | 메트릭 | 값 |
 |---|---|
-| 모델 수 (staging / intermediate / marts) | **TBD** / **TBD** / **TBD** |
-| `dbt run` 전체 시간 | **TBD** |
-| `dbt test` 전체 시간 / 통과 수 | **TBD** / **TBD** |
+| 모델 수 (staging / intermediate / marts) | **1 / 3 / 1** |
+| `dbt run` 전체 시간 | **0.18s / 5 models** |
+| `dbt test` 전체 시간 / 통과 수 | **0.37s / 44 passed** |
 | 컬럼 description 커버리지 | **TBD %** |
-| 테스트 커버리지 (컬럼 대비) | **TBD %** |
+| 테스트 커버리지 (컬럼 대비) | **44 data tests / 5 models** |
 | incremental vs full-refresh 시간 차 | **TBD** |
 | SCD2 snapshot row 수 | **TBD** |
 | 최장 모델 실행 (모델명 + 시간) | **TBD** |
+| creator mart row 수 | **46 creators / 49 posts** |
+| creator review 대상 | **24 creators** |
+| 광고/협찬 후보 게시물 | **21 posts** |
 
-**스크린샷**: `docs/images/03_dbt_lineage.png`
+**스크린샷**:
+- `docs/images/03_dbt_lineage.png` — dbt docs lineage (`raw → staging → intermediate → mart`)
+- `docs/images/phase3_creator_review_table.jpg` — Superset creator review table (`marts.mart_creator_sponsored_summary`, `included_in_creator_review = true`)
+
+**BI export**:
+- `dashboards/superset_exports/adinsight_creator_review_export.zip` — Superset dashboard/chart/dataset export (`AdInsight Creator Review`)
+
+**Stage 3 증거**
+- dbt models: `staging.stg_ig_posts`, `intermediate.int_ig_post_source_quality`, `intermediate.int_ig_sponsored_candidates`, `intermediate.int_ig_owner_activity`, `marts.mart_creator_sponsored_summary`
+- dbt tests: `44/44` pass (`dbt-core 1.8.8`, `dbt-postgres 1.8.2`)
+- Superset dataset: `marts.mart_creator_sponsored_summary`
+- Superset chart: `Creator Sponsored Review Table`
+- Known limitations: Round 1 데이터가 49건으로 작아 creator ranking은 대표성이 낮고, `is_sponsored_candidate`는 caption 키워드 기반 후보값이다.
 
 ---
 
@@ -185,7 +211,7 @@
 | Singleflight dedup 비율 | **TBD %** |
 | Gemini → Claude fallback 발동 횟수 | **TBD** |
 | Back-pressure 503 발동 임계점 | **TBD** |
-| ADR 문서 수 | **TBD** (목표 ≥ 3) |
+| ADR 문서 수 | **2** (목표 ≥ 3) |
 | Superset 기여 (issue / PR) | **TBD** |
 
 **스크린샷**: `docs/images/09_locust_30.png`
@@ -199,7 +225,7 @@
 - [ ] ERD (ai_native 레이어 중심) — `docs/images/04_erd_ai_native.svg`
 - [ ] Bus Matrix (표 또는 이미지) — README 직접
 - [ ] Airflow DAG 그래프 × 3 (ingest / dbt_run / weekly_llm_report)
-- [ ] dbt docs lineage 그래프
+- [x] dbt docs lineage 그래프 — `docs/images/03_dbt_lineage.png`
 - [ ] Superset 대시보드 × 2 (광고주 ROI, 크리에이터 성과)
 - [ ] Text2SQL 데모 GIF
 - [ ] EXPLAIN Before/After 콘솔 캡처
@@ -230,8 +256,8 @@ ADR = "왜 X 가 아니라 Y 를 선택했는가" 를 1~2페이지로 남긴 결
 
 | # | 제목 | 위치 | 상태 |
 |---|---|---|---|
-| 001 | Postgres 단일 스택 vs DuckDB / BigQuery | `docs/adr/001-single-postgres.md` | ⏳ Phase 1 시 |
-| 002 | Kimball star schema vs OBT | `docs/adr/002-star-schema.md` | ⏳ Phase 3 시 |
+| 001 | Postgres 단일 스택 vs DuckDB / BigQuery | `docs/adr/001-single-postgres-stack.md` | ✅ Phase 1 작성 |
+| 002 | Layered mart vs OBT | `docs/adr/002-layered-mart-vs-obt.md` | ✅ Phase 3 작성 |
 | 003 | AI-Native 레이어를 별도로 두는 이유 | `docs/adr/003-ai-native-layer.md` | ⏳ Phase 4 시 |
 | 004 | LangChain vs 직접 호출 | `docs/adr/004-langchain.md` | ⏳ Phase 6 시 |
 | 005 | Embedding 모델 선택 (bge-m3) | `docs/adr/005-embedding-model.md` | ⏳ Phase 6 시 |

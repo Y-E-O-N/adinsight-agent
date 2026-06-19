@@ -1,16 +1,16 @@
 # AdInsight Agent
 
-> **글로벌 인플루언서 광고 성과 분석 플랫폼 + AI-Native Data Mart + Text2SQL BI Agent**
-> A multi-region influencer ad performance analytics platform with an AI-Native data mart and a Text2SQL BI agent — built on Airflow, dbt, Superset, LangChain, pgvector.
+> **인플루언서 광고 집행부터 결제 전환까지 추적하는 AI-Native 분석 플랫폼**
+> An influencer campaign-to-payment analytics platform with ROAS prediction and a Text2SQL BI agent — built on Airflow, dbt, Superset, FastAPI, LangChain, pgvector, and LightGBM.
 
-대만·태국·한국·일본 4개 지역의 TikTok / Instagram / YouTube Shorts 인플루언서 광고 데이터를 수집·정제·모델링하고, LLM Agent가 자연어로 질의할 수 있는 데이터 플랫폼.
+Instagram 인플루언서 광고 데이터를 수집·정제·모델링하고, 합성 결제 전환 이벤트를 결합해 캠페인 ROI/ROAS를 분석한다. 최종 목표는 Superset 대시보드, ROAS 예측 ML 모델, 자연어 질의를 처리하는 Text2SQL BI Agent, FastAPI 서빙 엔드포인트까지 연결된 포트폴리오형 데이터 플랫폼이다.
 
 ---
 
 ## TL;DR
-- **도메인**: 멀티 플랫폼 인플루언서 광고 (TikTok / Instagram / YouTube Shorts), 다국가 (TW · TH · KR · JP)
-- **스택**: Airflow 2.9 · Postgres 16 + pgvector · dbt-postgres 1.8 · Superset 4.x · LangChain · Gemini / Claude
-- **차별점**: AI-Native 마트 레이어 (LLM 친화 비정규화 + dbt meta synonyms · example_questions) + Text2SQL 평가 프레임워크
+- **도메인**: 인플루언서 광고 집행 → 게시물 성과 → 결제 전환 → 캠페인 ROI/ROAS 분석
+- **스택**: Airflow 2.9 · Postgres 16 + pgvector · dbt-postgres 1.8 · Superset 4.x · FastAPI · LangChain · LightGBM · Gemini / Claude
+- **차별점**: Apify 운영 자동화 + 가설 기반 합성 결제 데이터 + dbt 5레이어 + ROAS 예측 ML + Text2SQL Agent Exec Acc 측정
 - **로컬 실행**: MacBook Apple Silicon, Docker Compose 한 방에 기동
 
 ---
@@ -21,9 +21,10 @@
 |---|---|
 | AI Native 데이터 마트 설계·운영 | `dbt/models/ai_native/` (LLM 친화 비정규화 + dbt YAML semantic metadata) |
 | 대규모 ETL 파이프라인 (Airflow) | `dags/` (수집 / 정제 / 집계 / 품질 / 리포트 DAG) + 백필 |
-| AI 학습용 데이터 전처리 | 캡션·해시태그·댓글 정제 + multilingual embedding + pgvector |
-| Tableau / Superset 대시보드 | `dashboards/` (Advertiser ROI / Creator Rank / Campaign Ops) |
-| LLM 연동 자동 분석 리포트 | `dags/weekly_llm_report.py` + `reports/{YYYY-WW}/` |
+| AI 학습용 데이터 전처리 | `ai_native.ai_campaign_roi_features` + LightGBM ROAS 예측 feature set |
+| Tableau / Superset 대시보드 | `dashboards/` (Campaign ROI / Creator Performance / Payment Conversion) |
+| ML 모델 개발·평가 | `ml/` LightGBM ROAS 예측 모델, Walk-forward CV, RMSE/MAE, Feature Importance |
+| API 연동·데이터 서빙 | `api/` FastAPI `/query`, `/predict` 엔드포인트 |
 | Text2SQL BI Agent | `agent/` (LangChain schema-aware SQL Agent + 평가 프레임워크) |
 | 데이터 리터러시 교육 | `docs/` 아키텍처·요청 플로우·동시성·면접 토크포인트 |
 | 대용량 쿼리 최적화 | `metrics/query_optimization_log.md` (Before/After 기록) |
@@ -143,16 +144,17 @@ adinsight-agent/
 
 | Phase | 내용 | 상태 |
 |---|---|---|
-| 0 | Repo Bootstrap (스켈레톤·CLAUDE.md·세션 로그) | ✅ |
-| 1 | docker-compose · Postgres · Airflow · Superset · pgvector | 🟡 코드 완료, `make up` 대기 |
-| 2 | 합성 + 공개 데이터 적재 (raw 레이어) | ⬜ |
-| 3 | dbt staging / intermediate / marts (Kimball star schema) | ⬜ |
-| 4 | **AI-Native data mart** (⭐ JD 핵심) | ⬜ |
-| 5 | Superset 대시보드 + 쿼리 최적화 | ⬜ |
-| 6 | **Text2SQL BI Agent** (⭐ JD 가장 핵심) | ⬜ |
-| 7 | 주간 LLM 자동 리포트 DAG | ⬜ |
-| 8 | 데이터 품질 · 관측성 · CI | ⬜ |
-| 9 | 문서화 · 데모 영상 · 면접 준비 | ⬜ |
+| 0~3 | 기존 작업: Docker/Airflow/Postgres/dbt/Superset/ai_native/eval YAML 초안 | ✅ |
+| P | 포지셔닝 재정립: A+C 전략 문서 정렬, ADR 003 | ✅ |
+| 2B | Apify 운영 등급 자동화: watermark, freshness, backfill | 🟡 다음 |
+| 2C | 합성 결제 데이터 생성: creator/campaign/post metrics/payment events | ⬜ |
+| 3B | dbt 모델 확장: campaign ROI, payment conversion, ML feature store | ⬜ |
+| 4B | ROAS 예측 ML 모델: LightGBM, Walk-forward CV, Feature Importance | ⬜ |
+| 5B | Text2SQL Agent 실구현: v1/v2/v3 Exec Acc 비교 | ⬜ |
+| 6B | FastAPI 엔드포인트: `/query`, `/predict` | ⬜ |
+| 7B | Superset 대시보드 + 쿼리 최적화 실측 | ⬜ |
+| 8B | CI/CD: dbt CI, ruff/sqlfluff | ⬜ |
+| 9B | 문서화 + 데모 준비: 토크포인트, 데모 영상, README 최종화 | ⬜ |
 
 ---
 

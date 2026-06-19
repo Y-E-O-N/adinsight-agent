@@ -1,0 +1,32 @@
+name: adinsight_agent
+version: "0.1.0"
+config-version: 2
+
+profile: adinsight_agent
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  adinsight_agent:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
+    ai_native:
+      +schema: ai_native
+      +materialized: table

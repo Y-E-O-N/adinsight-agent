@@ -1,4 +1,4 @@
-.PHONY: help up down logs ps psql airflow-cli superset-init dbt-run dbt-test dbt-docs test fmt lint sync clean
+.PHONY: help up down logs ps psql airflow-cli superset-init dbt-run dbt-test dbt-docs test fmt lint sync session-log session-log-once codex-session clean
 
 # 기본 타깃: help
 help:
@@ -18,6 +18,8 @@ help:
 	@echo "  make test          # pytest"
 	@echo "  make fmt           # ruff format + sqlfluff fix"
 	@echo "  make lint          # ruff check + sqlfluff lint"
+	@echo "  make session-log   # Codex raw log를 현재 폴더 logs/session_*.log로 미러링"
+	@echo "  make codex-session # Codex 시작과 동시에 현재 폴더 raw log 기록"
 
 sync:
 	uv sync
@@ -68,6 +70,15 @@ fmt:
 lint:
 	uv run ruff check .
 	uv run sqlfluff lint dbt/models || true
+
+session-log:
+	uv run python scripts/codex_session_logger.py
+
+session-log-once:
+	uv run python scripts/codex_session_logger.py --once
+
+codex-session:
+	bash scripts/start_codex_session.sh
 
 clean:
 	@echo "이 타깃은 컨테이너·볼륨을 삭제합니다. 정말 실행하려면 'make clean-confirm' 사용"

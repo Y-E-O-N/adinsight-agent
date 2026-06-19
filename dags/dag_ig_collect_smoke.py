@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-
 from airflow.decorators import dag, task
 
 
@@ -26,18 +25,12 @@ def ig_collect_smoke_dag() -> None:
     """Smoke DAG 정의"""
 
     @task
-    def collect_one_hashtag(hashtag: str = "다이소화장품", k: int=20) -> int:
-        """해시태그 1개 수집 후 처음 3건의 핵심 필드를 로그로 출력.
-
-        Returns:
-            수집된 게시물 개수 (Airflow UI에 task return으로 표시)
-        """
-        # import는 task함수 내부에 두는 편이 안전
-        # DAG파싱 단계에서 무거운 import가 일어나면 scheduler가 느려진다.
+    def collect_one_hashtag(hashtag: str = "다이소화장품", k: int=20) -> list[dict]:
+        """해시태그 1개 수집하고 게시물 원본 리스트를 반환. """
         from data_generation.collectors.apify_hashtag import collect_hashtag
 
         items = collect_hashtag(hashtag, k)
-        print(f"[smoke] hashtag={hashtag} k={k} -> {len(items)}건 수집")
+        print(f"[collect] hashtag={hashtag} k={k} -> {len(items)}건 수집")
 
         for i, item in enumerate(items[:3], start=1):
             print(
@@ -46,9 +39,19 @@ def ig_collect_smoke_dag() -> None:
                 f"caption={(item.get('caption') or '')[:40]!r} "
             )
 
-        return len(items)
+        return items
 
-    collect_one_hashtag()
+    @task
+    def load_posts(items: list[dict], source_hashtag: str = "다이소화장품") -> dict[str, int]:
+        """수집된 게시물을 raw.ig_posts / raw.ig_post_sources에 멱등 적재. """
+        from data_generation.collectors.loaders.postgres_loader import upsert_posts
+
+        metrics = upsert_posts(items, source_hashtag=source_hashtag)
+        print(f"[load] metrics={metrics}")
+        return metrics
+
+    items = collect_one_hashtag()
+    load_posts(items)
 
 # DAG 객체를 모듈 네임스페이스에 노출.
 # Airflow scheduler 가 이 줄을 실행해 DAG 인스턴스를 발견한다.

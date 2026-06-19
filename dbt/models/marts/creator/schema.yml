@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: mart_creator_sponsored_summary
+    description: "작성자별 광고/협찬 후보 활동을 BI와 포트폴리오 분석에 바로 사용할 수 있게 정리한 creator mart."
+    columns:
+      - name: owner_username
+        description: "게시물 작성자 username. 이 mart의 grain이다."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: posts
+        description: "작성자별 게시물 수."
+        data_tests:
+          - not_null
+
+      - name: sponsored_candidate_posts
+        description: "작성자별 광고/협찬 후보 게시물 수."
+        data_tests:
+          - not_null
+
+      - name: included_in_creator_review
+        description: "포트폴리오 분석 표에서 우선 검토할 creator인지 나타내는 boolean flag. 현재 기준은 posts >= 2 또는 sponsored_candidate_posts >= 1."
+        data_tests:
+          - not_null

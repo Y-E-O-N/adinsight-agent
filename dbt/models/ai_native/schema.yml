@@ -1,0 +1,150 @@
+version: 2
+
+models:
+  - name: ai_creator_sponsored_summary
+    description: "Text2SQL Agent가 creator별 광고/협찬 후보 현황을 자연어 질문에서 바로 찾을 수 있게 정리한 AI-Native mart."
+    meta:
+      grain: "creator 1명당 1행. creator_username이 unique key다."
+      synonyms:
+        - creator sponsored summary
+        - influencer sponsored summary
+        - creator review
+        - sponsored creator candidates
+        - 협찬 후보 크리에이터
+        - 광고 후보 작성자
+        - 인플루언서 협찬 요약
+      example_questions:
+        - "Which creators should we review first for sponsored content?"
+        - "Show creators with at least one sponsored candidate post."
+        - "Which influencers have a high sponsored candidate rate?"
+        - "협찬 후보 게시물이 있는 크리에이터를 보여줘."
+        - "광고 의심 비율이 높은 작성자는 누구야?"
+    columns:
+      - name: creator_username
+        description: "Instagram creator username. 이 모델의 grain이자 unique key다."
+        meta:
+          synonyms:
+            - creator
+            - influencer
+            - owner
+            - username
+            - 작성자
+            - 크리에이터
+            - 인플루언서
+        data_tests:
+          - not_null
+          - unique
+
+      - name: creator_display_name
+        description: "Instagram profile display name. username보다 사람이 읽기 쉬운 creator 이름이다."
+        meta:
+          synonyms:
+            - display name
+            - full name
+            - profile name
+            - 표시 이름
+            - 프로필 이름
+
+      - name: total_posts
+        description: "현재 분석 데이터에 포함된 creator별 전체 게시물 수."
+        meta:
+          synonyms:
+            - posts
+            - post count
+            - total content
+            - 게시물 수
+            - 전체 게시물
+        data_tests:
+          - not_null
+
+      - name: sponsored_candidate_posts
+        description: "caption keyword 기준으로 광고/협찬 후보로 분류된 creator별 게시물 수."
+        meta:
+          synonyms:
+            - sponsored posts
+            - ad candidate posts
+            - paid partnership candidates
+            - 협찬 후보 게시물
+            - 광고 의심 게시물
+        data_tests:
+          - not_null
+
+      - name: hidden_likes_posts
+        description: "likes count가 숨김 처리된 creator별 게시물 수."
+        meta:
+          synonyms:
+            - hidden likes posts
+            - private likes posts
+            - 좋아요 숨김 게시물
+
+      - name: carousel_posts
+        description: "creator별 carousel 형식 게시물 수."
+        meta:
+          synonyms:
+            - carousel content
+            - multi-image posts
+            - 캐러셀 게시물
+
+      - name: video_posts
+        description: "creator별 video 형식 게시물 수."
+        meta:
+          synonyms:
+            - video content
+            - reels-like posts
+            - 영상 게시물
+
+      - name: avg_likes_count_clean
+        description: "likes hidden 값을 제외하고 계산한 creator별 평균 likes count."
+        meta:
+          synonyms:
+            - average likes
+            - avg likes
+            - 평균 좋아요
+
+      - name: avg_comments_count
+        description: "creator별 평균 comments count."
+        meta:
+          synonyms:
+            - average comments
+            - avg comments
+            - 평균 댓글
+
+      - name: sponsored_candidate_rate
+        description: "creator별 전체 게시물 중 광고/협찬 후보 게시물 비율."
+        meta:
+          synonyms:
+            - sponsored rate
+            - ad candidate rate
+            - paid partnership rate
+            - 협찬 후보 비율
+            - 광고 의심 비율
+        data_tests:
+          - not_null
+
+      - name: hidden_likes_rate
+        description: "creator별 전체 게시물 중 likes count가 숨김 처리된 게시물 비율."
+        meta:
+          synonyms:
+            - hidden likes rate
+            - private likes rate
+            - 좋아요 숨김 비율
+
+      - name: has_engagement_signal
+        description: "likes 또는 comments 기반 engagement signal이 존재하는 creator인지 나타내는 boolean flag."
+        meta:
+          synonyms:
+            - engagement available
+            - has engagement
+            - 참여 신호 있음
+
+      - name: included_in_creator_review
+        description: "creator review 화면과 AI 질문에서 우선 검토 대상으로 포함할 creator인지 나타내는 boolean flag."
+        meta:
+          synonyms:
+            - review target
+            - needs review
+            - priority creator
+            - 검토 대상
+            - 우선 검토
+        data_tests:
+          - not_null

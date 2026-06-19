@@ -1,0 +1,327 @@
+version: 2
+
+models:
+  - name: stg_ig_posts
+    description: "Instagram raw 게시물을 분석 친화적으로 정리한 staging 모델. raw 원본은 보존하고, 숨김 좋아요/광고 후보/source lineage를 파생 컬럼으로 제공한다."
+    columns:
+      - name: post_id
+        description: "Instagram 게시물 ID. raw.ig_posts.id에서 이름을 명확히 바꾼 primary key."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: posted_at_utc
+        description: "UTC 기준 게시 시각."
+        data_tests:
+          - not_null
+
+      - name: posted_date
+        description: "UTC 기준 게시 날짜. 일 단위 집계용."
+        data_tests:
+          - not_null
+
+      - name: owner_username
+        description: "게시물 작성자 username."
+
+      - name: caption_is_empty
+        description: "caption이 NULL이거나 공백뿐이면 true."
+        data_tests:
+          - not_null
+
+      - name: likes_count_raw
+        description: "Apify가 반환한 원본 좋아요 수. -1은 좋아요 숨김을 의미한다."
+
+      - name: likes_hidden
+        description: "likes_count_raw가 -1이면 true."
+        data_tests:
+          - not_null
+
+      - name: likes_count_clean
+        description: "분석용 좋아요 수. likes_hidden이면 NULL, 아니면 원본 좋아요 수."
+
+      - name: is_carousel
+        description: "post_type 또는 product_type 기준 carousel 게시물이면 true."
+        data_tests:
+          - not_null
+
+      - name: is_video
+        description: "post_type 또는 product_type 기준 video/reels 게시물이면 true."
+        data_tests:
+          - not_null
+
+      - name: is_sponsored_candidate
+        description: "caption에 광고/협찬 관련 키워드가 포함된 후보 게시물이면 true. 확정 광고 판정은 아니다."
+        data_tests:
+          - not_null
+
+      - name: source_hashtags
+        description: "게시물이 발견된 source hashtag 목록."
+
+      - name: source_hashtag_count
+        description: "게시물이 발견된 서로 다른 source hashtag 수."
+        data_tests:
+          - not_null
+
+  - name: stg_syn_post_campaign_attributions
+    description: "실제 Apify 게시물에 synthetic campaign attribution을 붙인 Phase 2C staging 모델. 조회수/노출/클릭은 사용하지 않고, 수집된 likes/comments 기반 engagement tier만 제공한다."
+    columns:
+      - name: post_campaign_attribution_id
+        description: "반합성 post-campaign attribution row의 primary key."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: post_id
+        description: "실제 Instagram 게시물 ID. stg_ig_posts.post_id와 연결된다."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_ig_posts')
+              field: post_id
+
+      - name: creator_username
+        description: "실제 Apify 게시물 작성자 username."
+        data_tests:
+          - not_null
+
+      - name: campaign_id
+        description: "Synthetic campaign identifier."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_syn_campaigns')
+              field: campaign_id
+
+      - name: post_date
+        description: "UTC 기준 게시 날짜."
+        data_tests:
+          - not_null
+
+      - name: likes_count_clean
+        description: "likes_count=-1 숨김 값을 0으로 보정한 attribution용 좋아요 수."
+        data_tests:
+          - not_null
+
+      - name: likes_hidden
+        description: "원본 likes_count가 -1이면 true."
+        data_tests:
+          - not_null
+
+      - name: comments_count
+        description: "Apify가 수집한 댓글 수."
+        data_tests:
+          - not_null
+
+      - name: observed_engagement_count
+        description: "수집 가능한 지표만 사용한 engagement count. likes_count_clean + comments_count."
+        data_tests:
+          - not_null
+
+      - name: observed_engagement_tier
+        description: "Apify profile의 engagement_count percentiles 기준 tier."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['low', 'medium', 'high', 'viral']
+
+      - name: is_high_engagement_observed
+        description: "observed_engagement_tier가 high 또는 viral이면 true."
+        data_tests:
+          - not_null
+
+      - name: is_viral_engagement_observed
+        description: "observed_engagement_tier가 viral이면 true."
+        data_tests:
+          - not_null
+
+      - name: metric_policy
+        description: "views/impressions/clicks를 쓰지 않고 observed likes/comments만 썼음을 나타내는 정책명."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['observed_likes_comments_only_v1']
+
+  - name: stg_syn_campaigns
+    description: "Phase 2C synthetic campaign staging model. campaign attribution과 payment simulation의 광고비/기간/목표 기준이 된다."
+    columns:
+      - name: campaign_id
+        description: "Synthetic campaign primary key."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: campaign_name
+        description: "Category, region, objective, sequence를 포함한 synthetic campaign 이름."
+        data_tests:
+          - not_null
+
+      - name: region
+        description: "Campaign region. 현재 Phase 2C smoke 범위는 KR/JP."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['KR', 'JP']
+
+      - name: category
+        description: "Campaign category. 현재 Phase 2C smoke 범위는 beauty/fashion/food."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['beauty', 'fashion', 'food']
+
+      - name: objective
+        description: "Campaign objective."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['conversion', 'traffic', 'awareness']
+
+      - name: campaign_budget_krw
+        description: "KRW 기준 synthetic campaign budget."
+        data_tests:
+          - not_null
+
+      - name: start_date
+        description: "Campaign start date."
+        data_tests:
+          - not_null
+
+      - name: end_date
+        description: "Campaign end date."
+        data_tests:
+          - not_null
+
+      - name: duration_days
+        description: "Inclusive campaign duration in days."
+        data_tests:
+          - not_null
+
+      - name: is_budget_over_1m_krw
+        description: "Campaign budget이 100만원 이상이면 true."
+        data_tests:
+          - not_null
+
+      - name: is_budget_over_5m_krw
+        description: "Campaign budget이 500만원 이상이면 true."
+        data_tests:
+          - not_null
+
+      - name: is_active_on_current_date
+        description: "현재 DB date 기준 campaign 기간 안에 있으면 true."
+        data_tests:
+          - not_null
+
+  - name: stg_syn_payment_events
+    description: "Phase 2C synthetic payment event staging model. 실제 Apify 수집 게시물의 observed engagement와 synthetic campaign budget을 기반으로 생성한 결제 이벤트를 분석 친화적으로 정리한다."
+    columns:
+      - name: payment_event_id
+        description: "Synthetic payment event primary key."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: post_campaign_attribution_id
+        description: "결제 이벤트의 근거가 된 post-campaign attribution row."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_syn_post_campaign_attributions')
+              field: post_campaign_attribution_id
+
+      - name: post_id
+        description: "실제 Instagram 게시물 ID. stg_ig_posts.post_id와 연결된다."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_ig_posts')
+              field: post_id
+
+      - name: campaign_id
+        description: "Synthetic campaign identifier."
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_syn_campaigns')
+              field: campaign_id
+
+      - name: creator_username
+        description: "결제 이벤트가 귀속된 게시물 작성자 username."
+        data_tests:
+          - not_null
+
+      - name: event_ts_utc
+        description: "UTC 기준 synthetic payment event 발생 시각."
+        data_tests:
+          - not_null
+
+      - name: event_date
+        description: "UTC 기준 synthetic payment event 발생 날짜."
+        data_tests:
+          - not_null
+
+      - name: region
+        description: "Campaign region."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['KR', 'JP']
+
+      - name: category
+        description: "Campaign category."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['beauty', 'fashion', 'food']
+
+      - name: objective
+        description: "Campaign objective."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['conversion', 'traffic', 'awareness']
+
+      - name: currency
+        description: "Local payment currency."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['KRW', 'JPY']
+
+      - name: payment_amount_krw
+        description: "KRW 기준 gross payment amount."
+        data_tests:
+          - not_null
+
+      - name: net_payment_amount_krw
+        description: "환불 이벤트는 음수로 반영한 KRW 기준 net payment amount."
+        data_tests:
+          - not_null
+
+      - name: is_refunded
+        description: "Synthetic refund 여부."
+        data_tests:
+          - not_null
+
+      - name: observed_engagement_count
+        description: "결제 이벤트 생성에 사용한 observed likes/comments engagement count."
+        data_tests:
+          - not_null
+
+      - name: observed_engagement_tier
+        description: "결제 이벤트 생성에 사용한 observed engagement tier."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['low', 'medium', 'high', 'viral']
+
+      - name: expected_payment_count
+        description: "Poisson 분포의 lambda로 사용한 기대 결제 건수."
+        data_tests:
+          - not_null
+
+      - name: conversion_model
+        description: "Synthetic payment event 생성 모델명."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['poisson_observed_engagement_v1']

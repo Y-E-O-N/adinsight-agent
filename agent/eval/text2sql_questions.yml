@@ -1,0 +1,214 @@
+version: 1
+
+metadata:
+  phase: p4
+  purpose: "Initial Text2SQL evaluation set for the first AI-Native mart."
+  target_model: ai_native.ai_creator_sponsored_summary
+  target_grain: "one row per creator_username"
+  source_metadata: dbt/models/ai_native/schema.yml
+
+questions:
+  - id: p4_q001
+    language: en
+    question: "Which creators should we review first for sponsored content?"
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - sponsored_candidate_posts
+      - sponsored_candidate_rate
+      - included_in_creator_review
+    required_sql_features:
+      - filter_boolean_included_in_creator_review
+      - order_by_sponsored_priority
+      - limit
+    current_result_rows: 20
+    expected_sql: |
+      select
+          creator_username,
+          sponsored_candidate_posts,
+          sponsored_candidate_rate,
+          included_in_creator_review
+      from ai_native.ai_creator_sponsored_summary
+      where included_in_creator_review = true
+      order by sponsored_candidate_posts desc, sponsored_candidate_rate desc
+      limit 20
+
+  - id: p4_q002
+    language: en
+    question: "Show creators with at least one sponsored candidate post."
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - sponsored_candidate_posts
+    required_sql_features:
+      - filter_sponsored_candidate_posts_gte_1
+    current_result_rows: 21
+    expected_sql: |
+      select
+          creator_username,
+          sponsored_candidate_posts
+      from ai_native.ai_creator_sponsored_summary
+      where sponsored_candidate_posts >= 1
+      order by sponsored_candidate_posts desc, creator_username asc
+
+  - id: p4_q003
+    language: en
+    question: "Which influencers have a high sponsored candidate rate?"
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - sponsored_candidate_rate
+      - total_posts
+    required_sql_features:
+      - order_by_sponsored_candidate_rate_desc
+      - limit
+    current_result_rows: 10
+    expected_sql: |
+      select
+          creator_username,
+          sponsored_candidate_rate,
+          total_posts
+      from ai_native.ai_creator_sponsored_summary
+      order by sponsored_candidate_rate desc, total_posts desc
+      limit 10
+
+  - id: p4_q004
+    language: ko
+    question: "협찬 후보 게시물이 있는 크리에이터를 보여줘."
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - sponsored_candidate_posts
+    required_sql_features:
+      - korean_synonym_creator
+      - korean_synonym_sponsored
+      - filter_sponsored_candidate_posts_gte_1
+    current_result_rows: 21
+    expected_sql: |
+      select
+          creator_username,
+          sponsored_candidate_posts
+      from ai_native.ai_creator_sponsored_summary
+      where sponsored_candidate_posts >= 1
+      order by sponsored_candidate_posts desc, creator_username asc
+
+  - id: p4_q005
+    language: ko
+    question: "광고 의심 비율이 높은 작성자는 누구야?"
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - sponsored_candidate_rate
+    required_sql_features:
+      - korean_synonym_creator
+      - korean_synonym_ad_rate
+      - order_by_sponsored_candidate_rate_desc
+      - limit
+    current_result_rows: 10
+    expected_sql: |
+      select
+          creator_username,
+          sponsored_candidate_rate
+      from ai_native.ai_creator_sponsored_summary
+      order by sponsored_candidate_rate desc
+      limit 10
+
+  - id: p4_q006
+    language: ko
+    question: "우선 검토 대상 크리에이터만 보여줘."
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - included_in_creator_review
+    required_sql_features:
+      - korean_synonym_review_target
+      - filter_boolean_included_in_creator_review
+    current_result_rows: 24
+    expected_sql: |
+      select
+          creator_username,
+          included_in_creator_review
+      from ai_native.ai_creator_sponsored_summary
+      where included_in_creator_review = true
+      order by creator_username asc
+
+  - id: p4_q007
+    language: en
+    question: "List creators where likes are often hidden."
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - hidden_likes_rate
+      - hidden_likes_posts
+    required_sql_features:
+      - order_by_hidden_likes_rate_desc
+      - limit
+    current_result_rows: 10
+    expected_sql: |
+      select
+          creator_username,
+          hidden_likes_rate,
+          hidden_likes_posts
+      from ai_native.ai_creator_sponsored_summary
+      order by hidden_likes_rate desc, hidden_likes_posts desc
+      limit 10
+
+  - id: p4_q008
+    language: ko
+    question: "평균 댓글 수가 높은 인플루언서 Top 10을 보여줘."
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - avg_comments_count
+    required_sql_features:
+      - korean_synonym_influencer
+      - order_by_avg_comments_count_desc
+      - limit_10
+    current_result_rows: 10
+    expected_sql: |
+      select
+          creator_username,
+          avg_comments_count
+      from ai_native.ai_creator_sponsored_summary
+      order by avg_comments_count desc
+      limit 10
+
+  - id: p4_q009
+    language: en
+    question: "Which creators have engagement signals available?"
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - has_engagement_signal
+    required_sql_features:
+      - filter_boolean_has_engagement_signal
+    current_result_rows: 44
+    expected_sql: |
+      select
+          creator_username,
+          has_engagement_signal
+      from ai_native.ai_creator_sponsored_summary
+      where has_engagement_signal = true
+      order by creator_username asc
+
+  - id: p4_q010
+    language: ko
+    question: "게시물이 2개 이상인데 협찬 후보가 없는 계정을 찾아줘."
+    expected_model: ai_native.ai_creator_sponsored_summary
+    expected_columns:
+      - creator_username
+      - total_posts
+      - sponsored_candidate_posts
+    required_sql_features:
+      - filter_total_posts_gte_2
+      - filter_sponsored_candidate_posts_eq_0
+    current_result_rows: 3
+    expected_sql: |
+      select
+          creator_username,
+          total_posts,
+          sponsored_candidate_posts
+      from ai_native.ai_creator_sponsored_summary
+      where total_posts >= 2
+        and sponsored_candidate_posts = 0
+      order by total_posts desc, creator_username asc

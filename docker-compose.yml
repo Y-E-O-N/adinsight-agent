@@ -31,6 +31,13 @@ x-airflow-common: &airflow-common
     AIRFLOW_CONN_WAREHOUSE: >-
       postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     APIFY_TOKEN: ${APIFY_TOKEN}
+
+    POSTGRES_HOST: ${POSTGRES_HOST}
+    POSTGRES_PORT: ${POSTGRES_PORT}
+    POSTGRES_DB: ${POSTGRES_DB}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
     PYTHONPATH: /opt/airflow
   volumes:
     - ./dags:/opt/airflow/dags

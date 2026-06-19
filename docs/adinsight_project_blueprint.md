@@ -1,8 +1,8 @@
 # LINE Pay AI Insight Engineer 포트폴리오 프로젝트 설계서
 
-> **목적**: LINE Pay "AI Insight Engineer" JD에 정확히 매칭되는 포트폴리오 프로젝트를, MacBook 로컬 환경에서 Claude Code로 실행 가능한 형태로 설계.
-> **도메인**: 글로벌 멀티 플랫폼 인플루언서 광고 성과 분석 (TikTok / Instagram / YouTube Shorts)
-> **작성자 맥락**: Aimers 인플루언서 마케팅 데이터 업무 경험을 그대로 살리되, DE 역량(ETL·데이터 마트·BI Agent·LLM 연동)에 집중.
+> **목적**: LINE Pay "AI Insight Engineer" JD에 맞춰, 데이터 엔지니어링·핀테크 분석·ML·Text2SQL Agent 역량을 함께 증명하는 포트폴리오 프로젝트를 MacBook 로컬 환경에서 실행 가능한 형태로 설계.
+> **도메인**: 인플루언서 광고 집행부터 결제 전환까지 추적하는 캠페인 ROI/ROAS 분석
+> **작성자 맥락**: Aimers 인플루언서 마케팅 데이터 업무 경험을 살리되, 결제 전환·ROAS 예측·API 서빙까지 확장해 LINE Pay 맥락과의 거리를 줄인다.
 
 ---
 
@@ -17,15 +17,16 @@
 > 이 문서 이하에서는 `AdInsight Agent`로 통일.
 
 **한 줄 피치 (한국어)**
-> "대만·태국·한국·일본 4개 지역의 TikTok / Instagram / YouTube Shorts 인플루언서 광고 성과 데이터를 수집·정제·모델링하고, LLM AI Agent가 자연어로 질의할 수 있는 AI-Native 데이터 마트와 Text2SQL BI Agent를 제공하는 글로벌 인플루언서 광고 분석 플랫폼."
+> "인플루언서 광고 집행부터 결제 전환까지 추적하고, ROAS 예측 ML 모델과 Text2SQL BI Agent로 캠페인 의사결정을 돕는 AI-Native 분석 플랫폼."
 
 **한 줄 피치 (영어, 이력서용)**
-> "A multi-region influencer ad performance analytics platform with an AI-Native data mart and Text2SQL BI agent, built on Airflow, dbt, Superset, and LangChain."
+> "An influencer campaign-to-payment analytics platform with ROAS prediction and a Text2SQL BI agent, built on Airflow, dbt, Superset, FastAPI, LangChain, pgvector, and LightGBM."
 
 **LINE Pay JD와의 도메인 브릿지**
 - LINE Pay 광고 추천 시스템 ↔ 인플루언서 광고 채널 매칭 (둘 다 "광고주 ↔ 채널/오디언스 매칭" 문제)
 - LINE Pay 다국가 서비스 (TW·TH) ↔ 다국가 인플루언서 데이터 (타임존·통화·지역 규칙)
 - LINE Pay Advertiser Portal 지표 ↔ 광고 캠페인 ROI / CTR / CVR / ROAS
+- LINE Pay 결제 데이터 ↔ 광고 노출 이후 payment conversion / ROAS 분석
 - 면접에서 안전한 화법: *"현재 업무와 직접 연관된 도메인을 심화시키면서 DE 스택을 실전 적용해본 프로젝트"*
 
 ---
@@ -273,6 +274,11 @@ adinsight/
 ---
 
 ## 5. 단계별 구현 계획 (Phase 1 → 9)
+
+> **2026-06-16 재설계 메모**
+> 이 섹션은 원본 Phase 1~9 설계의 역사적 기준으로 보존한다.
+> 최신 실행 순서는 `docs/guides/project_redesign_master_guide.md` 의 A+C 전략 로드맵을 따른다.
+> 현재 우선순위는 Phase P 완료 후 `2B Apify 운영 자동화 → 2C 합성 결제 데이터 → 3B campaign/payment dbt 확장` 이다.
 
 각 Phase 끝에 **Claude Code 프롬프트 템플릿**을 포함. 한 Phase가 대략 1주~1주 반 분량 (평일 저녁 1~2시간 기준).
 

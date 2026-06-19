@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1800" viewBox="0 0 1800 1800">
+<defs>
+<marker id="arrow-ingest" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M2,2 L10,6 L2,10 Z" fill="#2563eb"/></marker>
+<marker id="arrow-raw_profile" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M2,2 L10,6 L2,10 Z" fill="#16a34a"/></marker>
+<marker id="arrow-campaign" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M2,2 L10,6 L2,10 Z" fill="#7c3aed"/></marker>
+<marker id="arrow-attribution" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M2,2 L10,6 L2,10 Z" fill="#dc2626"/></marker>
+<marker id="arrow-dbt" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M2,2 L10,6 L2,10 Z" fill="#0891b2"/></marker>
+<marker id="arrow-next" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M2,2 L10,6 L2,10 Z" fill="#d97706"/></marker>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#101828" flood-opacity="0.12"/></filter>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="70" y="52" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#101828">AdInsight Execution and Data Loading Flow</text>
+<text x="70" y="82" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#475467">Actual Apify ingestion, synthetic campaign attribution, dbt staging, and next payment events</text>
+<rect x="45" y="105" width="1535" height="290" rx="10" fill="#f9fafb" stroke="#eaecf0"/>
+<text x="61" y="134" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#667085">1. Actual collection and raw preservation</text>
+<rect x="45" y="455" width="1210" height="170" rx="10" fill="#fbfffb" stroke="#eaecf0"/>
+<text x="61" y="484" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#667085">2. Profile observed Apify fields</text>
+<rect x="45" y="715" width="1260" height="430" rx="10" fill="#fffafa" stroke="#eaecf0"/>
+<text x="61" y="744" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#667085">3. Synthetic campaign and attribution loading</text>
+<rect x="45" y="1195" width="1440" height="300" rx="10" fill="#f8fbff" stroke="#eaecf0"/>
+<text x="61" y="1224" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#667085">4. dbt staging validation</text>
+<rect x="290" y="1540" width="990" height="155" rx="10" fill="#fffdf2" stroke="#eaecf0"/>
+<text x="306" y="1569" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#667085">5. Next planned step</text>
+<path d="M 1100.0 355.0 C 1100.0 795.0, 770.0 795.0, 770.0 1235.0" fill="none" stroke="#0891b2" stroke-width="2.8" marker-end="url(#arrow-dbt)" opacity="0.78"/>
+<path d="M 970.0 320.0 C 970.0 687.5, 390.0 687.5, 390.0 1055.0" fill="none" stroke="#dc2626" stroke-width="2.8" marker-end="url(#arrow-attribution)" opacity="0.78"/>
+<path d="M 1280.0 320.0 C 835.0 320.0, 835.0 1055.0, 390.0 1055.0" fill="none" stroke="#dc2626" stroke-width="2.8" marker-end="url(#arrow-attribution)" opacity="0.78"/>
+<path d="M 650.0 585.0 C 650.0 792.5, 255.0 792.5, 255.0 1000.0" fill="none" stroke="#dc2626" stroke-width="2.8" marker-end="url(#arrow-attribution)" opacity="0.78"/>
+<path d="M 1060.0 845.0 C 1060.0 1040.0, 770.0 1040.0, 770.0 1235.0" fill="none" stroke="#0891b2" stroke-width="2.8" marker-end="url(#arrow-dbt)" opacity="0.78"/>
+<path d="M 910.0 542.5 C 650.0 542.5, 650.0 802.5, 390.0 802.5" fill="none" stroke="#7c3aed" stroke-width="2.8" marker-end="url(#arrow-campaign)" opacity="0.78"/>
+<path d="M 910.0 802.5 C 650.0 802.5, 650.0 1055.0, 390.0 1055.0" fill="none" stroke="#dc2626" stroke-width="2.8" marker-end="url(#arrow-attribution)" opacity="0.78"/>
+<path d="M 910.0 1054.5 C 910.0 1166.0, 920.0 1166.0, 920.0 1277.5" fill="none" stroke="#0891b2" stroke-width="2.8" marker-end="url(#arrow-dbt)" opacity="0.78"/>
+<path d="M 970.0 320.0 C 680.0 320.0, 680.0 542.5, 390.0 542.5" fill="none" stroke="#16a34a" stroke-width="2.8" marker-end="url(#arrow-raw_profile)" opacity="0.78"/>
+<path d="M 1280.0 320.0 C 835.0 320.0, 835.0 542.5, 390.0 542.5" fill="none" stroke="#16a34a" stroke-width="2.8" marker-end="url(#arrow-raw_profile)" opacity="0.78"/>
+<path d="M 655.0 1460.0 C 655.0 1520.0, 535.0 1520.0, 535.0 1580.0" fill="none" stroke="#d97706" stroke-width="2.8" marker-end="url(#arrow-next)" opacity="0.78"/>
+<path d="M 910.0 1425.0 C 910.0 1522.5, 720.0 1522.5, 720.0 1620.0" fill="none" stroke="#d97706" stroke-width="2.8" marker-end="url(#arrow-next)" opacity="0.78"/>
+<path d="M 1245.0 215.0 C 1172.5 215.0, 1172.5 285.0, 1100.0 285.0" fill="none" stroke="#2563eb" stroke-width="2.8" marker-end="url(#arrow-ingest)" opacity="0.78"/>
+<path d="M 1370.0 172.5 C 1370.0 246.2, 1280.0 246.2, 1280.0 320.0" fill="none" stroke="#2563eb" stroke-width="2.8" marker-end="url(#arrow-ingest)" opacity="0.78"/>
+<path d="M 620.0 1277.5 C 510.0 1277.5, 510.0 1425.0, 400.0 1425.0" fill="none" stroke="#0891b2" stroke-width="2.8" marker-end="url(#arrow-dbt)" opacity="0.78"/>
+<path d="M 770.0 1320.0 C 712.5 1320.0, 712.5 1390.0, 655.0 1390.0" fill="none" stroke="#0891b2" stroke-width="2.8" marker-end="url(#arrow-dbt)" opacity="0.78"/>
+<path d="M 920.0 1277.5 C 920.0 1351.2, 910.0 1351.2, 910.0 1425.0" fill="none" stroke="#0891b2" stroke-width="2.8" marker-end="url(#arrow-dbt)" opacity="0.78"/>
+<path d="M 390.0 1055.0 C 445.0 1055.0, 445.0 1054.5, 500.0 1054.5" fill="none" stroke="#dc2626" stroke-width="2.8" marker-end="url(#arrow-attribution)" opacity="0.78"/>
+<path d="M 320.0 172.5 C 370.0 172.5, 370.0 172.5, 420.0 172.5" fill="none" stroke="#2563eb" stroke-width="2.8" marker-end="url(#arrow-ingest)" opacity="0.78"/>
+<path d="M 670.0 172.5 C 720.0 172.5, 720.0 172.5, 770.0 172.5" fill="none" stroke="#2563eb" stroke-width="2.8" marker-end="url(#arrow-ingest)" opacity="0.78"/>
+<path d="M 1020.0 172.5 C 1070.0 172.5, 1070.0 172.5, 1120.0 172.5" fill="none" stroke="#2563eb" stroke-width="2.8" marker-end="url(#arrow-ingest)" opacity="0.78"/>
+<path d="M 390.0 542.5 C 445.0 542.5, 445.0 542.5, 500.0 542.5" fill="none" stroke="#16a34a" stroke-width="2.8" marker-end="url(#arrow-raw_profile)" opacity="0.78"/>
+<path d="M 800.0 542.5 C 855.0 542.5, 855.0 542.5, 910.0 542.5" fill="none" stroke="#16a34a" stroke-width="2.8" marker-end="url(#arrow-raw_profile)" opacity="0.78"/>
+<path d="M 390.0 802.5 C 445.0 802.5, 445.0 802.5, 500.0 802.5" fill="none" stroke="#7c3aed" stroke-width="2.8" marker-end="url(#arrow-campaign)" opacity="0.78"/>
+<path d="M 800.0 802.5 C 855.0 802.5, 855.0 802.5, 910.0 802.5" fill="none" stroke="#7c3aed" stroke-width="2.8" marker-end="url(#arrow-campaign)" opacity="0.78"/>
+<path d="M 800.0 1054.5 C 855.0 1054.5, 855.0 1054.5, 910.0 1054.5" fill="none" stroke="#dc2626" stroke-width="2.8" marker-end="url(#arrow-attribution)" opacity="0.78"/>
+<path d="M 720.0 1620.0 C 785.0 1620.0, 785.0 1620.0, 850.0 1620.0" fill="none" stroke="#d97706" stroke-width="2.8" marker-end="url(#arrow-next)" opacity="0.78"/>
+<rect x="70" y="130" width="250" height="85" rx="8" fill="#f6f8fb" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="195.0" y="168.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">Airflow DAGs</text>
+<text x="195.0" y="188.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Daily / Backfill</text>
+<rect x="420" y="130" width="250" height="85" rx="8" fill="#eef7ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="545.0" y="168.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">Apify Instagram</text>
+<text x="545.0" y="188.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Hashtag Actor</text>
+<rect x="770" y="130" width="250" height="85" rx="8" fill="#eef7ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="895.0" y="168.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">collect_hashtag</text>
+<text x="895.0" y="188.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">hashtag + k</text>
+<rect x="1120" y="130" width="250" height="85" rx="8" fill="#f5f0ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="1245.0" y="168.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">postgres_loader.py</text>
+<text x="1245.0" y="188.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Idempotent upsert</text>
+<rect x="970" y="285" width="260" height="70" rx="8" fill="#fff7e8" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="1100.0" y="326.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">raw.ig_posts</text>
+<rect x="1280" y="285" width="260" height="70" rx="8" fill="#fff7e8" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="1410.0" y="326.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">raw.ig_post_sources</text>
+<rect x="120" y="500" width="270" height="85" rx="8" fill="#eafaf1" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="255.0" y="538.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">apify_profile.py</text>
+<text x="255.0" y="558.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Profile real posts</text>
+<rect x="500" y="500" width="300" height="85" rx="8" fill="#eafaf1" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="650.0" y="538.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">apify_profile_latest.json</text>
+<text x="650.0" y="558.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Observed field policy</text>
+<rect x="910" y="500" width="300" height="85" rx="8" fill="#eafaf1" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="1060.0" y="538.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">generation_profile.py</text>
+<text x="1060.0" y="558.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Shared parameters</text>
+<rect x="120" y="760" width="270" height="85" rx="8" fill="#fff4f4" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="255.0" y="798.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">campaigns.py</text>
+<text x="255.0" y="818.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Synthetic campaigns</text>
+<rect x="500" y="760" width="300" height="85" rx="8" fill="#f5f0ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="650.0" y="798.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">synthetic_loader.py</text>
+<text x="650.0" y="818.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">upsert_campaigns</text>
+<rect x="910" y="760" width="300" height="85" rx="8" fill="#fff7e8" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="1060.0" y="808.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">raw.syn_campaigns</text>
+<rect x="120" y="1000" width="270" height="110" rx="8" fill="#fff4f4" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="255.0" y="1031.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">post_campaign</text>
+<text x="255.0" y="1051.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">attribution.py</text>
+<text x="255.0" y="1071.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Real post metrics</text>
+<text x="255.0" y="1091.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">No views/clicks</text>
+<rect x="500" y="1012" width="300" height="85" rx="8" fill="#f5f0ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="650.0" y="1050.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">synthetic_loader.py</text>
+<text x="650.0" y="1070.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">upsert_attributions</text>
+<rect x="910" y="1012" width="330" height="85" rx="8" fill="#fff7e8" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="1075.0" y="1050.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">raw.syn_post_campaign</text>
+<text x="1075.0" y="1070.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">attributions</text>
+<rect x="620" y="1235" width="300" height="85" rx="8" fill="#eef7ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="770.0" y="1273.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">dbt run + test</text>
+<text x="770.0" y="1293.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Staging models</text>
+<rect x="130" y="1390" width="270" height="70" rx="8" fill="#eef7ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="265.0" y="1431.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">stg_ig_posts</text>
+<rect x="520" y="1390" width="270" height="70" rx="8" fill="#eef7ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="655.0" y="1431.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">stg_syn_campaigns</text>
+<rect x="910" y="1390" width="300" height="70" rx="8" fill="#eef7ff" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="1060.0" y="1421.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">stg_syn_post_campaign</text>
+<text x="1060.0" y="1441.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">attributions</text>
+<rect x="350" y="1580" width="370" height="80" rx="8" fill="#fffbe6" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="535.0" y="1616.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">Next: payment_events.py</text>
+<text x="535.0" y="1636.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">Engagement tier + budget</text>
+<rect x="850" y="1580" width="370" height="80" rx="8" fill="#fffbe6" stroke="#98a2b3" stroke-width="1.4" filter="url(#shadow)"/>
+<text x="1035.0" y="1616.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#101828">Planned payment tables</text>
+<text x="1035.0" y="1636.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#101828">raw + dbt staging</text>
+<line x1="70" y1="1743" x2="112" y2="1743" stroke="#2563eb" stroke-width="4" marker-end="url(#arrow-ingest)"/>
+<text x="125" y="1749" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#475467">Apify ingest</text>
+<line x1="330" y1="1743" x2="372" y2="1743" stroke="#16a34a" stroke-width="4" marker-end="url(#arrow-raw_profile)"/>
+<text x="385" y="1749" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#475467">Raw/Profile</text>
+<line x1="590" y1="1743" x2="632" y2="1743" stroke="#7c3aed" stroke-width="4" marker-end="url(#arrow-campaign)"/>
+<text x="645" y="1749" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#475467">Campaign</text>
+<line x1="850" y1="1743" x2="892" y2="1743" stroke="#dc2626" stroke-width="4" marker-end="url(#arrow-attribution)"/>
+<text x="905" y="1749" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#475467">Attribution</text>
+<line x1="1110" y1="1743" x2="1152" y2="1743" stroke="#0891b2" stroke-width="4" marker-end="url(#arrow-dbt)"/>
+<text x="1165" y="1749" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#475467">dbt staging</text>
+<line x1="1370" y1="1743" x2="1412" y2="1743" stroke="#d97706" stroke-width="4" marker-end="url(#arrow-next)"/>
+<text x="1425" y="1749" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#475467">Next payment</text>
+</svg>

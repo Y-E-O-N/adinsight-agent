@@ -1,0 +1,133 @@
+version: 2
+
+sources:
+  - name: raw
+    database: "{{ target.database }}"
+    schema: raw
+    description: "원본 보존 레이어. Apify Instagram 응답을 변환 없이 적재한다."
+    tables:
+      - name: ig_posts
+        description: "Apify instagram-hashtag-scraper 응답 1건을 원본 중심으로 저장한 게시물 테이블."
+        columns:
+          - name: id
+            description: "Instagram 게시물 ID. raw.ig_posts의 primary key."
+            data_tests:
+              - not_null
+              - unique
+          - name: caption
+            description: "원본 caption. 해시태그, 멘션, 광고 키워드는 staging에서 파생한다."
+          - name: likes_count
+            description: "원본 좋아요 수. -1은 좋아요 수 숨김 sentinel value로 staging에서 분리한다."
+          - name: posted_at
+            description: "게시 시각. UTC 기준 timestamptz로 저장한다."
+
+      - name: ig_post_sources
+        description: "게시물이 어떤 source hashtag 수집에서 발견됐는지 기록하는 lineage 테이블."
+        columns:
+          - name: post_id
+            description: "raw.ig_posts.id를 참조하는 게시물 ID."
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'ig_posts')
+                  field: id
+          - name: source_hashtag
+            description: "게시물이 발견된 seed hashtag."
+            data_tests:
+              - not_null
+
+      - name: syn_post_campaign_attributions
+        description: "실제 Apify 게시물에 synthetic campaign attribution을 붙인 Phase 2C 반합성 raw 테이블."
+        columns:
+          - name: post_campaign_attribution_id
+            description: "반합성 post-campaign attribution row의 primary key."
+            data_tests:
+              - not_null
+              - unique
+          - name: post_id
+            description: "raw.ig_posts.id를 참조하는 실제 Instagram 게시물 ID."
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'ig_posts')
+                  field: id
+          - name: campaign_id
+            description: "Synthetic campaign identifier."
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'syn_campaigns')
+                  field: campaign_id
+          - name: observed_engagement_tier
+            description: "Apify 관측 engagement 분포 기준 low/medium/high/viral tier."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  values: ['low', 'medium', 'high', 'viral']
+
+      - name: syn_campaigns
+        description: "Phase 2C synthetic campaign dimension raw table."
+        columns:
+          - name: campaign_id
+            description: "Synthetic campaign primary key."
+            data_tests:
+              - not_null
+              - unique
+          - name: campaign_budget_krw
+            description: "Synthetic campaign budget in KRW."
+            data_tests:
+              - not_null
+          - name: category
+            description: "Synthetic campaign category."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  values: ['beauty', 'fashion', 'food']
+          - name: objective
+            description: "Synthetic campaign objective."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  values: ['conversion', 'traffic', 'awareness']
+
+      - name: syn_payment_events
+        description: "Observed engagement 기반으로 생성한 Phase 2C synthetic payment event raw table."
+        columns:
+          - name: payment_event_id
+            description: "Synthetic payment event primary key."
+            data_tests:
+              - not_null
+              - unique
+          - name: post_campaign_attribution_id
+            description: "raw.syn_post_campaign_attributions의 attribution row."
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'syn_post_campaign_attributions')
+                  field: post_campaign_attribution_id
+          - name: post_id
+            description: "raw.ig_posts.id를 참조하는 실제 Instagram 게시물 ID."
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'ig_posts')
+                  field: id
+          - name: campaign_id
+            description: "Synthetic campaign identifier."
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'syn_campaigns')
+                  field: campaign_id
+          - name: observed_engagement_tier
+            description: "결제 이벤트 생성에 사용한 observed engagement tier."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  values: ['low', 'medium', 'high', 'viral']
+          - name: conversion_model
+            description: "Synthetic payment event 생성 모델명."
+            data_tests:
+              - not_null
+              - accepted_values:
+                  values: ['poisson_observed_engagement_v1']

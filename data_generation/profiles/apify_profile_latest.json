@@ -1,0 +1,344 @@
+{
+  "generated_at": "2026-06-19T05:37:25.516215+00:00",
+  "source": "raw.ig_posts + raw.ig_post_sources",
+  "overview": {
+    "raw_posts": 4126,
+    "likes_present": 4117,
+    "likes_hidden": 1226,
+    "comments_present": 4126,
+    "min_posted_at": "2025-11-21T09:30:00+00:00",
+    "max_posted_at": "2026-06-18T21:00:19+00:00"
+  },
+  "percentiles": {
+    "percentile_labels": [
+      "p25",
+      "p50",
+      "p75",
+      "p90",
+      "p99"
+    ],
+    "likes_percentiles": [
+      1,
+      6,
+      33,
+      149,
+      1381
+    ],
+    "comments_percentiles": [
+      0,
+      2,
+      4,
+      13,
+      90
+    ],
+    "engagement_count_percentiles": [
+      2,
+      4,
+      22,
+      108,
+      1042
+    ],
+    "min_engagement_count": 0,
+    "max_engagement_count": 52961,
+    "avg_engagement_count": "85.38"
+  },
+  "post_type_distribution": [
+    {
+      "post_type": "Sidecar",
+      "product_type": "carousel_container",
+      "posts": 3114
+    },
+    {
+      "post_type": "Image",
+      "product_type": "feed",
+      "posts": 1001
+    },
+    {
+      "post_type": "Image",
+      "product_type": "carousel_item",
+      "posts": 9
+    },
+    {
+      "post_type": "Video",
+      "product_type": "igtv",
+      "posts": 2
+    }
+  ],
+  "source_hashtag_distribution": [
+    {
+      "source_hashtag": "뷰티",
+      "source_rows": 561
+    },
+    {
+      "source_hashtag": "올리브영",
+      "source_rows": 255
+    },
+    {
+      "source_hashtag": "코덕",
+      "source_rows": 225
+    },
+    {
+      "source_hashtag": "꾸안꾸",
+      "source_rows": 225
+    },
+    {
+      "source_hashtag": "메이크업",
+      "source_rows": 225
+    },
+    {
+      "source_hashtag": "grwm",
+      "source_rows": 225
+    },
+    {
+      "source_hashtag": "ootd",
+      "source_rows": 225
+    },
+    {
+      "source_hashtag": "k뷰티",
+      "source_rows": 223
+    },
+    {
+      "source_hashtag": "다이소화장품",
+      "source_rows": 204
+    },
+    {
+      "source_hashtag": "화장품추천",
+      "source_rows": 165
+    },
+    {
+      "source_hashtag": "소확행",
+      "source_rows": 125
+    },
+    {
+      "source_hashtag": "트렌드",
+      "source_rows": 125
+    },
+    {
+      "source_hashtag": "네이버쇼핑",
+      "source_rows": 115
+    },
+    {
+      "source_hashtag": "올영추천템",
+      "source_rows": 114
+    },
+    {
+      "source_hashtag": "올영세일",
+      "source_rows": 113
+    },
+    {
+      "source_hashtag": "유행",
+      "source_rows": 106
+    },
+    {
+      "source_hashtag": "뷰티꿀팁",
+      "source_rows": 102
+    },
+    {
+      "source_hashtag": "뷰티릴스",
+      "source_rows": 102
+    },
+    {
+      "source_hashtag": "제품리뷰",
+      "source_rows": 102
+    },
+    {
+      "source_hashtag": "올영",
+      "source_rows": 101
+    },
+    {
+      "source_hashtag": "뷰티팁",
+      "source_rows": 101
+    },
+    {
+      "source_hashtag": "솔직리뷰",
+      "source_rows": 101
+    },
+    {
+      "source_hashtag": "요즘유행",
+      "source_rows": 101
+    },
+    {
+      "source_hashtag": "일상공감",
+      "source_rows": 101
+    },
+    {
+      "source_hashtag": "올영세일추천템",
+      "source_rows": 101
+    },
+    {
+      "source_hashtag": "여자공감",
+      "source_rows": 100
+    },
+    {
+      "source_hashtag": "요즘대세",
+      "source_rows": 100
+    },
+    {
+      "source_hashtag": "요즘취미",
+      "source_rows": 100
+    },
+    {
+      "source_hashtag": "요즘패션",
+      "source_rows": 100
+    },
+    {
+      "source_hashtag": "기초화장품",
+      "source_rows": 100
+    }
+  ],
+  "field_availability": {
+    "video_view_count_rows": 2,
+    "view_count_rows": 0,
+    "views_count_rows": 0,
+    "impressions_rows": 0,
+    "paid_partnership_key_rows": 11,
+    "paid_partnership_true_rows": 11
+  },
+  "raw_payload_keys": [
+    {
+      "key": "caption",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "childPosts",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "commentsCount",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "dimensionsHeight",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "dimensionsWidth",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "displayUrl",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "firstComment",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "hashtags",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "id",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "images",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "inputUrl",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "latestComments",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "mentions",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "ownerFullName",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "ownerId",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "ownerUsername",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "productType",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "shortCode",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "timestamp",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "type",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "url",
+      "rows_with_key": 4126
+    },
+    {
+      "key": "musicInfo",
+      "rows_with_key": 4124
+    },
+    {
+      "key": "likesCount",
+      "rows_with_key": 4117
+    },
+    {
+      "key": "taggedUsers",
+      "rows_with_key": 1278
+    },
+    {
+      "key": "locationId",
+      "rows_with_key": 759
+    },
+    {
+      "key": "locationName",
+      "rows_with_key": 759
+    },
+    {
+      "key": "coauthorProducers",
+      "rows_with_key": 105
+    },
+    {
+      "key": "isPinned",
+      "rows_with_key": 62
+    },
+    {
+      "key": "alt",
+      "rows_with_key": 30
+    },
+    {
+      "key": "paidPartnership",
+      "rows_with_key": 11
+    },
+    {
+      "key": "videoDuration",
+      "rows_with_key": 2
+    },
+    {
+      "key": "videoUrl",
+      "rows_with_key": 2
+    },
+    {
+      "key": "videoViewCount",
+      "rows_with_key": 2
+    }
+  ],
+  "recommended_metric_policy": {
+    "use_views": false,
+    "use_impressions": false,
+    "reason": "Current Apify payload has videoViewCount only for a tiny subset and has no stable viewCount/viewsCount/impressions fields.",
+    "primary_observed_signals": [
+      "likes_count",
+      "comments_count",
+      "post_type",
+      "product_type",
+      "source_hashtag",
+      "paidPartnership"
+    ]
+  }
+}

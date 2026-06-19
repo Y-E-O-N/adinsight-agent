@@ -21,6 +21,40 @@
 
 ---
 
+## 2026-06-16 (Tue)
+- **Phase P A+C 전략 재설계 반영**
+  - `docs/guides/project_redesign_master_guide.md` 기준으로 프로젝트 피치를 결제 전환·ROAS 예측·Text2SQL Agent 중심으로 재정렬
+  - `CLAUDE.md`, `README.md`, `docs/adinsight_project_blueprint.md`, `docs/guides/project_redesign_master_guide.md` 갱신
+  - 신규 ADR: `docs/adr/003-redesign-ac-strategy.md`
+  - **다음**: Phase 2B Apify 운영 등급 자동화 파이프라인 착수
+
+## 2026-06-11 (Thu)
+- **Phase 4 Text2SQL 평가 질문셋 초안**
+  - `dbt docs generate` 실행 후 manifest에서 `marts -> ai_native` lineage와 dbt `meta` 적재 확인
+  - `agent/eval/text2sql_questions.yml`에 bilingual 평가 질문 10개와 expected SQL 작성
+  - expected SQL 10개 실행 확인: row count 범위 3~44건
+  - 문서: `docs/analysis/stage4_text2sql_eval_questions.md`
+  - **다음**: YAML을 읽어 expected SQL row count를 비교하는 evaluator 구현
+- **Phase 4 AI-Native mart 첫 모델 구축**
+  - `ai_native.ai_creator_sponsored_summary` 추가: creator 1명당 1행, 46 rows
+  - `meta.grain`, model/column-level `meta.synonyms`, `meta.example_questions` 작성
+  - 전체 dbt 검증 갱신: `dbt run` 6/6 pass, `dbt test` 50/50 pass
+  - 설계 노트: `docs/analysis/stage4_ai_creator_sponsored_summary_design.md`
+  - **다음**: dbt docs lineage에서 `marts -> ai_native` 확장 확인 후 Text2SQL 평가 질문셋 초안 작성
+- **Phase 4 시작 준비**
+  - Session 10의 Next session 지점을 Phase 4 AI-Native mart 설계로 정리
+  - Phase 3 마감 자산 확인: dbt lineage screenshot, Superset screenshot/export, ADR 002
+  - 신규 시작 노트: `docs/analysis/stage4_ai_native_mart_start_plan.md`
+  - **다음**: `ai_native.ai_creator_sponsored_summary` 설계 전 `meta.grain`, `meta.synonyms`, `meta.example_questions` 범위 결정
+
+## 2026-06-09 (Tue)
+- **Phase 3 creator mart + Superset 포트폴리오 자산 완료**
+  - dbt models 5개 (`staging=1`, `intermediate=3`, `marts=1`), 전체 `dbt test` 44/44 pass
+  - creator mart: 46 creators / review 대상 24 creators / sponsored 후보 게시물 21건
+  - Superset dataset·chart·dashboard 생성, screenshot과 export ZIP 저장
+  - 메트릭: `metrics/run_results.jsonl`에 `p3.creator_mart_superset_complete` append
+  - **다음**: dbt docs lineage screenshot 또는 ADR 002 작성 후 Phase 4 AI-Native mart 설계
+
 ## 2026-04-19 (Sat)
 - **Phase 1 코드 완료 (가이드 모드 첫 세션)**
   - 가이드 모드 전환 결정: Yeon 이 프로덕션 파일 직접 타이핑, Claude 는 설명·리뷰

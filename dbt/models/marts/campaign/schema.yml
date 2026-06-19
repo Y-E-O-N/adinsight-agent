@@ -1,0 +1,89 @@
+version: 2
+
+models:
+  - name: mart_campaign_roi_summary
+    description: "Campaign별 synthetic payment 성과와 ROAS를 BI/포트폴리오 분석에 바로 사용할 수 있게 정리한 mart."
+    columns:
+      - name: campaign_id
+        description: "Synthetic campaign primary key. 이 mart의 grain이다."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: campaign_name
+        description: "Campaign display name."
+        data_tests:
+          - not_null
+
+      - name: region
+        description: "Campaign region."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['KR', 'JP']
+
+      - name: category
+        description: "Campaign category."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['beauty', 'fashion', 'food']
+
+      - name: objective
+        description: "Campaign objective."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['conversion', 'traffic', 'awareness']
+
+      - name: campaign_budget_krw
+        description: "KRW 기준 synthetic campaign budget."
+        data_tests:
+          - not_null
+
+      - name: attributed_posts
+        description: "Campaign에 연결된 observed Apify posts 수."
+        data_tests:
+          - not_null
+
+      - name: payment_events
+        description: "Campaign에 귀속된 synthetic payment events 수."
+        data_tests:
+          - not_null
+
+      - name: gross_payment_amount_krw
+        description: "Campaign별 gross payment amount."
+        data_tests:
+          - not_null
+
+      - name: net_payment_amount_krw
+        description: "환불 이벤트를 음수로 반영한 campaign별 net payment amount."
+        data_tests:
+          - not_null
+
+      - name: has_positive_net_payment
+        description: "Campaign net payment가 0보다 크면 true."
+        data_tests:
+          - not_null
+
+      - name: is_roas_over_1x
+        description: "ROAS가 1.0 이상이면 true."
+        data_tests:
+          - not_null
+
+      - name: is_roas_over_2x
+        description: "ROAS가 2.0 이상이면 true."
+        data_tests:
+          - not_null
+
+      - name: included_in_campaign_roi_review
+        description: "ROI 리뷰 화면에 우선 포함할 campaign인지 나타내는 flag."
+        data_tests:
+          - not_null
+
+      - name: roas_performance_tier
+        description: "Campaign ROAS 성과 등급."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['no_payment', 'negative_net', 'under_1x', 'one_to_two_x', 'two_x_plus']
