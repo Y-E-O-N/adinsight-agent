@@ -86,3 +86,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-06-16 · Session 13 · Strategy Redesign A+C](2026-06-16_session-13_strategy-redesign-ac.md) — A+C 전략 반영 / 프로젝트 피치 재정렬 / ADR 003 / Phase 2B 착수 지점 정리
 - [2026-06-16 · Session 14 · Phase 2B Daily + Backfill Pipeline](2026-06-16_session-14_phase2b-daily-backfill.md) — daily adaptive Apify DAG / freshness·watermark / backfill DAG / 멱등성 검증
 - [2026-06-19 · Session 15 · Phase 2C Synthetic Payment Events](2026-06-19_session-15_phase2c-synthetic-payment-events.md) — Apify observed engagement 기반 campaign attribution/payment events / raw+staging 적재 / payment sync / dbt test 95개 통과
+- [2026-06-19 · Session 16 · Phase 3B Campaign ROI Handoff](2026-06-19_session-16_phase3b-campaign-roi-handoff.md) — campaign ROI intermediate/mart / payment sync 보강 / dbt test 124개 통과 / commit+push checkpoint
