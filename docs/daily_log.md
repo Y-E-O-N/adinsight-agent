@@ -21,6 +21,16 @@
 
 ---
 
+## 2026-06-19 (Fri)
+- **Phase 3B/4/5 campaign ROAS prediction monitoring**
+  - campaign ROI mart를 `ai_native.ai_campaign_roi_summary`와 ROAS feature layer로 확장
+  - baseline evaluator/scoring script 추가: objective mean MAE `0.0892`
+  - prediction monitor mart 생성: rows `25`, MAE `0.0799`, bias `0.0000`
+  - Superset dashboard/export/screenshot 저장: `docs/images/05_campaign_roas_prediction_monitor.png`
+  - Airflow daily scoring DAG 검증: `campaign_roas_prediction_daily`, manual run success
+  - JD 기반 AWS/유사 도구 전략 문서 작성: `docs/analysis/stage5_jd_cloud_tooling_strategy.md`
+  - **다음**: Text2SQL campaign ROI eval 확장 또는 ML model v1 추가
+
 ## 2026-06-16 (Tue)
 - **Phase P A+C 전략 재설계 반영**
   - `docs/guides/project_redesign_master_guide.md` 기준으로 프로젝트 피치를 결제 전환·ROAS 예측·Text2SQL Agent 중심으로 재정렬

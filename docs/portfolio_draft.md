@@ -5,7 +5,7 @@
 >
 > 이 문서가 충분히 채워지면 → `README.md`, 1-pager PDF, 이력서 bullet, 면접 토크포인트로 **거의 자동 변환** 됩니다.
 
-마지막 갱신: **2026-06-09** (Phase 3 creator mart + Superset table chart)
+마지막 갱신: **2026-06-19** (Campaign ROAS prediction monitor + Airflow daily scoring DAG)
 
 ---
 
@@ -113,6 +113,13 @@
 
 **스크린샷**: `docs/images/04_erd_ai_native.svg`
 
+**Stage 4/5 campaign AI-native 증거**
+- `ai_native.ai_creator_sponsored_summary` — creator-level semantic mart
+- `ai_native.ai_campaign_roi_summary` — campaign/payment semantic mart
+- `features.feature_campaign_roas_training_set` — ROAS training feature table
+- `features.feature_campaign_roas_scoring_set` — daily scoring feature table
+- Known limitations: `ai_campaign_roi_summary`는 synthetic payment benchmark 기반이며, 실제 광고 성과 일반화 주장이 아니다.
+
 ---
 
 ## Phase 5 — Superset + 쿼리 최적화 ⭐
@@ -152,13 +159,17 @@
 - Superset dashboard: `AdInsight Campaign ROAS Prediction Monitor`
 - Dashboard rebuild script: `dashboards/scripts/create_campaign_roas_prediction_dashboard.py`
 - Dashboard design note: `docs/analysis/stage5_campaign_roas_prediction_dashboard.md`
+- Airflow daily refresh DAG: `dags/dag_campaign_roas_prediction_daily.py`
+- Manual validation run: `manual__phase5_prediction_validation_20260619` → success
+- Prediction monitor metrics: rows `25`, MAE `0.0799`, bias `0.0000`
+- JD/cloud tooling strategy: `docs/analysis/stage5_jd_cloud_tooling_strategy.md`
 
 ---
 
 ## Phase 6 — Text2SQL Agent ⭐⭐ (가장 풍부한 메트릭)
 
 ### 평가셋
-- 크기: **TBD** (목표 50)
+- 크기: **10 drafted** (creator sponsored summary 기준, campaign ROI/prediction monitor 확장 예정; 목표 50)
 - 언어 분포: KO **TBD** / EN **TBD** / ZH-TW **TBD** / TH **TBD**
 - 난이도: easy **TBD** / medium **TBD** / hard **TBD**
 
@@ -185,6 +196,11 @@
 3. **TBD**
 
 **스크린샷·GIF**: `docs/images/06_text2sql_demo.gif`
+
+**다음 Text2SQL 후보**
+- `ai_native.ai_campaign_roi_summary` 대상 campaign ROI 질문 추가
+- `marts.mart_campaign_roas_prediction_monitor` 대상 prediction error 질문 추가
+- expected SQL 실행 결과와 row count를 evaluator에 연결
 
 ---
 
