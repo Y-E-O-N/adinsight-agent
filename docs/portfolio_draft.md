@@ -5,7 +5,7 @@
 >
 > 이 문서가 충분히 채워지면 → `README.md`, 1-pager PDF, 이력서 bullet, 면접 토크포인트로 **거의 자동 변환** 됩니다.
 
-마지막 갱신: **2026-06-19** (Campaign ROAS prediction monitor + Airflow daily scoring DAG)
+마지막 갱신: **2026-06-23** (Text2SQL campaign ROI / prediction monitor eval 확장)
 
 ---
 
@@ -169,8 +169,8 @@
 ## Phase 6 — Text2SQL Agent ⭐⭐ (가장 풍부한 메트릭)
 
 ### 평가셋
-- 크기: **10 drafted** (creator sponsored summary 기준, campaign ROI/prediction monitor 확장 예정; 목표 50)
-- 언어 분포: KO **TBD** / EN **TBD** / ZH-TW **TBD** / TH **TBD**
+- 크기: **18 expected-SQL questions** (creator 10 + campaign ROI 4 + prediction monitor 4; 목표 50)
+- 언어 분포: KO **9** / EN **9** / ZH-TW **0** / TH **0**
 - 난이도: easy **TBD** / medium **TBD** / hard **TBD**
 
 ### 결과 비교 표
@@ -198,9 +198,16 @@
 **스크린샷·GIF**: `docs/images/06_text2sql_demo.gif`
 
 **다음 Text2SQL 후보**
-- `ai_native.ai_campaign_roi_summary` 대상 campaign ROI 질문 추가
-- `marts.mart_campaign_roas_prediction_monitor` 대상 prediction error 질문 추가
-- expected SQL 실행 결과와 row count를 evaluator에 연결
+- expected SQL benchmark: `agent/eval/run_expected_sql.py` 기준 **18/18 PASS**
+- `ai_native.ai_campaign_roi_summary` 대상 campaign ROI 질문 4개 추가 완료
+- `marts.mart_campaign_roas_prediction_monitor` 대상 prediction error/model metric 질문 4개 추가 완료
+- 다음: 실제 LLM-generated SQL 평가 runner, SQL validator, negative set 추가
+
+**Stage 6 eval 증거**
+- Evaluation set: `agent/eval/text2sql_questions.yml`
+- Analysis note: `docs/analysis/stage4_text2sql_eval_questions.md`
+- Latest verified command: `set -a; source .env; set +a; POSTGRES_HOST=localhost uv run python agent/eval/run_expected_sql.py`
+- Result: `summary passed=18 failed=0 total=18`
 
 ---
 

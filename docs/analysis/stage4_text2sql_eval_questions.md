@@ -107,8 +107,123 @@ order by sponsored_candidate_posts desc, total_posts desc;
 | `p4_q009` | 44 |
 | `p4_q010` | 3 |
 
+2026-06-23 현재 daily Apify collection 이후 creator mart row count 기준선은 아래 값으로 갱신했다.
+
+| id | refreshed row count |
+|---|---:|
+| `p4_q001` | 20 |
+| `p4_q002` | 758 |
+| `p4_q003` | 10 |
+| `p4_q004` | 758 |
+| `p4_q005` | 10 |
+| `p4_q006` | 1159 |
+| `p4_q007` | 10 |
+| `p4_q008` | 10 |
+| `p4_q009` | 2694 |
+| `p4_q010` | 401 |
+
 ## 7. Next Step
 
 다음 단계는 `agent/eval/text2sql_questions.yml`을 실제 evaluator가 읽을 수 있는 포맷으로 확정하고, 각 질문의 expected SQL을 실행해 결과 row count를 저장하는 것이다.
 
 현재 Round 1 데이터 분포상 `total_posts >= 2`이면서 `sponsored_candidate_posts >= 1`인 creator는 0건이다. 그래서 복합 조건 질문은 결과가 있는 `total_posts >= 2 and sponsored_candidate_posts = 0` 케이스로 시작한다.
+
+## 8. Stage 5 Extension — Campaign ROI / Prediction Monitor
+
+**Date**: 2026-06-23
+**Phase**: Phase 5 — Campaign ROI and ROAS prediction monitoring
+**Additional target models**:
+- `ai_native.ai_campaign_roi_summary`
+- `marts.mart_campaign_roas_prediction_monitor`
+
+Session 17에서 campaign ROI mart, AI-native campaign summary, ROAS baseline prediction, prediction monitor mart가 추가되었다. 그래서 Text2SQL 평가셋도 creator 협찬 후보 질문에서 campaign ROI / prediction monitoring 질문까지 확장한다.
+
+이번 확장의 목적은 아래 세 가지다.
+
+- **Campaign table selection**: ROAS, 결제 성과, objective 질문에서 `ai_native.ai_campaign_roi_summary`를 선택하는지 본다.
+- **Prediction monitor table selection**: 예측값, 실제값, 오차, MAE, bias 질문에서 `marts.mart_campaign_roas_prediction_monitor`를 선택하는지 본다.
+- **Snapshot awareness**: prediction monitor는 매일 snapshot이 누적되므로, “최신 예측” 질문에는 `max(scoring_snapshot_date)` 필터가 필요하다.
+
+## 9. Stage 5 Draft Questions
+
+| id | language | question | expected intent | required columns |
+|---|---|---|---|---|
+| `p5_q001` | en | Which campaigns have the highest ROAS? | ROAS 상위 campaign 정렬 | `campaign_id`, `campaign_name`, `roas`, `net_payment_amount_krw` |
+| `p5_q002` | en | Show average ROAS and net payment amount by campaign objective. | objective별 ROAS/결제액 집계 | `campaign_objective`, `campaign_count`, `avg_roas`, `avg_net_payment_amount_krw` |
+| `p5_q003` | ko | 전환 목적 캠페인 중 ROAS가 높은 캠페인 Top 10을 보여줘. | conversion campaign 필터 + ROAS Top N | `campaign_id`, `campaign_name`, `campaign_objective`, `roas`, `total_payment_events` |
+| `p5_q004` | ko | 순결제액이 있는 ROI 검토 대상 캠페인을 보여줘. | positive net payment와 ROI review flag 복합 필터 | `campaign_id`, `campaign_name`, `roas`, `has_positive_net_payment`, `included_in_campaign_roi_review` |
+| `p5_q005` | en | Which campaigns have the largest ROAS prediction errors in the latest snapshot? | 최신 snapshot에서 absolute error 상위 campaign 정렬 | `campaign_id`, `campaign_name`, `actual_roas`, `predicted_roas`, `absolute_roas_prediction_error` |
+| `p5_q006` | ko | 최신 예측에서 실제 ROAS가 예측보다 높았던 캠페인을 찾아줘. | 최신 snapshot에서 positive prediction error 필터 | `campaign_id`, `campaign_name`, `actual_roas`, `predicted_roas`, `roas_prediction_error` |
+| `p5_q007` | en | Compare average actual ROAS and predicted ROAS by objective in the latest prediction snapshot. | 최신 snapshot objective별 actual/predicted ROAS 비교 | `objective`, `campaign_count`, `avg_actual_roas`, `avg_predicted_roas`, `avg_roas_prediction_error` |
+| `p5_q008` | ko | 최신 ROAS 예측 모델의 MAE와 bias를 요약해줘. | 최신 snapshot model-level error metric 집계 | `model_name`, `prediction_rows`, `mae`, `bias` |
+
+## 10. Stage 5 Expected SQL Patterns
+
+Campaign ROI 질문은 `ai_native` schema의 자연어 친화 컬럼명을 우선 사용한다.
+
+```sql
+select
+    campaign_id,
+    campaign_name,
+    roas,
+    net_payment_amount_krw
+from ai_native.ai_campaign_roi_summary
+order by roas desc, net_payment_amount_krw desc
+limit 5;
+```
+
+Prediction monitor 질문은 daily snapshot 누적을 고려해 최신 snapshot으로 제한한다.
+
+```sql
+select
+    campaign_id,
+    campaign_name,
+    actual_roas,
+    predicted_roas,
+    absolute_roas_prediction_error
+from marts.mart_campaign_roas_prediction_monitor
+where scoring_snapshot_date = (
+    select max(scoring_snapshot_date)
+    from marts.mart_campaign_roas_prediction_monitor
+)
+order by absolute_roas_prediction_error desc, campaign_id asc
+limit 5;
+```
+
+Model metric 질문은 BI dashboard의 MAE/bias 계산과 같은 형태를 사용한다.
+
+```sql
+select
+    model_name,
+    count(*) as prediction_rows,
+    avg(absolute_roas_prediction_error) as mae,
+    avg(roas_prediction_error) as bias
+from marts.mart_campaign_roas_prediction_monitor
+where scoring_snapshot_date = (
+    select max(scoring_snapshot_date)
+    from marts.mart_campaign_roas_prediction_monitor
+)
+group by model_name
+order by model_name asc;
+```
+
+## 11. Stage 5 Current Row Counts
+
+2026-06-23 현재 expected SQL 실행 결과는 아래와 같다.
+
+| id | current row count |
+|---|---:|
+| `p5_q001` | 5 |
+| `p5_q002` | 3 |
+| `p5_q003` | 10 |
+| `p5_q004` | 24 |
+| `p5_q005` | 5 |
+| `p5_q006` | 11 |
+| `p5_q007` | 3 |
+| `p5_q008` | 1 |
+
+## Known Limitations
+
+- 현재 평가는 LLM이 생성한 SQL을 채점하지 않고, 사람이 작성한 expected SQL의 실행 가능성과 row count 기준선을 검증한다.
+- `marts.mart_campaign_roas_prediction_monitor`는 snapshot이 누적되는 테이블이므로, 최신 snapshot 필터가 없는 질문은 daily DAG 실행에 따라 row count가 바뀔 수 있다.
+- ROAS와 payment 데이터는 synthetic benchmark이므로 실제 광고 성과 해석이 아니라 데이터/ML/Agent 파이프라인 검증용으로 사용한다.

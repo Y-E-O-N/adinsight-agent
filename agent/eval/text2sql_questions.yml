@@ -1,10 +1,10 @@
 version: 1
 
 metadata:
-  phase: p4
-  purpose: "Initial Text2SQL evaluation set for the first AI-Native mart."
+  phase: p4_p5
+  purpose: "Text2SQL evaluation set for AI-Native creator, campaign ROI, and ROAS prediction monitoring marts."
   target_model: ai_native.ai_creator_sponsored_summary
-  target_grain: "one row per creator_username"
+  target_grain: "creator, campaign, and latest prediction snapshot grains depending on question."
   source_metadata: dbt/models/ai_native/schema.yml
 
 questions:
@@ -42,7 +42,7 @@ questions:
       - sponsored_candidate_posts
     required_sql_features:
       - filter_sponsored_candidate_posts_gte_1
-    current_result_rows: 21
+    current_result_rows: 758
     expected_sql: |
       select
           creator_username,
@@ -83,7 +83,7 @@ questions:
       - korean_synonym_creator
       - korean_synonym_sponsored
       - filter_sponsored_candidate_posts_gte_1
-    current_result_rows: 21
+    current_result_rows: 758
     expected_sql: |
       select
           creator_username,
@@ -123,7 +123,7 @@ questions:
     required_sql_features:
       - korean_synonym_review_target
       - filter_boolean_included_in_creator_review
-    current_result_rows: 24
+    current_result_rows: 1159
     expected_sql: |
       select
           creator_username,
@@ -182,7 +182,7 @@ questions:
       - has_engagement_signal
     required_sql_features:
       - filter_boolean_has_engagement_signal
-    current_result_rows: 44
+    current_result_rows: 2694
     expected_sql: |
       select
           creator_username,
@@ -202,7 +202,7 @@ questions:
     required_sql_features:
       - filter_total_posts_gte_2
       - filter_sponsored_candidate_posts_eq_0
-    current_result_rows: 3
+    current_result_rows: 401
     expected_sql: |
       select
           creator_username,
@@ -212,3 +212,227 @@ questions:
       where total_posts >= 2
         and sponsored_candidate_posts = 0
       order by total_posts desc, creator_username asc
+
+  - id: p5_q001
+    language: en
+    question: "Which campaigns have the highest ROAS?"
+    expected_model: ai_native.ai_campaign_roi_summary
+    expected_columns:
+      - campaign_id
+      - campaign_name
+      - roas
+      - net_payment_amount_krw
+    required_sql_features:
+      - campaign_roi_table_selection
+      - order_by_roas_desc
+      - limit_5
+    current_result_rows: 5
+    expected_sql: |
+      select
+          campaign_id,
+          campaign_name,
+          roas,
+          net_payment_amount_krw
+      from ai_native.ai_campaign_roi_summary
+      order by roas desc, net_payment_amount_krw desc
+      limit 5
+
+  - id: p5_q002
+    language: en
+    question: "Show average ROAS and net payment amount by campaign objective."
+    expected_model: ai_native.ai_campaign_roi_summary
+    expected_columns:
+      - campaign_objective
+      - campaign_count
+      - avg_roas
+      - avg_net_payment_amount_krw
+    required_sql_features:
+      - campaign_objective_group_by
+      - aggregate_avg_roas
+      - aggregate_avg_payment
+    current_result_rows: 3
+    expected_sql: |
+      select
+          campaign_objective,
+          count(*) as campaign_count,
+          avg(roas) as avg_roas,
+          avg(net_payment_amount_krw) as avg_net_payment_amount_krw
+      from ai_native.ai_campaign_roi_summary
+      group by campaign_objective
+      order by avg_roas desc
+
+  - id: p5_q003
+    language: ko
+    question: "전환 목적 캠페인 중 ROAS가 높은 캠페인 Top 10을 보여줘."
+    expected_model: ai_native.ai_campaign_roi_summary
+    expected_columns:
+      - campaign_id
+      - campaign_name
+      - campaign_objective
+      - roas
+      - total_payment_events
+    required_sql_features:
+      - korean_synonym_conversion_campaign
+      - filter_campaign_objective_conversion
+      - order_by_roas_desc
+      - limit_10
+    current_result_rows: 10
+    expected_sql: |
+      select
+          campaign_id,
+          campaign_name,
+          campaign_objective,
+          roas,
+          total_payment_events
+      from ai_native.ai_campaign_roi_summary
+      where campaign_objective = 'conversion'
+      order by roas desc, total_payment_events desc
+      limit 10
+
+  - id: p5_q004
+    language: ko
+    question: "순결제액이 있는 ROI 검토 대상 캠페인을 보여줘."
+    expected_model: ai_native.ai_campaign_roi_summary
+    expected_columns:
+      - campaign_id
+      - campaign_name
+      - roas
+      - has_positive_net_payment
+      - included_in_campaign_roi_review
+    required_sql_features:
+      - korean_synonym_roi_review
+      - filter_boolean_has_positive_net_payment
+      - filter_boolean_included_in_campaign_roi_review
+    current_result_rows: 24
+    expected_sql: |
+      select
+          campaign_id,
+          campaign_name,
+          roas,
+          has_positive_net_payment,
+          included_in_campaign_roi_review
+      from ai_native.ai_campaign_roi_summary
+      where has_positive_net_payment = true
+        and included_in_campaign_roi_review = true
+      order by roas desc, campaign_id asc
+
+  - id: p5_q005
+    language: en
+    question: "Which campaigns have the largest ROAS prediction errors in the latest snapshot?"
+    expected_model: marts.mart_campaign_roas_prediction_monitor
+    expected_columns:
+      - campaign_id
+      - campaign_name
+      - actual_roas
+      - predicted_roas
+      - absolute_roas_prediction_error
+    required_sql_features:
+      - prediction_monitor_table_selection
+      - latest_scoring_snapshot_filter
+      - order_by_absolute_error_desc
+      - limit_5
+    current_result_rows: 5
+    expected_sql: |
+      select
+          campaign_id,
+          campaign_name,
+          actual_roas,
+          predicted_roas,
+          absolute_roas_prediction_error
+      from marts.mart_campaign_roas_prediction_monitor
+      where scoring_snapshot_date = (
+          select max(scoring_snapshot_date)
+          from marts.mart_campaign_roas_prediction_monitor
+      )
+      order by absolute_roas_prediction_error desc, campaign_id asc
+      limit 5
+
+  - id: p5_q006
+    language: ko
+    question: "최신 예측에서 실제 ROAS가 예측보다 높았던 캠페인을 찾아줘."
+    expected_model: marts.mart_campaign_roas_prediction_monitor
+    expected_columns:
+      - campaign_id
+      - campaign_name
+      - actual_roas
+      - predicted_roas
+      - roas_prediction_error
+    required_sql_features:
+      - korean_synonym_actual_vs_predicted
+      - latest_scoring_snapshot_filter
+      - filter_positive_prediction_error
+      - order_by_prediction_error_desc
+    current_result_rows: 11
+    expected_sql: |
+      select
+          campaign_id,
+          campaign_name,
+          actual_roas,
+          predicted_roas,
+          roas_prediction_error
+      from marts.mart_campaign_roas_prediction_monitor
+      where scoring_snapshot_date = (
+          select max(scoring_snapshot_date)
+          from marts.mart_campaign_roas_prediction_monitor
+      )
+        and roas_prediction_error > 0
+      order by roas_prediction_error desc, campaign_id asc
+
+  - id: p5_q007
+    language: en
+    question: "Compare average actual ROAS and predicted ROAS by objective in the latest prediction snapshot."
+    expected_model: marts.mart_campaign_roas_prediction_monitor
+    expected_columns:
+      - objective
+      - campaign_count
+      - avg_actual_roas
+      - avg_predicted_roas
+      - avg_roas_prediction_error
+    required_sql_features:
+      - latest_scoring_snapshot_filter
+      - group_by_objective
+      - aggregate_actual_and_predicted_roas
+    current_result_rows: 3
+    expected_sql: |
+      select
+          objective,
+          count(*) as campaign_count,
+          avg(actual_roas) as avg_actual_roas,
+          avg(predicted_roas) as avg_predicted_roas,
+          avg(roas_prediction_error) as avg_roas_prediction_error
+      from marts.mart_campaign_roas_prediction_monitor
+      where scoring_snapshot_date = (
+          select max(scoring_snapshot_date)
+          from marts.mart_campaign_roas_prediction_monitor
+      )
+      group by objective
+      order by avg_roas_prediction_error desc
+
+  - id: p5_q008
+    language: ko
+    question: "최신 ROAS 예측 모델의 MAE와 bias를 요약해줘."
+    expected_model: marts.mart_campaign_roas_prediction_monitor
+    expected_columns:
+      - model_name
+      - prediction_rows
+      - mae
+      - bias
+    required_sql_features:
+      - korean_synonym_model_metric
+      - latest_scoring_snapshot_filter
+      - aggregate_mae
+      - aggregate_bias
+    current_result_rows: 1
+    expected_sql: |
+      select
+          model_name,
+          count(*) as prediction_rows,
+          avg(absolute_roas_prediction_error) as mae,
+          avg(roas_prediction_error) as bias
+      from marts.mart_campaign_roas_prediction_monitor
+      where scoring_snapshot_date = (
+          select max(scoring_snapshot_date)
+          from marts.mart_campaign_roas_prediction_monitor
+      )
+      group by model_name
+      order by model_name asc
