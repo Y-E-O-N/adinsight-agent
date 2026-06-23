@@ -1,0 +1,97 @@
+{
+  "model_name": "linear_regression_numpy_v1",
+  "feature_table": "features.feature_campaign_roas_training_set",
+  "training_rows_used": 25,
+  "generated_at": "2026-06-23T18:22:30+09:00",
+  "categorical_features": [
+    "region",
+    "category",
+    "objective"
+  ],
+  "numeric_features": [
+    "campaign_budget_krw",
+    "duration_days",
+    "attributed_posts",
+    "distinct_posts",
+    "distinct_creators",
+    "paid_partnership_posts",
+    "avg_observed_engagement_count",
+    "high_engagement_posts",
+    "viral_engagement_posts",
+    "paid_partnership_post_rate",
+    "high_engagement_post_rate",
+    "viral_engagement_post_rate",
+    "creator_diversity_rate"
+  ],
+  "transform": {
+    "categories_by_feature": {
+      "region": [
+        "JP",
+        "KR"
+      ],
+      "category": [
+        "beauty",
+        "fashion"
+      ],
+      "objective": [
+        "awareness",
+        "conversion",
+        "traffic"
+      ]
+    },
+    "numeric_means": [
+      2396866.32,
+      14.32,
+      20.0,
+      20.0,
+      19.32,
+      0.0,
+      134.16865514327475,
+      5.44,
+      2.08,
+      0.0,
+      0.24187937072089047,
+      0.09281642644250221,
+      0.9528025541709753
+    ],
+    "numeric_stds": [
+      2124868.7012453773,
+      7.519148888005875,
+      9.081850031794183,
+      9.081850031794183,
+      9.24216424870279,
+      1.0,
+      196.21765059910274,
+      3.8892672831781563,
+      1.9782820830205183,
+      1.0,
+      0.12014034941981185,
+      0.080985335667803,
+      0.06817690660615311
+    ]
+  },
+  "coefficients": [
+    0.04519811835585726,
+    -0.042382936152840014,
+    -0.019221339932091935,
+    0.789465215197251,
+    0.7894652151972475,
+    -1.7808226574820643,
+    8.056055822436292e-15,
+    -0.002336482886555364,
+    0.27522943038458414,
+    0.02019331118597826,
+    -2.3869795029440866e-15,
+    -0.16612314203510928,
+    0.011031063288424497,
+    0.18477826823533933,
+    0.028111329814462373,
+    0.017086788541390317,
+    0.07376833780649264,
+    -0.028570219450639322,
+    -0.03150092106935618,
+    0.0388551169643738,
+    0.037843922460840035
+  ],
+  "known_limitation": "Fitted on 25 synthetic labeled campaign rows; benchmark artifact only."
+}

@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
+from pathlib import Path
 
-import numpy as np
 import psycopg
 from fastapi import FastAPI, HTTPException
 
 from agent.eval.run_campaign_roas_model import (
+    ARTIFACT_PATH,
     CATEGORICAL_FEATURES,
-    FEATURE_TABLE,
     NUMERIC_FEATURES,
     CampaignRoasFeatureRow,
-    build_design_matrices,
     coerce_float,
-    fit_linear,
+    load_linear_model_artifact,
+    predict_with_linear_artifact,
 )
 from api.schemas import (
     CampaignRoasPredictRequest,
@@ -23,6 +24,7 @@ from api.schemas import (
 
 SCORING_TABLE = "features.feature_campaign_roas_scoring_set"
 MODEL_NAME = "linear_regression_numpy_v1"
+MODEL_ARTIFACT_PATH = Path(os.getenv("MODEL_ARTIFACT_PATH", str(ARTIFACT_PATH)))
 
 app = FastAPI(
     title="AdInsight Serving API",
@@ -40,50 +42,21 @@ def health() -> HealthResponse:
 def predict_campaign_roas(
     request: CampaignRoasPredictRequest,
 ) -> CampaignRoasPredictResponse:
-    training_rows = fetch_training_rows()
+    artifact = get_model_artifact()
     scoring_row, scoring_snapshot_date = fetch_scoring_row(request.campaign_id)
 
-    if not training_rows:
-        raise HTTPException(status_code=503, detail=f"No rows found in {FEATURE_TABLE}.")
-
-    train_labels = np.array([row.label_roas for row in training_rows], dtype=float)
-    train_matrix, scoring_matrix = build_design_matrices(training_rows, [scoring_row])
-    coefficients = fit_linear(train_matrix, train_labels)
-    predicted_roas = float((scoring_matrix @ coefficients)[0])
+    predicted_roas = predict_with_linear_artifact(scoring_row, artifact)
 
     return CampaignRoasPredictResponse(
         campaign_id=request.campaign_id,
-        model_name=MODEL_NAME,
+        model_name=str(artifact["model_name"]),
         predicted_roas=round(predicted_roas, 6),
-        training_rows_used=len(training_rows),
+        training_rows_used=int(artifact["training_rows_used"]),
         scoring_snapshot_date=scoring_snapshot_date,
         feature_source=SCORING_TABLE,
-        known_limitation=(
-            "Local skeleton prediction from 25 synthetic labeled campaign rows; "
-            "not production performance evidence."
-        ),
+        model_artifact_path=str(MODEL_ARTIFACT_PATH),
+        known_limitation=str(artifact["known_limitation"]),
     )
-
-
-def fetch_training_rows() -> list[CampaignRoasFeatureRow]:
-    selected_columns = [
-        "campaign_id",
-        *CATEGORICAL_FEATURES,
-        *NUMERIC_FEATURES,
-        "label_roas",
-    ]
-    sql = f"""
-        select
-            {", ".join(selected_columns)}
-        from {FEATURE_TABLE}
-        order by campaign_id
-    """
-
-    with get_connection() as conn, conn.cursor() as cur:
-        cur.execute(sql)
-        records = cur.fetchall()
-
-    return [build_feature_row(record, has_label=True) for record in records]
 
 
 def fetch_scoring_row(campaign_id: str) -> tuple[CampaignRoasFeatureRow, str]:
@@ -141,3 +114,24 @@ def get_connection():
         password=os.getenv("POSTGRES_PASSWORD"),
     )
 
+
+@lru_cache(maxsize=1)
+def get_model_artifact() -> dict[str, object]:
+    if not MODEL_ARTIFACT_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail=f"Model artifact not found at {MODEL_ARTIFACT_PATH}.",
+        )
+
+    artifact = load_linear_model_artifact(MODEL_ARTIFACT_PATH)
+
+    if artifact.get("model_name") != MODEL_NAME:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Unexpected model artifact {artifact.get('model_name')}; "
+                f"expected {MODEL_NAME}."
+            ),
+        )
+
+    return artifact

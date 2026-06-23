@@ -11,7 +11,9 @@ import psycopg
 
 FEATURE_TABLE = "features.feature_campaign_roas_training_set"
 METRICS_PATH = Path("metrics/run_results.jsonl")
+ARTIFACT_PATH = Path("agent/model_artifacts/campaign_roas_linear_v1.json")
 MODEL_COMPARISON_NAME = "campaign_roas_model_comparison_v1"
+LINEAR_MODEL_NAME = "linear_regression_numpy_v1"
 BASELINE_NAME = "objective_mean_roas_baseline_v1"
 RIDGE_ALPHA = 1.0
 KNN_NEIGHBORS = 5
@@ -63,7 +65,7 @@ def main() -> None:
     candidate_predictions = {
         "global_mean_baseline_v1": predict_leave_one_out_global_mean(actual),
         BASELINE_NAME: predict_leave_one_out_objective_mean(rows, actual),
-        "linear_regression_numpy_v1": predict_leave_one_out_linear(rows),
+        LINEAR_MODEL_NAME: predict_leave_one_out_linear(rows),
         "ridge_regression_numpy_v1": predict_leave_one_out_ridge(rows, alpha=RIDGE_ALPHA),
         "knn_regression_numpy_v1": predict_leave_one_out_knn(rows, neighbors=KNN_NEIGHBORS),
     }
@@ -88,6 +90,7 @@ def main() -> None:
     )
 
     write_metrics(baseline_metrics, best_metrics, candidate_metrics)
+    export_linear_model_artifact(rows, ARTIFACT_PATH)
 
 
 def fetch_rows() -> list[CampaignRoasFeatureRow]:
@@ -249,6 +252,24 @@ def build_design_matrices(
     )
 
 
+def build_training_transform(rows: list[CampaignRoasFeatureRow]) -> tuple[dict[str, list[str]], np.ndarray, np.ndarray]:
+    categories_by_feature = {
+        feature_name: sorted({getattr(row, feature_name) for row in rows})
+        for feature_name in CATEGORICAL_FEATURES
+    }
+    numeric_matrix = np.array(
+        [
+            [row.numeric_features[feature_name] for feature_name in NUMERIC_FEATURES]
+            for row in rows
+        ],
+        dtype=float,
+    )
+    means = numeric_matrix.mean(axis=0)
+    stds = numeric_matrix.std(axis=0)
+    stds = np.where(stds == 0, 1.0, stds)
+    return categories_by_feature, means, stds
+
+
 def build_design_matrix(
     rows: list[CampaignRoasFeatureRow],
     categories_by_feature: dict[str, list[str]],
@@ -274,6 +295,32 @@ def build_design_matrix(
     return np.array(matrix_rows, dtype=float)
 
 
+def build_design_matrix_from_artifact(
+    rows: list[CampaignRoasFeatureRow],
+    artifact: dict[str, object],
+) -> np.ndarray:
+    transform = artifact["transform"]
+    assert isinstance(transform, dict)
+
+    categories_by_feature = transform["categories_by_feature"]
+    numeric_means = transform["numeric_means"]
+    numeric_stds = transform["numeric_stds"]
+
+    assert isinstance(categories_by_feature, dict)
+    assert isinstance(numeric_means, list)
+    assert isinstance(numeric_stds, list)
+
+    return build_design_matrix(
+        rows,
+        {
+            str(feature_name): [str(category) for category in categories]
+            for feature_name, categories in categories_by_feature.items()
+        },
+        np.array(numeric_means, dtype=float),
+        np.array(numeric_stds, dtype=float),
+    )
+
+
 def fit_ridge(matrix: np.ndarray, labels: np.ndarray, alpha: float) -> np.ndarray:
     penalty = np.eye(matrix.shape[1], dtype=float) * alpha
     penalty[0, 0] = 0.0
@@ -288,6 +335,49 @@ def fit_ridge(matrix: np.ndarray, labels: np.ndarray, alpha: float) -> np.ndarra
 
 def fit_linear(matrix: np.ndarray, labels: np.ndarray) -> np.ndarray:
     return np.linalg.lstsq(matrix, labels, rcond=None)[0]
+
+
+def export_linear_model_artifact(
+    rows: list[CampaignRoasFeatureRow],
+    path: Path,
+) -> None:
+    categories_by_feature, means, stds = build_training_transform(rows)
+    training_matrix = build_design_matrix(rows, categories_by_feature, means, stds)
+    labels = np.array([row.label_roas for row in rows], dtype=float)
+    coefficients = fit_linear(training_matrix, labels)
+
+    artifact = {
+        "model_name": LINEAR_MODEL_NAME,
+        "feature_table": FEATURE_TABLE,
+        "training_rows_used": len(rows),
+        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "categorical_features": list(CATEGORICAL_FEATURES),
+        "numeric_features": list(NUMERIC_FEATURES),
+        "transform": {
+            "categories_by_feature": categories_by_feature,
+            "numeric_means": means.tolist(),
+            "numeric_stds": stds.tolist(),
+        },
+        "coefficients": coefficients.tolist(),
+        "known_limitation": "Fitted on 25 synthetic labeled campaign rows; benchmark artifact only.",
+    }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(artifact, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"artifact path={path} model={LINEAR_MODEL_NAME} rows={len(rows)}")
+
+
+def load_linear_model_artifact(path: Path = ARTIFACT_PATH) -> dict[str, object]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def predict_with_linear_artifact(
+    row: CampaignRoasFeatureRow,
+    artifact: dict[str, object],
+) -> float:
+    coefficients = np.array(artifact["coefficients"], dtype=float)
+    scoring_matrix = build_design_matrix_from_artifact([row], artifact)
+    return float((scoring_matrix @ coefficients)[0])
 
 
 def calculate_metrics(

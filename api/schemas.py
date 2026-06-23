@@ -19,5 +19,5 @@ class CampaignRoasPredictResponse(BaseModel):
     training_rows_used: int
     scoring_snapshot_date: str
     feature_source: str
+    model_artifact_path: str
     known_limitation: str
-
