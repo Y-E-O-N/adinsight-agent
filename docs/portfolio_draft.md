@@ -224,6 +224,17 @@
 - Deferred models: LightGBM, XGBoost, CatBoost. 25 synthetic labeled rows is too small for credible boosting-model comparison.
 - Known limitation: 25 synthetic labeled campaign rows only; benchmark evidence, not production performance claim.
 
+**FastAPI serving skeleton**
+- Service files: `api/main.py`, `api/schemas.py`
+- Docker service: `api` in `docker-compose.yml`, port `8000`
+- Endpoints:
+  - `GET /health`
+  - `POST /predict/campaign-roas`
+- Live smoke result:
+  - `/health` → `{"status":"ok","service":"adinsight-api"}`
+  - `/predict/campaign-roas` for `camp_000029` → model `linear_regression_numpy_v1`, predicted ROAS `0.597425`, training rows `25`
+- Known limitation: request-time model fitting is acceptable for skeleton validation only; production serving should load a versioned model artifact or registry entry.
+
 ---
 
 ## Phase 7 — LLM 자동 리포트
