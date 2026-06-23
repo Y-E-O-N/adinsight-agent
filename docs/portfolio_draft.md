@@ -15,6 +15,9 @@
 3. 큰 결정은 `docs/adr/00X-...md` 별도 ADR + 여기에 1줄 요약
 4. 매주 금요일 30분: 이번 주 수치 확인 + 안 채워진 칸 표시
 
+**현재 아키텍처 시각화**
+- `docs/analysis/2026-06-23_current_architecture_visualization.md` — ingestion → dbt marts → ai_native → Text2SQL eval → ROAS model comparison 흐름
+
 ---
 
 # Part A. Phase 별 메트릭 (`portfolio_template.md` §7 압축)
@@ -269,7 +272,7 @@
 # Part B. 스크린샷 · 증거물 체크리스트 (`portfolio_template.md` §8)
 
 ## 필수 (README 용)
-- [ ] 아키텍처 다이어그램 (SVG/PNG 고해상도) — `docs/images/00_architecture.svg`
+- [ ] 아키텍처 다이어그램 (SVG/PNG 고해상도) — Mermaid 원본: `docs/analysis/2026-06-23_current_architecture_visualization.md`, 추후 export: `docs/images/00_architecture.svg`
 - [ ] ERD (ai_native 레이어 중심) — `docs/images/04_erd_ai_native.svg`
 - [ ] Bus Matrix (표 또는 이미지) — README 직접
 - [ ] Airflow DAG 그래프 × 3 (ingest / dbt_run / weekly_llm_report)
