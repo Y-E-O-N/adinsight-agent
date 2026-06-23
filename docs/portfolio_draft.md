@@ -209,6 +209,18 @@
 - Latest verified command: `set -a; source .env; set +a; POSTGRES_HOST=localhost uv run python agent/eval/run_expected_sql.py`
 - Result: `summary passed=18 failed=0 total=18`
 
+**ROAS ML model v1**
+- Script: `agent/eval/run_campaign_roas_model.py`
+- Comparison: `campaign_roas_model_comparison_v1`
+- Validation: leave-one-out on `features.feature_campaign_roas_training_set`
+- Rows: `25`
+- Candidates: `global_mean_baseline_v1`, `objective_mean_roas_baseline_v1`, `linear_regression_numpy_v1`, `ridge_regression_numpy_v1`, `knn_regression_numpy_v1`
+- Baseline `objective_mean_roas_baseline_v1`: MAE `0.0892`, RMSE `0.1349`
+- Best candidate `linear_regression_numpy_v1`: MAE `0.0474`, RMSE `0.0577`
+- Delta vs baseline: MAE `-0.0418`, RMSE `-0.0771`
+- Deferred models: LightGBM, XGBoost, CatBoost. 25 synthetic labeled rows is too small for credible boosting-model comparison.
+- Known limitation: 25 synthetic labeled campaign rows only; benchmark evidence, not production performance claim.
+
 ---
 
 ## Phase 7 — LLM 자동 리포트
