@@ -90,3 +90,4 @@
 -->
 - 2026-04-20 Session 04: Phase 1 스택 기동 완료. make up 10.7s, 8컨테이너 healthy, Smoke DAG 1s 성공. 버그 3개 디버깅 (ARG 스코프·chmod·볼륨 재초기화). GitHub 푸시.
 - 2026-04-28 Session 05: Phase 2 Stage 0 완료. Apify $29 구독, 시드 3개 합의 (#뷰티/#올리브영/#다이소화장품), 가이드 모드 5파일 작성. 로컬·Airflow 양쪽 20건 수집 성공. PYTHONPATH 함정 디버깅 1회. 응답 스키마 적립.
+- 2026-06-23 Session 19: ROAS model comparison + FastAPI serving checkpoint. Text2SQL 18/18 PASS 이후 model comparison best `linear_regression_numpy_v1` MAE 0.0474 vs baseline 0.0892. FastAPI `/health`, `/predict/campaign-roas` 추가 후 artifact-backed serving으로 개선, functional code commit `371f24d`. 다음은 `dags/dag_ig_collect_daily.py` 로컬 변경 확인 또는 API latency/pytest smoke tests.
