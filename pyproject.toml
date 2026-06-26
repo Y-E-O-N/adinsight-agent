@@ -29,6 +29,7 @@ dev = [
     "pre-commit>=3.8",
     "detect-secrets>=1.5",
     "kaggle>=2.1.0",
+    "httpx2>=2.5.0",
 ]
 
 [tool.ruff]

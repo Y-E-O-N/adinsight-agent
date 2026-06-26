@@ -46,7 +46,13 @@ CANDIDATE_HASHTAGS = (
     "네이버쇼핑",
     "요즘패션",
     "소확행",
-    "트렌드"
+    "트렌드",
+)
+
+# 운영 비용/Apify 사용량 제어를 위해 daily DAG는 전체 후보 중 일부만 활성화한다.
+ACTIVE_CANDIDATE_HASHTAGS = (
+    "뷰티",
+    "올리브영",
 )
 
 MIN_K = 25
@@ -54,7 +60,7 @@ DEFAULT_K = 50
 MAX_K_PER_HASHTAG = 200
 K_STEP = 25
 DAILY_K_BUDGET_PER_HASHTAG = 100
-DAILY_K_BUDGET = DAILY_K_BUDGET_PER_HASHTAG * len(CANDIDATE_HASHTAGS)
+DAILY_K_BUDGET = DAILY_K_BUDGET_PER_HASHTAG * len(ACTIVE_CANDIDATE_HASHTAGS)
 
 @dag(
     dag_id="ig_collect_daily",
@@ -99,7 +105,7 @@ def ig_collect_daily_dag() -> None:
 
         with psycopg.connect(dsn) as conn:
             with conn.cursor() as cur:
-                cur.execute(sql, (list(CANDIDATE_HASHTAGS),))
+                cur.execute(sql, (list(ACTIVE_CANDIDATE_HASHTAGS),))
                 rows = cur.fetchall()
 
         source_rows_by_hashtag = {row[0]: int(row[1]) for row in rows}
@@ -131,7 +137,7 @@ def ig_collect_daily_dag() -> None:
 
         plan = []
 
-        for hashtag in CANDIDATE_HASHTAGS:
+        for hashtag in ACTIVE_CANDIDATE_HASHTAGS:
             source_rows = source_rows_by_hashtag.get(hashtag, 0)
             previous_metrics = latest_seed_metrics_by_hashtag.get(hashtag)
 

@@ -16,6 +16,7 @@ class CampaignRoasPredictResponse(BaseModel):
     campaign_id: str
     model_name: str
     predicted_roas: float
+    latency_ms: float
     training_rows_used: int
     scoring_snapshot_date: str
     feature_source: str

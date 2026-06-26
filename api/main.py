@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
+from time import perf_counter
 
 import psycopg
 from fastapi import FastAPI, HTTPException
@@ -42,15 +43,18 @@ def health() -> HealthResponse:
 def predict_campaign_roas(
     request: CampaignRoasPredictRequest,
 ) -> CampaignRoasPredictResponse:
+    started_at = perf_counter()
     artifact = get_model_artifact()
     scoring_row, scoring_snapshot_date = fetch_scoring_row(request.campaign_id)
 
     predicted_roas = predict_with_linear_artifact(scoring_row, artifact)
+    latency_ms = (perf_counter() - started_at) * 1000
 
     return CampaignRoasPredictResponse(
         campaign_id=request.campaign_id,
         model_name=str(artifact["model_name"]),
         predicted_roas=round(predicted_roas, 6),
+        latency_ms=round(latency_ms, 3),
         training_rows_used=int(artifact["training_rows_used"]),
         scoring_snapshot_date=scoring_snapshot_date,
         feature_source=SCORING_TABLE,
