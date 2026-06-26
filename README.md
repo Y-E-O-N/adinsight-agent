@@ -54,8 +54,8 @@ uv sync
 
 ### 3단계 — 포트 충돌 확인
 ```bash
-# 아래 포트가 비어있어야 함: 5432 / 6379 / 8080 / 8088 / 5555
-lsof -i :5432,6379,8080,8088,5555
+# 아래 포트가 비어있어야 함: 5432 / 6379 / 8081 / 8088 / 5555 / 8000
+lsof -i :5432,6379,8081,8088,5555,8000
 ```
 
 ### 4단계 — 스택 기동
@@ -68,9 +68,10 @@ time make up   # 최초 실행 시 이미지 pull 로 5~15분 소요
 make ps        # 모든 서비스 STATUS = healthy 확인
 
 # 각 UI 접속
-#   Airflow  → http://localhost:8080  (admin / admin)
+#   Airflow  → http://localhost:8081  (admin / admin)
 #   Superset → http://localhost:8088  (make superset-init 후 admin / admin)
 #   Flower   → http://localhost:5555  (Celery 모니터링)
+#   FastAPI  → http://localhost:8000  (ROAS prediction serving)
 #   Postgres → localhost:5432         (make psql)
 ```
 
@@ -85,6 +86,33 @@ make superset-init
 # Graph view 에서 select_one task 초록색 = 스택 정상
 make airflow-cli cmd='dags trigger sample_smoke_test'
 ```
+
+### 8단계 — FastAPI ROAS 예측 API 확인
+```bash
+# Docker Compose API 서비스 사용
+curl -s http://127.0.0.1:8000/health
+
+curl -s -X POST http://127.0.0.1:8000/predict/campaign-roas \
+  -H 'Content-Type: application/json' \
+  -d '{"campaign_id":"camp_000029"}'
+```
+
+예상 응답 형태:
+```json
+{
+  "campaign_id": "camp_000029",
+  "model_name": "linear_regression_numpy_v1",
+  "predicted_roas": 0.597425,
+  "latency_ms": 23.495,
+  "training_rows_used": 25,
+  "scoring_snapshot_date": "2026-06-26",
+  "feature_source": "features.feature_campaign_roas_scoring_set",
+  "model_artifact_path": "agent/model_artifacts/campaign_roas_linear_v1.json",
+  "known_limitation": "Fitted on 25 synthetic labeled campaign rows; benchmark artifact only."
+}
+```
+
+로컬 FastAPI 서비스는 `api/` 코드와 `agent/model_artifacts/`의 모델 산출물을 연결하는 serving layer입니다. AWS로 옮기면 이 역할은 보통 ECS/Fargate 또는 Lambda 컨테이너 + ALB/API Gateway가 맡고, Postgres는 RDS/Aurora, 모델 산출물은 S3 또는 모델 registry로 분리합니다. 현재 구현은 포트폴리오용 로컬 skeleton이라 인증, rate limit, model registry versioning은 후속 hardening 대상입니다.
 
 ### 종료
 ```bash

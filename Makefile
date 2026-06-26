@@ -26,7 +26,7 @@ sync:
 
 up:
 	docker compose up -d
-	@echo "Airflow:  http://localhost:8080"
+	@echo "Airflow:  http://localhost:8081"
 	@echo "Superset: http://localhost:8088"
 
 down:
