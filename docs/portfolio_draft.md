@@ -230,12 +230,16 @@
 - Endpoints:
   - `GET /health`
   - `POST /predict/campaign-roas`
+  - `POST /query`
 - Live smoke result:
   - `/health` → `{"status":"ok","service":"adinsight-api"}`
   - `/predict/campaign-roas` for `camp_000029` → model `linear_regression_numpy_v1`, predicted ROAS `0.597425`, latency `23.495ms`, training rows `25`, artifact `agent/model_artifacts/campaign_roas_linear_v1.json`
+  - `/query` English ROAS question → `p5_q001`, rows `5`, top campaign `camp_000029`, latency `41.013ms`
+  - `/query` Korean MAE/bias question → `p5_q008`, rows `1`, MAE `0.07988873820803322`, latency `42.839ms`
 - Serving improvement: request-time model fitting removed; API loads the exported linear model artifact.
-- API smoke tests: `tests/unit/test_api.py`, `uv run pytest -q` → `2 passed`
-- Known limitation: artifact is still local JSON fitted on 25 synthetic rows, not a production model registry.
+- API smoke tests: `tests/unit/test_api.py`, `uv run pytest -q` → `4 passed`
+- Text2SQL v1 mode: deterministic expected-SQL registry match from `agent/eval/text2sql_questions.yml`; live registry validation `18/18 PASS`.
+- Known limitation: artifact is still local JSON fitted on 25 synthetic rows, and `/query` does not yet perform free-form LLM SQL generation.
 
 ---
 

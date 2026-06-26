@@ -97,7 +97,7 @@ curl -s -X POST http://127.0.0.1:8000/predict/campaign-roas \
   -d '{"campaign_id":"camp_000029"}'
 ```
 
-예상 응답 형태:
+ROAS 예측 응답 예시:
 ```json
 {
   "campaign_id": "camp_000029",
@@ -112,7 +112,40 @@ curl -s -X POST http://127.0.0.1:8000/predict/campaign-roas \
 }
 ```
 
+자연어 질의 API:
+```bash
+curl -s -X POST http://127.0.0.1:8000/query \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Which campaigns have the highest ROAS?"}'
+
+curl -s -X POST http://127.0.0.1:8000/query \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"최신 ROAS 예측 모델의 MAE와 bias를 요약해줘."}'
+```
+
+자연어 질의 응답 예시:
+```json
+{
+  "question_id": "p5_q001",
+  "matched_question": "Which campaigns have the highest ROAS?",
+  "expected_model": "ai_native.ai_campaign_roi_summary",
+  "row_count": 5,
+  "rows": [
+    {
+      "campaign_id": "camp_000029",
+      "campaign_name": "beauty_kr_conversion_000029",
+      "roas": 0.5969125239376458,
+      "net_payment_amount_krw": 500281.34
+    }
+  ],
+  "latency_ms": 41.013,
+  "mode": "deterministic_expected_sql_registry_v1"
+}
+```
+
 로컬 FastAPI 서비스는 `api/` 코드와 `agent/model_artifacts/`의 모델 산출물을 연결하는 serving layer입니다. AWS로 옮기면 이 역할은 보통 ECS/Fargate 또는 Lambda 컨테이너 + ALB/API Gateway가 맡고, Postgres는 RDS/Aurora, 모델 산출물은 S3 또는 모델 registry로 분리합니다. 현재 구현은 포트폴리오용 로컬 skeleton이라 인증, rate limit, model registry versioning은 후속 hardening 대상입니다.
+
+`/query`는 현재 LLM이 자유롭게 SQL을 생성하는 방식이 아니라, `agent/eval/text2sql_questions.yml`의 검증된 expected-SQL registry에서 질문을 매칭한 뒤 SELECT만 실행하는 deterministic v1입니다. 이 구조는 hallucination 위험을 줄이고, 이후 LLM SQL generation을 붙일 때 validator 기준선으로 사용할 수 있습니다.
 
 ### 종료
 ```bash

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from fastapi.testclient import TestClient
 
 import api.main as api_main
@@ -9,6 +11,7 @@ from agent.eval.run_campaign_roas_model import (
     NUMERIC_FEATURES,
     CampaignRoasFeatureRow,
 )
+from agent.text2sql.registry import Text2SqlResult, serialize_value
 
 
 def test_health_endpoint() -> None:
@@ -72,3 +75,46 @@ def test_predict_campaign_roas_endpoint(monkeypatch) -> None:
     assert payload["scoring_snapshot_date"] == "2026-06-26"
     assert payload["feature_source"] == api_main.SCORING_TABLE
     assert payload["known_limitation"] == "unit test artifact"
+
+
+def test_query_endpoint(monkeypatch) -> None:
+    def fake_execute_question(question, conn):
+        return Text2SqlResult(
+            question_id="p5_q001",
+            matched_question="Which campaigns have the highest ROAS?",
+            expected_model="ai_native.ai_campaign_roi_summary",
+            sql="select campaign_id, roas from ai_native.ai_campaign_roi_summary limit 5",
+            rows=[{"campaign_id": "camp_000029", "roas": 0.597425}],
+            row_count=1,
+            answer="p5_q001 returned 1 rows from ai_native.ai_campaign_roi_summary.",
+        )
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_question", fake_execute_question)
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query",
+        json={"question": "Which campaigns have the highest ROAS?"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["question_id"] == "p5_q001"
+    assert payload["matched_question"] == "Which campaigns have the highest ROAS?"
+    assert payload["expected_model"] == "ai_native.ai_campaign_roi_summary"
+    assert payload["rows"] == [{"campaign_id": "camp_000029", "roas": 0.597425}]
+    assert payload["row_count"] == 1
+    assert payload["latency_ms"] >= 0
+    assert payload["mode"] == "deterministic_expected_sql_registry_v1"
+
+
+def test_text2sql_serialize_value_converts_decimal_to_float() -> None:
+    assert serialize_value(Decimal("0.597425")) == 0.597425

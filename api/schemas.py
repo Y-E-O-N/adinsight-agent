@@ -22,3 +22,21 @@ class CampaignRoasPredictResponse(BaseModel):
     feature_source: str
     model_artifact_path: str
     known_limitation: str
+
+
+class QueryRequest(BaseModel):
+    question: str = Field(..., min_length=1, description="Natural-language analytics question.")
+
+
+class QueryResponse(BaseModel):
+    question: str
+    question_id: str
+    matched_question: str
+    expected_model: str
+    sql: str
+    rows: list[dict[str, object]]
+    row_count: int
+    answer: str
+    latency_ms: float
+    mode: str
+    known_limitation: str

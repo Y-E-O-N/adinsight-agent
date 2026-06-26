@@ -17,10 +17,13 @@ from agent.eval.run_campaign_roas_model import (
     load_linear_model_artifact,
     predict_with_linear_artifact,
 )
+from agent.text2sql.registry import Text2SqlNoMatchError, Text2SqlUnsafeSqlError, execute_question
 from api.schemas import (
     CampaignRoasPredictRequest,
     CampaignRoasPredictResponse,
     HealthResponse,
+    QueryRequest,
+    QueryResponse,
 )
 
 SCORING_TABLE = "features.feature_campaign_roas_scoring_set"
@@ -60,6 +63,44 @@ def predict_campaign_roas(
         feature_source=SCORING_TABLE,
         model_artifact_path=str(MODEL_ARTIFACT_PATH),
         known_limitation=str(artifact["known_limitation"]),
+    )
+
+
+@app.post("/query", response_model=QueryResponse)
+def query(request: QueryRequest) -> QueryResponse:
+    started_at = perf_counter()
+
+    try:
+        with get_connection() as conn:
+            result = execute_question(request.question, conn)
+    except Text2SqlNoMatchError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "message": str(exc),
+                "supported_question_examples": exc.supported_question_examples,
+            },
+        ) from exc
+    except Text2SqlUnsafeSqlError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    latency_ms = (perf_counter() - started_at) * 1000
+
+    return QueryResponse(
+        question=request.question,
+        question_id=result.question_id,
+        matched_question=result.matched_question,
+        expected_model=result.expected_model,
+        sql=result.sql,
+        rows=result.rows,
+        row_count=result.row_count,
+        answer=result.answer,
+        latency_ms=round(latency_ms, 3),
+        mode="deterministic_expected_sql_registry_v1",
+        known_limitation=(
+            "Matches only curated questions in agent/eval/text2sql_questions.yml; "
+            "LLM SQL generation is a later hardening step."
+        ),
     )
 
 
