@@ -103,10 +103,9 @@ def ig_collect_daily_dag() -> None:
             GROUP BY source_hashtag
         """
 
-        with psycopg.connect(dsn) as conn:
-            with conn.cursor() as cur:
-                cur.execute(sql, (list(ACTIVE_CANDIDATE_HASHTAGS),))
-                rows = cur.fetchall()
+        with psycopg.connect(dsn) as conn, conn.cursor() as cur:
+            cur.execute(sql, (list(ACTIVE_CANDIDATE_HASHTAGS),))
+            rows = cur.fetchall()
 
         source_rows_by_hashtag = {row[0]: int(row[1]) for row in rows}
         latest_seed_metrics_by_hashtag: dict[str, dict[str, int | str]] = {}

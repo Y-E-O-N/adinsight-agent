@@ -40,10 +40,9 @@ def get_today_collected_count() -> int:
         WHERE collected_at >= date_trunc('day', now())
     """
 
-    with psycopg.connect(_postgres_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql)
-            result = cur.fetchone()
+    with psycopg.connect(_postgres_dsn()) as conn, conn.cursor() as cur:
+        cur.execute(sql)
+        result = cur.fetchone()
 
     return int(result[0]) if result else 0
 
@@ -55,10 +54,9 @@ def get_weekly_avg_count() -> float:
         WHERE collected_at >= date_trunc('day', now()) - INTERVAL '6 days'
     """
 
-    with psycopg.connect(_postgres_dsn()) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql)
-            result = cur.fetchone()
+    with psycopg.connect(_postgres_dsn()) as conn, conn.cursor() as cur:
+        cur.execute(sql)
+        result = cur.fetchone()
 
     return float(result[0]) if result and result[0] is not None else 0.0
 

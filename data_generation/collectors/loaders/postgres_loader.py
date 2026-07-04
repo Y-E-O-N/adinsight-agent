@@ -38,7 +38,7 @@ ON CONFLICT (id) DO UPDATE SET
 RETURNING (xmax = 0) AS inserted;
 """
 
-_INSERT_SOURCE_SQL = f"""
+_INSERT_SOURCE_SQL = """
 INSERT INTO raw.ig_post_sources (post_id, source_hashtag)
 VALUES (%s, %s)
 ON CONFLICT (post_id, source_hashtag) DO NOTHING
@@ -112,6 +112,7 @@ def upsert_posts(items: list[dict[str, Any]], source_hashtag: str) -> dict[str, 
 if __name__ == "__main__":
     import argparse
     import sys
+
     from data_generation.collectors.apify_hashtag import collect_hashtag
 
     parser = argparse.ArgumentParser(description="Apify수집 + raw.ig_posts upsert")

@@ -95,3 +95,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-06-29 · Session 22 · Text2SQL Demo GIF Capture](2026-06-29_session-22_text2sql-demo-gif-capture.md) — `/query` live smoke 재측정 / evidence 문서 / dependency-free demo GIF 생성
 - [2026-07-01 · Session 23 · AWS Target Architecture](2026-07-01_session-23_aws-target-architecture.md) — MWAA/RDS·Redshift/S3/ECS/QuickSight/CloudWatch target mapping / IaC skeleton boundary
 - [2026-07-04 · Session 24 · LLM Text2SQL v2 Design + Mock Endpoint/Eval](2026-07-04_session-24_llm-text2sql-v2-design.md) — v1 fallback/eval baseline 유지 / SQL validator·mock provider·`/query/v2`·v2 eval runner 구현 / pytest 13개 통과
+- [2026-07-04 · Session 25 · Full Ruff Cleanup](2026-07-04_session-25_full-ruff-cleanup.md) — 전체 ruff gate 통과 / 기존 import·context-manager·f-string lint 정리 / pytest 13개 통과
