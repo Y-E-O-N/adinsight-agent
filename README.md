@@ -151,6 +151,7 @@ Superset dashboard와 `/query`를 함께 보여주는 데모 흐름은 `docs/ana
 Text2SQL 데모 GIF는 `docs/images/06_text2sql_demo.gif`, 실측 evidence는 `docs/analysis/stage6_text2sql_demo_evidence.md`에 저장했습니다.
 
 AWS target architecture는 `docs/architecture/aws_target_architecture.md`, 인프라 skeleton은 `infra/aws/README.md`에 정리했습니다.
+LLM SQL generation v2 설계와 provider-free mock harness는 `docs/analysis/stage6_llm_text2sql_v2_design.md`에 정리했습니다. 현재는 real provider 연결 전이며, v1 expected-SQL registry를 guardrail/eval baseline으로 유지합니다.
 
 ### 종료
 ```bash
@@ -217,6 +218,7 @@ adinsight-agent/
 | 3B | dbt 모델 확장: campaign ROI, payment conversion, ML feature store | ✅ |
 | 4B | ROAS 예측 ML 모델: baseline + NumPy model comparison + artifact export | ✅ |
 | 5B | Text2SQL Agent 실구현: deterministic expected-SQL registry v1 + evaluator | 🟡 |
+| 5C | LLM SQL generation v2: validator + mock harness + eval baseline | 🟡 |
 | 6B | FastAPI 엔드포인트: `/query`, `/predict` | ✅ |
 | 7B | Superset 대시보드 + Text2SQL 데모 연결 | 🟡 |
 | 8B | AWS target architecture + IaC skeleton | 🟡 |
