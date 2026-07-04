@@ -300,7 +300,7 @@
 - [ ] locust 부하 테스트 스크린샷 (RPS, p95)
 - [ ] CI 배지 (GitHub Actions)
 - [x] AWS target architecture — `docs/architecture/aws_target_architecture.md`, skeleton: `infra/aws/README.md`
-- [x] LLM Text2SQL v2 design + mock endpoint — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`
+- [x] LLM Text2SQL v2 design + mock endpoint/eval — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`, eval: `2 PASS / 16 REFUSED / 0 BLOCKED`
 
 ## 권장 (블로그·심층 문서용)
 - [ ] Airflow task 실행 이력 (30일)

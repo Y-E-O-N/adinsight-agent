@@ -1,13 +1,13 @@
 # Session 24 — LLM Text2SQL v2 Design (2026-07-04)
 
-**Phase**: Phase 5C/6 — LLM SQL generation v2 design + mock endpoint
+**Phase**: Phase 5C/6 — LLM SQL generation v2 design + mock endpoint/eval
 **Duration**: ~30m
 **Operator**: Yeon (with Codex)
 
 ## Goals
 - Pending Text2SQL demo/AWS architecture artifacts를 먼저 커밋하고 push한다.
 - deterministic `/query` v1 이후의 LLM SQL generation v2를 안전하게 설계한다.
-- provider dependency를 바로 추가하지 않고, v1 evaluator와 validator를 기준선으로 두는 v2 mock harness와 `/query/v2` endpoint를 만든다.
+- provider dependency를 바로 추가하지 않고, v1 evaluator와 validator를 기준선으로 두는 v2 mock harness, `/query/v2` endpoint, eval runner를 만든다.
 
 ## Done
 - [x] Session 20~23 포트폴리오 산출물을 commit/push했다.
@@ -30,9 +30,18 @@
   - request schema: `QueryRequest`
   - response schema: `QueryV2Response`
   - provider: `MockSqlGenerationClient`
+- [x] v2 eval runner를 구현하고 실제 DB 기준으로 실행했다.
+  - script: `agent/eval/run_text2sql_v2_eval.py`
+  - total `18`
+  - passed `2`
+  - failed `0`
+  - refused `16`
+  - blocked `0`
+  - answerable exec_acc `1.0`
+  - refuse_rate `0.8889`
 - [x] 검증을 실행했다.
-  - `uv run ruff check api tests/unit/test_api.py agent/text2sql tests/unit/test_text2sql_v2.py` -> pass
-  - `uv run pytest -q` -> `12 passed`
+  - `uv run ruff check agent/eval/run_text2sql_v2_eval.py tests/unit/test_text2sql_v2_eval.py` -> pass
+  - `uv run pytest -q` -> `13 passed`
 - [x] README, portfolio draft, CLAUDE에 v2 design checkpoint를 반영했다.
 
 ## Decisions
@@ -50,6 +59,8 @@
 - `api/main.py` — `POST /query/v2` endpoint
 - `api/schemas.py` — `QueryV2Response`
 - `tests/unit/test_api.py` — `/query/v2` API tests
+- `agent/eval/run_text2sql_v2_eval.py` — v2 mock eval runner
+- `tests/unit/test_text2sql_v2_eval.py` — v2 eval summary test
 - `README.md` — v2 design link and Phase row
 - `docs/portfolio_draft.md` — v2 design portfolio checklist item
 - `CLAUDE.md` — current Phase and session summary update
@@ -64,16 +75,17 @@
 
 ## Portfolio assets added
 - `docs/analysis/stage6_llm_text2sql_v2_design.md`
-- Provider-free v2.0 mock harness modules, `/query/v2` endpoint, and tests
+- Provider-free v2.0 mock harness modules, `/query/v2` endpoint, eval runner, and tests
 
 ## Open questions
 - v2 provider를 OpenAI, Bedrock, 또는 local mock first로 어디까지 가져갈지 결정한다.
 - `sqlglot` dependency를 validator 단계에 추가할지, initial regex validator를 유지할지 결정한다.
-- v2 eval runner를 먼저 만들지, real provider integration 설계를 먼저 할지 결정한다.
+- real provider integration 설계를 먼저 할지, mock provider coverage를 늘릴지 결정한다.
 
 ## Metrics
-- `uv run ruff check api tests/unit/test_api.py agent/text2sql tests/unit/test_text2sql_v2.py` -> pass
-- `uv run pytest -q` -> `12 passed`
+- `uv run ruff check agent/eval/run_text2sql_v2_eval.py tests/unit/test_text2sql_v2_eval.py` -> pass
+- `uv run pytest -q` -> `13 passed`
+- v2 mock eval: total `18`, passed `2`, refused `16`, blocked `0`, answerable exec_acc `1.0`
 
 ## Next session — start here
 1. Inspect v2 design:
@@ -81,6 +93,6 @@
    sed -n '1,240p' docs/analysis/stage6_llm_text2sql_v2_design.md
    ```
 2. Choose next implementation step:
-   - `agent/eval/run_text2sql_v2_eval.py`
-   - or real provider integration design
+   - real provider integration design
+   - or expand mock provider coverage beyond the initial 2 questions
 3. Keep `/query` v1 unchanged until `/query/v2` is tested.

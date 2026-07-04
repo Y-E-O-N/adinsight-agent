@@ -1,7 +1,7 @@
 # Stage 6 LLM Text2SQL v2 Design
 
 **작성일**: 2026-07-04
-**상태**: v2.0 mock harness and `/query/v2` endpoint implemented, provider integration not implemented
+**상태**: v2.0 mock harness, `/query/v2` endpoint, and v2 eval runner implemented; provider integration not implemented
 **기준선**: deterministic `/query` v1 with expected-SQL registry
 
 ## 1. 목적
@@ -248,15 +248,15 @@ Not implemented yet:
 
 - real LLM provider integration
 - SQL parser dependency such as `sqlglot`
-- v2 eval runner
 
-## 14. `/query/v2` Mock Endpoint Status
+## 14. `/query/v2` Mock Endpoint And Eval Status
 
 Implemented:
 
 - `POST /query/v2`
 - response schema: `QueryV2Response`
 - mock provider: `MockSqlGenerationClient`
+- eval runner: `agent/eval/run_text2sql_v2_eval.py`
 - validation metadata in response:
   - `expected_tables`
   - `validation_tables`
@@ -267,11 +267,20 @@ Verified:
 
 - `uv run ruff check api tests/unit/test_api.py agent/text2sql tests/unit/test_text2sql_v2.py` -> pass
 - `uv run pytest -q` -> `12 passed`
+- `set -a; source .env; set +a; POSTGRES_HOST=localhost uv run python agent/eval/run_text2sql_v2_eval.py`
+  - total `18`
+  - passed `2`
+  - failed `0`
+  - refused `16`
+  - blocked `0`
+  - answerable exec_acc `1.0`
+  - refuse_rate `0.8889`
 
 ## 15. Next Concrete Step
 
-Add a v2 eval runner before connecting a real provider:
+Connect a richer provider after keeping the same eval gate:
 
-- `agent/eval/run_text2sql_v2_eval.py`
-- evaluate mock/provider output against `agent/eval/text2sql_questions.yml`
+- keep `agent/eval/run_text2sql_v2_eval.py`
+- add a provider adapter behind `SqlGenerationClient`
+- compare provider output against `agent/eval/text2sql_questions.yml`
 - record Exec Acc, Refuse Rate, Unsafe Block Rate, p50/p95 latency
