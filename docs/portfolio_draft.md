@@ -263,10 +263,10 @@
 |---|---|
 | pytest 통과 / 커버리지 | **TBD** / **TBD %** |
 | dbt test 수 (generic / custom) | **TBD** / **TBD** |
-| GitHub Actions 전체 실행 시간 | **TBD** |
+| GitHub Actions 전체 실행 시간 | **TBD** (workflow added: `.github/workflows/ci.yml`) |
 | source freshness 실패 알림 동작 검증 | **TBD** |
 
-**배지**: `![CI](https://github.com/<you>/adinsight-agent/actions/workflows/dbt-ci.yml/badge.svg)`
+**배지**: `[![CI](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml)`
 
 ---
 
@@ -298,7 +298,7 @@
 - [x] Text2SQL 데모 GIF — `docs/images/06_text2sql_demo.gif`, evidence: `docs/analysis/stage6_text2sql_demo_evidence.md`
 - [ ] EXPLAIN Before/After 콘솔 캡처
 - [ ] locust 부하 테스트 스크린샷 (RPS, p95)
-- [ ] CI 배지 (GitHub Actions)
+- [x] CI 배지 (GitHub Actions) — `.github/workflows/ci.yml`
 - [x] AWS target architecture — `docs/architecture/aws_target_architecture.md`, skeleton: `infra/aws/README.md`
 - [x] LLM Text2SQL v2 design + mock endpoint/eval — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`, eval: `2 PASS / 16 REFUSED / 0 BLOCKED`
 
@@ -361,7 +361,7 @@ ADR = "왜 X 가 아니라 Y 를 선택했는가" 를 1~2페이지로 남긴 결
 - [ ] 라이선스·데이터 출처 명시
 - [ ] `.env.example` 제공, `.env` gitignore
 - [ ] `make up` 으로 낯선 맥에서 재현 가능
-- [ ] GitHub Actions CI 통과 배지
+- [x] GitHub Actions CI 배지 — README 상단
 - [ ] 커밋 메시지 conventional (feat/fix/docs)
 - [ ] Issues 에 "다음 할 일" 정리 (미완성도 공개)
 

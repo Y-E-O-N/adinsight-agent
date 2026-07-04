@@ -1,5 +1,7 @@
 # AdInsight Agent
 
+[![CI](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml)
+
 > **인플루언서 광고 집행부터 결제 전환까지 추적하는 AI-Native 분석 플랫폼**
 > An influencer campaign-to-payment analytics platform with ROAS prediction and a Text2SQL BI agent — built on Airflow, dbt, Superset, FastAPI, LangChain, pgvector, and LightGBM.
 
@@ -226,7 +228,7 @@ adinsight-agent/
 | 6B | FastAPI 엔드포인트: `/query`, `/predict` | ✅ |
 | 7B | Superset 대시보드 + Text2SQL 데모 연결 | 🟡 |
 | 8B | AWS target architecture + IaC skeleton | 🟡 |
-| 8C | CI/CD: dbt CI, ruff/sqlfluff | ⬜ |
+| 8C | CI/CD: GitHub Actions `ruff check` + `pytest -q` | ✅ |
 | 9B | 문서화 + 데모 준비: 토크포인트, 데모 영상, README 최종화 | ⬜ |
 
 ---
