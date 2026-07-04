@@ -147,6 +147,11 @@ curl -s -X POST http://127.0.0.1:8000/query \
 
 `/query`는 현재 LLM이 자유롭게 SQL을 생성하는 방식이 아니라, `agent/eval/text2sql_questions.yml`의 검증된 expected-SQL registry에서 질문을 매칭한 뒤 SELECT만 실행하는 deterministic v1입니다. 이 구조는 hallucination 위험을 줄이고, 이후 LLM SQL generation을 붙일 때 validator 기준선으로 사용할 수 있습니다.
 
+Superset dashboard와 `/query`를 함께 보여주는 데모 흐름은 `docs/analysis/stage6_text2sql_superset_demo_runbook.md`에 정리했습니다.
+Text2SQL 데모 GIF는 `docs/images/06_text2sql_demo.gif`, 실측 evidence는 `docs/analysis/stage6_text2sql_demo_evidence.md`에 저장했습니다.
+
+AWS target architecture는 `docs/architecture/aws_target_architecture.md`, 인프라 skeleton은 `infra/aws/README.md`에 정리했습니다.
+
 ### 종료
 ```bash
 make down          # 컨테이너 중지 (볼륨 유지)
@@ -207,14 +212,15 @@ adinsight-agent/
 |---|---|---|
 | 0~3 | 기존 작업: Docker/Airflow/Postgres/dbt/Superset/ai_native/eval YAML 초안 | ✅ |
 | P | 포지셔닝 재정립: A+C 전략 문서 정렬, ADR 003 | ✅ |
-| 2B | Apify 운영 등급 자동화: watermark, freshness, backfill | 🟡 다음 |
-| 2C | 합성 결제 데이터 생성: creator/campaign/post metrics/payment events | ⬜ |
-| 3B | dbt 모델 확장: campaign ROI, payment conversion, ML feature store | ⬜ |
-| 4B | ROAS 예측 ML 모델: LightGBM, Walk-forward CV, Feature Importance | ⬜ |
-| 5B | Text2SQL Agent 실구현: v1/v2/v3 Exec Acc 비교 | ⬜ |
-| 6B | FastAPI 엔드포인트: `/query`, `/predict` | ⬜ |
-| 7B | Superset 대시보드 + 쿼리 최적화 실측 | ⬜ |
-| 8B | CI/CD: dbt CI, ruff/sqlfluff | ⬜ |
+| 2B | Apify 운영 등급 자동화: watermark, freshness, backfill | ✅ |
+| 2C | 합성 결제 데이터 생성: creator/campaign/post metrics/payment events | ✅ |
+| 3B | dbt 모델 확장: campaign ROI, payment conversion, ML feature store | ✅ |
+| 4B | ROAS 예측 ML 모델: baseline + NumPy model comparison + artifact export | ✅ |
+| 5B | Text2SQL Agent 실구현: deterministic expected-SQL registry v1 + evaluator | 🟡 |
+| 6B | FastAPI 엔드포인트: `/query`, `/predict` | ✅ |
+| 7B | Superset 대시보드 + Text2SQL 데모 연결 | 🟡 |
+| 8B | AWS target architecture + IaC skeleton | 🟡 |
+| 8C | CI/CD: dbt CI, ruff/sqlfluff | ⬜ |
 | 9B | 문서화 + 데모 준비: 토크포인트, 데모 영상, README 최종화 | ⬜ |
 
 ---

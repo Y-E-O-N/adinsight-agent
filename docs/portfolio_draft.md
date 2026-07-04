@@ -295,10 +295,11 @@
 - [ ] Airflow DAG 그래프 × 3 (ingest / dbt_run / weekly_llm_report)
 - [x] dbt docs lineage 그래프 — `docs/images/03_dbt_lineage.png`
 - [ ] Superset 대시보드 × 2 (광고주 ROI, 크리에이터 성과)
-- [ ] Text2SQL 데모 GIF
+- [x] Text2SQL 데모 GIF — `docs/images/06_text2sql_demo.gif`, evidence: `docs/analysis/stage6_text2sql_demo_evidence.md`
 - [ ] EXPLAIN Before/After 콘솔 캡처
 - [ ] locust 부하 테스트 스크린샷 (RPS, p95)
 - [ ] CI 배지 (GitHub Actions)
+- [x] AWS target architecture — `docs/architecture/aws_target_architecture.md`, skeleton: `infra/aws/README.md`
 
 ## 권장 (블로그·심층 문서용)
 - [ ] Airflow task 실행 이력 (30일)
