@@ -40,3 +40,18 @@ class QueryResponse(BaseModel):
     latency_ms: float
     mode: str
     known_limitation: str
+
+
+class QueryV2Response(BaseModel):
+    question: str
+    sql: str
+    rows: list[dict[str, object]]
+    row_count: int
+    answer: str
+    latency_ms: float
+    mode: str
+    expected_tables: list[str]
+    reason: str
+    validation_tables: list[str]
+    validation_limit: int | None
+    known_limitation: str

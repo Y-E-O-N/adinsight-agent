@@ -17,13 +17,17 @@ from agent.eval.run_campaign_roas_model import (
     load_linear_model_artifact,
     predict_with_linear_artifact,
 )
+from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
+from agent.text2sql.llm_client import MockSqlGenerationClient
 from agent.text2sql.registry import Text2SqlNoMatchError, Text2SqlUnsafeSqlError, execute_question
+from agent.text2sql.validator import Text2SqlValidationError
 from api.schemas import (
     CampaignRoasPredictRequest,
     CampaignRoasPredictResponse,
     HealthResponse,
     QueryRequest,
     QueryResponse,
+    QueryV2Response,
 )
 
 SCORING_TABLE = "features.feature_campaign_roas_scoring_set"
@@ -100,6 +104,55 @@ def query(request: QueryRequest) -> QueryResponse:
         known_limitation=(
             "Matches only curated questions in agent/eval/text2sql_questions.yml; "
             "LLM SQL generation is a later hardening step."
+        ),
+    )
+
+
+@app.post("/query/v2", response_model=QueryV2Response)
+def query_v2(request: QueryRequest) -> QueryV2Response:
+    started_at = perf_counter()
+
+    try:
+        with get_connection() as conn:
+            result = execute_generated_question(
+                request.question,
+                conn,
+                client=MockSqlGenerationClient(),
+            )
+    except Text2SqlNotAnswerableError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "message": str(exc),
+                "mode": "llm_generated_sql_v2_mock",
+            },
+        ) from exc
+    except Text2SqlValidationError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": str(exc),
+                "mode": "llm_generated_sql_v2_mock",
+            },
+        ) from exc
+
+    latency_ms = (perf_counter() - started_at) * 1000
+
+    return QueryV2Response(
+        question=request.question,
+        sql=result.sql,
+        rows=result.rows,
+        row_count=result.row_count,
+        answer=result.answer,
+        latency_ms=round(latency_ms, 3),
+        mode=result.mode,
+        expected_tables=list(result.expected_tables),
+        reason=result.reason,
+        validation_tables=list(result.validation.referenced_tables),
+        validation_limit=result.validation.limit,
+        known_limitation=(
+            "Uses a provider-free mock SQL generator. This validates the v2 API boundary "
+            "and SQL guardrails before connecting a real LLM provider."
         ),
     )
 

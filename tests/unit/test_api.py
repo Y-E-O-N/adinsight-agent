@@ -11,7 +11,9 @@ from agent.eval.run_campaign_roas_model import (
     NUMERIC_FEATURES,
     CampaignRoasFeatureRow,
 )
+from agent.text2sql.generator import GeneratedText2SqlResult, Text2SqlNotAnswerableError
 from agent.text2sql.registry import Text2SqlResult, serialize_value
+from agent.text2sql.validator import SqlValidationResult
 
 
 def test_health_endpoint() -> None:
@@ -114,6 +116,73 @@ def test_query_endpoint(monkeypatch) -> None:
     assert payload["row_count"] == 1
     assert payload["latency_ms"] >= 0
     assert payload["mode"] == "deterministic_expected_sql_registry_v1"
+
+
+def test_query_v2_endpoint(monkeypatch) -> None:
+    def fake_execute_generated_question(question, conn, client):
+        return GeneratedText2SqlResult(
+            question=question,
+            sql="select campaign_id, roas from ai_native.ai_campaign_roi_summary limit 5",
+            rows=[{"campaign_id": "camp_000029", "roas": 0.5969}],
+            row_count=1,
+            answer="Generated Text2SQL v2 returned 1 rows.",
+            mode="llm_generated_sql_v2_mock",
+            expected_tables=("ai_native.ai_campaign_roi_summary",),
+            reason="unit test generation",
+            validation=SqlValidationResult(
+                sql="select campaign_id, roas from ai_native.ai_campaign_roi_summary limit 5",
+                referenced_tables=("ai_native.ai_campaign_roi_summary",),
+                limit=5,
+            ),
+        )
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query/v2",
+        json={"question": "Which campaigns have the highest ROAS?"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mode"] == "llm_generated_sql_v2_mock"
+    assert payload["expected_tables"] == ["ai_native.ai_campaign_roi_summary"]
+    assert payload["validation_tables"] == ["ai_native.ai_campaign_roi_summary"]
+    assert payload["validation_limit"] == 5
+    assert payload["row_count"] == 1
+
+
+def test_query_v2_endpoint_returns_404_for_not_answerable(monkeypatch) -> None:
+    def fake_execute_generated_question(question, conn, client):
+        raise Text2SqlNotAnswerableError("not answerable in unit test")
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query/v2",
+        json={"question": "Show TikTok spend by channel."},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["mode"] == "llm_generated_sql_v2_mock"
 
 
 def test_text2sql_serialize_value_converts_decimal_to_float() -> None:

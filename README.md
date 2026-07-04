@@ -121,6 +121,10 @@ curl -s -X POST http://127.0.0.1:8000/query \
 curl -s -X POST http://127.0.0.1:8000/query \
   -H 'Content-Type: application/json' \
   -d '{"question":"최신 ROAS 예측 모델의 MAE와 bias를 요약해줘."}'
+
+curl -s -X POST http://127.0.0.1:8000/query/v2 \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Which campaigns have the highest ROAS?"}'
 ```
 
 자연어 질의 응답 예시:
@@ -151,7 +155,7 @@ Superset dashboard와 `/query`를 함께 보여주는 데모 흐름은 `docs/ana
 Text2SQL 데모 GIF는 `docs/images/06_text2sql_demo.gif`, 실측 evidence는 `docs/analysis/stage6_text2sql_demo_evidence.md`에 저장했습니다.
 
 AWS target architecture는 `docs/architecture/aws_target_architecture.md`, 인프라 skeleton은 `infra/aws/README.md`에 정리했습니다.
-LLM SQL generation v2 설계와 provider-free mock harness는 `docs/analysis/stage6_llm_text2sql_v2_design.md`에 정리했습니다. 현재는 real provider 연결 전이며, v1 expected-SQL registry를 guardrail/eval baseline으로 유지합니다.
+LLM SQL generation v2 설계와 provider-free mock harness는 `docs/analysis/stage6_llm_text2sql_v2_design.md`에 정리했습니다. 현재 `/query/v2`는 mock provider로 SQL generation boundary와 validator를 검증하며, real provider 연결 전 단계입니다. v1 expected-SQL registry는 guardrail/eval baseline으로 유지합니다.
 
 ### 종료
 ```bash
