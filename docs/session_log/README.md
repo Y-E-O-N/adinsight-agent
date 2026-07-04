@@ -97,3 +97,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-04 · Session 24 · LLM Text2SQL v2 Design + Mock Endpoint/Eval](2026-07-04_session-24_llm-text2sql-v2-design.md) — v1 fallback/eval baseline 유지 / SQL validator·mock provider·`/query/v2`·v2 eval runner 구현 / pytest 13개 통과
 - [2026-07-04 · Session 25 · Full Ruff Cleanup](2026-07-04_session-25_full-ruff-cleanup.md) — 전체 ruff gate 통과 / 기존 import·context-manager·f-string lint 정리 / pytest 13개 통과
 - [2026-07-04 · Session 26 · GitHub Actions CI](2026-07-04_session-26_github-actions-ci.md) — Python 3.11 + uv 기반 ruff/pytest workflow / README CI badge / Phase 8C 체크포인트
+- [2026-07-04 · Session 27 · CI Remote Pass and Text2SQL Eval Comparison](2026-07-04_session-27_ci-remote-and-text2sql-comparison.md) — GitHub Actions run success 확인 / v1 18 PASS vs v2 mock 2 PASS·16 REFUSED 비교표
