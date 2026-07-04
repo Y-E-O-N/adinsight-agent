@@ -13,7 +13,7 @@ from agent.eval.run_campaign_roas_model import (
 )
 from agent.text2sql.generator import GeneratedText2SqlResult, Text2SqlNotAnswerableError
 from agent.text2sql.registry import Text2SqlResult, serialize_value
-from agent.text2sql.validator import SqlValidationResult
+from agent.text2sql.validator import SqlValidationResult, Text2SqlValidationError
 
 
 def test_health_endpoint() -> None:
@@ -119,6 +119,8 @@ def test_query_endpoint(monkeypatch) -> None:
 
 
 def test_query_v2_endpoint(monkeypatch) -> None:
+    audit_records = []
+
     def fake_execute_generated_question(question, conn, client):
         return GeneratedText2SqlResult(
             question=question,
@@ -145,6 +147,7 @@ def test_query_v2_endpoint(monkeypatch) -> None:
 
     monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
     monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+    monkeypatch.setattr(api_main, "write_text2sql_audit", lambda record: audit_records.append(record))
 
     client = TestClient(api_main.app)
     response = client.post(
@@ -159,9 +162,13 @@ def test_query_v2_endpoint(monkeypatch) -> None:
     assert payload["validation_tables"] == ["ai_native.ai_campaign_roi_summary"]
     assert payload["validation_limit"] == 5
     assert payload["row_count"] == 1
+    assert audit_records[0]["status"] == "success"
+    assert audit_records[0]["row_count"] == 1
 
 
 def test_query_v2_endpoint_returns_404_for_not_answerable(monkeypatch) -> None:
+    audit_records = []
+
     def fake_execute_generated_question(question, conn, client):
         raise Text2SqlNotAnswerableError("not answerable in unit test")
 
@@ -174,6 +181,7 @@ def test_query_v2_endpoint_returns_404_for_not_answerable(monkeypatch) -> None:
 
     monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
     monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+    monkeypatch.setattr(api_main, "write_text2sql_audit", lambda record: audit_records.append(record))
 
     client = TestClient(api_main.app)
     response = client.post(
@@ -183,6 +191,63 @@ def test_query_v2_endpoint_returns_404_for_not_answerable(monkeypatch) -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"]["mode"] == "llm_generated_sql_v2_mock"
+    assert audit_records[0]["status"] == "refused"
+
+
+def test_query_v2_endpoint_returns_400_for_blocked_sql(monkeypatch) -> None:
+    audit_records = []
+
+    def fake_execute_generated_question(question, conn, client):
+        raise Text2SqlValidationError("blocked in unit test")
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+    monkeypatch.setattr(api_main, "write_text2sql_audit", lambda record: audit_records.append(record))
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query/v2",
+        json={"question": "Drop all tables."},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["mode"] == "llm_generated_sql_v2_mock"
+    assert audit_records[0]["status"] == "blocked"
+
+
+def test_query_v2_endpoint_returns_500_for_unexpected_error(monkeypatch) -> None:
+    audit_records = []
+
+    def fake_execute_generated_question(question, conn, client):
+        raise RuntimeError("unexpected unit test error")
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+    monkeypatch.setattr(api_main, "write_text2sql_audit", lambda record: audit_records.append(record))
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query/v2",
+        json={"question": "Which campaigns have the highest ROAS?"},
+    )
+
+    assert response.status_code == 500
+    assert response.json()["detail"]["message"] == "Text2SQL v2 execution failed."
+    assert audit_records[0]["status"] == "error"
 
 
 def test_text2sql_serialize_value_converts_decimal_to_float() -> None:

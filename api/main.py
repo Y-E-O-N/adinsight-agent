@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from functools import lru_cache
 from pathlib import Path
 from time import perf_counter
@@ -17,6 +18,7 @@ from agent.eval.run_campaign_roas_model import (
     load_linear_model_artifact,
     predict_with_linear_artifact,
 )
+from agent.text2sql.audit import write_text2sql_audit
 from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
 from agent.text2sql.llm_client import MockSqlGenerationClient
 from agent.text2sql.registry import Text2SqlNoMatchError, Text2SqlUnsafeSqlError, execute_question
@@ -111,6 +113,7 @@ def query(request: QueryRequest) -> QueryResponse:
 @app.post("/query/v2", response_model=QueryV2Response)
 def query_v2(request: QueryRequest) -> QueryV2Response:
     started_at = perf_counter()
+    mode = "llm_generated_sql_v2_mock"
 
     try:
         with get_connection() as conn:
@@ -120,23 +123,74 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
                 client=MockSqlGenerationClient(),
             )
     except Text2SqlNotAnswerableError as exc:
+        latency_ms = round((perf_counter() - started_at) * 1000, 3)
+        record_query_v2_audit(
+            {
+                "status": "refused",
+                "mode": mode,
+                "question": request.question,
+                "latency_ms": latency_ms,
+                "error": str(exc),
+            }
+        )
         raise HTTPException(
             status_code=404,
             detail={
                 "message": str(exc),
-                "mode": "llm_generated_sql_v2_mock",
+                "mode": mode,
             },
         ) from exc
     except Text2SqlValidationError as exc:
+        latency_ms = round((perf_counter() - started_at) * 1000, 3)
+        record_query_v2_audit(
+            {
+                "status": "blocked",
+                "mode": mode,
+                "question": request.question,
+                "latency_ms": latency_ms,
+                "error": str(exc),
+            }
+        )
         raise HTTPException(
             status_code=400,
             detail={
                 "message": str(exc),
-                "mode": "llm_generated_sql_v2_mock",
+                "mode": mode,
+            },
+        ) from exc
+    except Exception as exc:
+        latency_ms = round((perf_counter() - started_at) * 1000, 3)
+        record_query_v2_audit(
+            {
+                "status": "error",
+                "mode": mode,
+                "question": request.question,
+                "latency_ms": latency_ms,
+                "error": type(exc).__name__,
+            }
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Text2SQL v2 execution failed.",
+                "mode": mode,
             },
         ) from exc
 
     latency_ms = (perf_counter() - started_at) * 1000
+    rounded_latency_ms = round(latency_ms, 3)
+    record_query_v2_audit(
+        {
+            "status": "success",
+            "mode": result.mode,
+            "question": request.question,
+            "latency_ms": rounded_latency_ms,
+            "row_count": result.row_count,
+            "expected_tables": list(result.expected_tables),
+            "validation_tables": list(result.validation.referenced_tables),
+            "validation_limit": result.validation.limit,
+        }
+    )
 
     return QueryV2Response(
         question=request.question,
@@ -144,7 +198,7 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
         rows=result.rows,
         row_count=result.row_count,
         answer=result.answer,
-        latency_ms=round(latency_ms, 3),
+        latency_ms=rounded_latency_ms,
         mode=result.mode,
         expected_tables=list(result.expected_tables),
         reason=result.reason,
@@ -155,6 +209,11 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
             "and SQL guardrails before connecting a real LLM provider."
         ),
     )
+
+
+def record_query_v2_audit(record: dict[str, object]) -> None:
+    with suppress(OSError):
+        write_text2sql_audit(record)
 
 
 def fetch_scoring_row(campaign_id: str) -> tuple[CampaignRoasFeatureRow, str]:

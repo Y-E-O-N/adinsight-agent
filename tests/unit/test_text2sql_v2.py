@@ -69,6 +69,9 @@ def test_mock_generator_executes_valid_generated_sql() -> None:
             FakeColumn("roas"),
         ]
 
+        def __init__(self) -> None:
+            self.executed_sql: list[str] = []
+
         def __enter__(self):
             return self
 
@@ -76,7 +79,7 @@ def test_mock_generator_executes_valid_generated_sql() -> None:
             return None
 
         def execute(self, sql: str) -> None:
-            self.sql = sql
+            self.executed_sql.append(sql)
 
         def fetchmany(self, limit: int):
             return [("camp_000029", "beauty_kr_conversion_000029", 0.5969)]
@@ -100,6 +103,7 @@ def test_mock_generator_executes_valid_generated_sql() -> None:
     assert result.row_count == 1
     assert result.rows[0]["campaign_id"] == "camp_000029"
     assert result.validation.referenced_tables == ("ai_native.ai_campaign_roi_summary",)
+    assert conn.cursor_instance.executed_sql[0] == "set local statement_timeout = 5000"
 
 
 def test_mock_provider_supports_campaign_objective_aggregation() -> None:

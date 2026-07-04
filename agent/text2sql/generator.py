@@ -15,6 +15,7 @@ Allowed tables:
 - marts.mart_campaign_roas_prediction_monitor: latest campaign ROAS prediction metrics.
 - ai_native.ai_creator_sponsored_summary: creator grain sponsored-content review signals.
 """.strip()
+STATEMENT_TIMEOUT_MS = 5000
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ def execute_generated_question(
     conn: psycopg.Connection,
     client: SqlGenerationClient,
     schema_context: str = SCHEMA_CONTEXT_V1,
+    statement_timeout_ms: int = STATEMENT_TIMEOUT_MS,
 ) -> GeneratedText2SqlResult:
     generation = client.generate_sql(
         SqlGenerationRequest(question=question, schema_context=schema_context)
@@ -50,6 +52,7 @@ def execute_generated_question(
     validation = validate_generated_sql(generation.sql)
 
     with conn.cursor() as cur:
+        cur.execute(f"set local statement_timeout = {int(statement_timeout_ms)}")
         cur.execute(validation.sql)
         records = cur.fetchmany(MAX_RESULT_ROWS)
         columns = [column.name for column in cur.description or []]

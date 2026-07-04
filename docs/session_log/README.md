@@ -99,3 +99,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-04 · Session 26 · GitHub Actions CI](2026-07-04_session-26_github-actions-ci.md) — Python 3.11 + uv 기반 ruff/pytest workflow / README CI badge / Phase 8C 체크포인트
 - [2026-07-04 · Session 27 · CI Remote Pass and Text2SQL Eval Comparison](2026-07-04_session-27_ci-remote-and-text2sql-comparison.md) — GitHub Actions run success 확인 / v1 18 PASS vs v2 mock 2 PASS·16 REFUSED 비교표
 - [2026-07-04 · Session 28 · Text2SQL v2 Mock Coverage Expansion](2026-07-04_session-28_text2sql-v2-mock-coverage.md) — p5 campaign ROI·prediction monitor mock coverage 확장 / v2 eval 8 PASS·10 REFUSED·0 BLOCKED
+- [2026-07-04 · Session 29 · Text2SQL v2 API Hardening](2026-07-04_session-29_text2sql-v2-api-hardening.md) — statement timeout / best-effort audit log / `/query/v2` 400·404·500 tests / pytest 16개 통과

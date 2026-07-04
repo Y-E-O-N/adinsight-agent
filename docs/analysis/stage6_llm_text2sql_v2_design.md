@@ -276,6 +276,13 @@ Verified:
   - answerable exec_acc `1.0`
   - refuse_rate `0.5556`
 
+Hardening implemented:
+
+- `statement_timeout` is set before generated SQL execution.
+- `/query/v2` writes best-effort audit records to `logs/text2sql_audit.jsonl`.
+- `/query/v2` has explicit success, refused, blocked, and unexpected-error response handling.
+- API tests cover `200`, `400`, `404`, and `500` paths.
+
 ## 15. Next Concrete Step
 
 Connect a richer provider after keeping the same eval gate:
