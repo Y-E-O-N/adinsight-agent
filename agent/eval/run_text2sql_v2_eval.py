@@ -13,7 +13,8 @@ import yaml
 
 from agent.eval.run_expected_sql import QUESTIONS_PATH
 from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
-from agent.text2sql.llm_client import MockSqlGenerationClient
+from agent.text2sql.llm_client import SqlGenerationClient
+from agent.text2sql.provider import get_sql_generation_provider
 from agent.text2sql.registry import serialize_value
 from agent.text2sql.validator import Text2SqlValidationError
 
@@ -64,11 +65,11 @@ def main() -> None:
 
 def run_eval() -> list[V2EvalCaseResult]:
     questions = load_questions()
-    client = MockSqlGenerationClient()
+    provider = get_sql_generation_provider()
 
     with get_connection() as conn:
         return [
-            evaluate_question(question, conn, client)
+            evaluate_question(question, conn, provider.client, provider.mode)
             for question in questions
         ]
 
@@ -76,14 +77,15 @@ def run_eval() -> list[V2EvalCaseResult]:
 def evaluate_question(
     question: dict[str, Any],
     conn: psycopg.Connection,
-    client: MockSqlGenerationClient,
+    client: SqlGenerationClient,
+    mode: str,
 ) -> V2EvalCaseResult:
     started_at = perf_counter()
     question_id = str(question["id"])
     expected_rows = int(question["current_result_rows"])
 
     try:
-        generated = execute_generated_question(str(question["question"]), conn, client)
+        generated = execute_generated_question(str(question["question"]), conn, client, mode=mode)
     except Text2SqlNotAnswerableError as exc:
         return V2EvalCaseResult(
             question_id=question_id,

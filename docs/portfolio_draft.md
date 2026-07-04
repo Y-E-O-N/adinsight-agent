@@ -5,7 +5,7 @@
 >
 > 이 문서가 충분히 채워지면 → `README.md`, 1-pager PDF, 이력서 bullet, 면접 토크포인트로 **거의 자동 변환** 됩니다.
 
-마지막 갱신: **2026-06-23** (Text2SQL campaign ROI / prediction monitor eval 확장)
+마지막 갱신: **2026-07-04** (Text2SQL v2 provider adapter + API hardening)
 
 ---
 
@@ -302,6 +302,7 @@
 - [x] AWS target architecture — `docs/architecture/aws_target_architecture.md`, skeleton: `infra/aws/README.md`
 - [x] LLM Text2SQL v2 design + mock endpoint/eval — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`, eval: `8 PASS / 10 REFUSED / 0 BLOCKED`
 - [x] Text2SQL v1/v2 eval comparison — `docs/analysis/stage6_text2sql_v1_v2_eval_comparison.md`
+- [x] Text2SQL v2 API hardening + provider adapter — statement timeout, audit JSONL, `TEXT2SQL_PROVIDER=mock|http_json`, pytest 20개 통과
 
 ## 권장 (블로그·심층 문서용)
 - [ ] Airflow task 실행 이력 (30일)

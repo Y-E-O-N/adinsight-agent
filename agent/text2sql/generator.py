@@ -41,6 +41,7 @@ def execute_generated_question(
     client: SqlGenerationClient,
     schema_context: str = SCHEMA_CONTEXT_V1,
     statement_timeout_ms: int = STATEMENT_TIMEOUT_MS,
+    mode: str = "llm_generated_sql_v2_mock",
 ) -> GeneratedText2SqlResult:
     generation = client.generate_sql(
         SqlGenerationRequest(question=question, schema_context=schema_context)
@@ -71,7 +72,7 @@ def execute_generated_question(
         rows=rows,
         row_count=len(rows),
         answer=build_generated_answer(question, rows),
-        mode="llm_generated_sql_v2_mock",
+        mode=mode,
         expected_tables=generation.expected_tables,
         reason=generation.reason,
         validation=validation,

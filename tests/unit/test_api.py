@@ -121,7 +121,7 @@ def test_query_endpoint(monkeypatch) -> None:
 def test_query_v2_endpoint(monkeypatch) -> None:
     audit_records = []
 
-    def fake_execute_generated_question(question, conn, client):
+    def fake_execute_generated_question(question, conn, client, mode):
         return GeneratedText2SqlResult(
             question=question,
             sql="select campaign_id, roas from ai_native.ai_campaign_roi_summary limit 5",
@@ -169,7 +169,7 @@ def test_query_v2_endpoint(monkeypatch) -> None:
 def test_query_v2_endpoint_returns_404_for_not_answerable(monkeypatch) -> None:
     audit_records = []
 
-    def fake_execute_generated_question(question, conn, client):
+    def fake_execute_generated_question(question, conn, client, mode):
         raise Text2SqlNotAnswerableError("not answerable in unit test")
 
     class FakeConnection:
@@ -197,7 +197,7 @@ def test_query_v2_endpoint_returns_404_for_not_answerable(monkeypatch) -> None:
 def test_query_v2_endpoint_returns_400_for_blocked_sql(monkeypatch) -> None:
     audit_records = []
 
-    def fake_execute_generated_question(question, conn, client):
+    def fake_execute_generated_question(question, conn, client, mode):
         raise Text2SqlValidationError("blocked in unit test")
 
     class FakeConnection:
@@ -225,7 +225,7 @@ def test_query_v2_endpoint_returns_400_for_blocked_sql(monkeypatch) -> None:
 def test_query_v2_endpoint_returns_500_for_unexpected_error(monkeypatch) -> None:
     audit_records = []
 
-    def fake_execute_generated_question(question, conn, client):
+    def fake_execute_generated_question(question, conn, client, mode):
         raise RuntimeError("unexpected unit test error")
 
     class FakeConnection:

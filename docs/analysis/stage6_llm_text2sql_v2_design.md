@@ -283,11 +283,61 @@ Hardening implemented:
 - `/query/v2` has explicit success, refused, blocked, and unexpected-error response handling.
 - API tests cover `200`, `400`, `404`, and `500` paths.
 
-## 15. Next Concrete Step
+## 15. Provider Adapter Status
+
+Implemented:
+
+- `agent/text2sql/provider.py`
+- `TEXT2SQL_PROVIDER=mock` default
+- `TEXT2SQL_PROVIDER=http_json` external gateway adapter
+- shared provider factory for:
+  - `POST /query/v2`
+  - `agent/eval/run_text2sql_v2_eval.py`
+
+`http_json` request contract:
+
+```json
+{
+  "question": "Which campaigns have the highest ROAS?",
+  "schema_context": "Allowed tables: ..."
+}
+```
+
+`http_json` response contract:
+
+```json
+{
+  "answerability": "answerable",
+  "sql": "select ...",
+  "expected_tables": ["ai_native.ai_campaign_roi_summary"],
+  "reason": "Question asks for campaigns ranked by ROAS."
+}
+```
+
+Environment variables:
+
+- `TEXT2SQL_PROVIDER`: `mock` or `http_json`
+- `TEXT2SQL_PROVIDER_URL`: required for `http_json`
+- `TEXT2SQL_PROVIDER_API_KEY`: optional bearer token
+- `TEXT2SQL_PROVIDER_TIMEOUT_SECONDS`: default `20`
+
+Verified:
+
+- `uv run ruff check` -> pass
+- `uv run pytest -q` -> `20 passed`
+- `git diff --check` -> pass
+
+Remaining:
+
+- deploy or choose an actual external provider gateway
+- run `agent/eval/run_text2sql_v2_eval.py` with `TEXT2SQL_PROVIDER=http_json`
+- compare mock vs real-provider Exec Acc, Refuse Rate, Unsafe Block Rate, p50/p95 latency
+
+## 16. Next Concrete Step
 
 Connect a richer provider after keeping the same eval gate:
 
 - keep `agent/eval/run_text2sql_v2_eval.py`
-- add a provider adapter behind `SqlGenerationClient`
+- connect the real provider behind the existing `http_json` adapter
 - compare provider output against `agent/eval/text2sql_questions.yml`
 - record Exec Acc, Refuse Rate, Unsafe Block Rate, p50/p95 latency

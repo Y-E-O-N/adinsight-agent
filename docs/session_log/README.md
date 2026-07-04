@@ -100,3 +100,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-04 · Session 27 · CI Remote Pass and Text2SQL Eval Comparison](2026-07-04_session-27_ci-remote-and-text2sql-comparison.md) — GitHub Actions run success 확인 / v1 18 PASS vs v2 mock 2 PASS·16 REFUSED 비교표
 - [2026-07-04 · Session 28 · Text2SQL v2 Mock Coverage Expansion](2026-07-04_session-28_text2sql-v2-mock-coverage.md) — p5 campaign ROI·prediction monitor mock coverage 확장 / v2 eval 8 PASS·10 REFUSED·0 BLOCKED
 - [2026-07-04 · Session 29 · Text2SQL v2 API Hardening](2026-07-04_session-29_text2sql-v2-api-hardening.md) — statement timeout / best-effort audit log / `/query/v2` 400·404·500 tests / pytest 16개 통과
+- [2026-07-04 · Session 30 · Text2SQL v2 Provider Adapter](2026-07-04_session-30_text2sql-v2-provider-adapter.md) — `TEXT2SQL_PROVIDER=mock|http_json` / API·eval runner 공통 provider factory / pytest 20개 통과

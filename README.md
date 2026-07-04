@@ -157,7 +157,21 @@ Superset dashboard와 `/query`를 함께 보여주는 데모 흐름은 `docs/ana
 Text2SQL 데모 GIF는 `docs/images/06_text2sql_demo.gif`, 실측 evidence는 `docs/analysis/stage6_text2sql_demo_evidence.md`에 저장했습니다.
 
 AWS target architecture는 `docs/architecture/aws_target_architecture.md`, 인프라 skeleton은 `infra/aws/README.md`에 정리했습니다.
-LLM SQL generation v2 설계와 provider-free mock harness는 `docs/analysis/stage6_llm_text2sql_v2_design.md`에 정리했습니다. 현재 `/query/v2`는 mock provider로 SQL generation boundary와 validator를 검증하며, v2 eval runner는 expected-SQL 18문항 중 mock answerable 2문항 PASS, 16문항 REFUSED를 기록합니다. v1 expected-SQL registry는 guardrail/eval baseline으로 유지합니다.
+LLM SQL generation v2 설계와 provider adapter는 `docs/analysis/stage6_llm_text2sql_v2_design.md`에 정리했습니다. 현재 `/query/v2` 기본값은 mock provider이며 SQL generation boundary, validator, statement timeout, audit log를 검증합니다. v2 eval runner는 expected-SQL 18문항 중 mock answerable 8문항 PASS, 10문항 REFUSED를 기록합니다. v1 expected-SQL registry는 guardrail/eval baseline으로 유지합니다.
+
+Text2SQL v2 provider 선택:
+```bash
+# 기본값: provider-free mock
+TEXT2SQL_PROVIDER=mock
+
+# 외부 Text2SQL gateway 연결 시
+TEXT2SQL_PROVIDER=http_json
+TEXT2SQL_PROVIDER_URL=https://example.com/text2sql
+TEXT2SQL_PROVIDER_API_KEY=...
+TEXT2SQL_PROVIDER_TIMEOUT_SECONDS=20
+```
+
+`http_json` provider는 `{question, schema_context}`를 POST하고 `{answerability, sql, expected_tables, reason}` JSON을 받는 내부 contract입니다. 실제 OpenAI/Bedrock 호출은 이 gateway 뒤에 붙이고, FastAPI와 eval runner는 같은 adapter boundary를 사용합니다.
 
 ### 종료
 ```bash

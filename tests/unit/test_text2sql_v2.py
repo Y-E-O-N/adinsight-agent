@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from agent.text2sql.generator import execute_generated_question
 from agent.text2sql.llm_client import MockSqlGenerationClient, SqlGenerationRequest
+from agent.text2sql.provider import (
+    HttpJsonSqlGenerationClient,
+    Text2SqlProviderConfigError,
+    get_sql_generation_provider,
+    parse_sql_generation_response,
+)
 from agent.text2sql.validator import Text2SqlValidationError, validate_generated_sql
 
 
@@ -117,3 +123,52 @@ def test_mock_provider_supports_campaign_objective_aggregation() -> None:
     assert response.answerability == "answerable"
     assert response.expected_tables == ("ai_native.ai_campaign_roi_summary",)
     assert "group by campaign_objective" in response.sql
+
+
+def test_provider_factory_defaults_to_mock() -> None:
+    provider = get_sql_generation_provider({})
+
+    assert provider.kind == "mock"
+    assert provider.mode == "llm_generated_sql_v2_mock"
+    assert isinstance(provider.client, MockSqlGenerationClient)
+
+
+def test_provider_factory_builds_http_json_client() -> None:
+    provider = get_sql_generation_provider(
+        {
+            "TEXT2SQL_PROVIDER": "http_json",
+            "TEXT2SQL_PROVIDER_URL": "https://example.test/text2sql",
+            "TEXT2SQL_PROVIDER_API_KEY": "unit-test-key",
+            "TEXT2SQL_PROVIDER_TIMEOUT_SECONDS": "7",
+        }
+    )
+
+    assert provider.kind == "http_json"
+    assert provider.mode == "llm_generated_sql_v2_http_json"
+    assert isinstance(provider.client, HttpJsonSqlGenerationClient)
+    assert provider.client.url == "https://example.test/text2sql"
+    assert provider.client.api_key == "unit-test-key"
+    assert provider.client.timeout_seconds == 7
+
+
+def test_provider_factory_requires_http_json_url() -> None:
+    try:
+        get_sql_generation_provider({"TEXT2SQL_PROVIDER": "http_json"})
+    except Text2SqlProviderConfigError as exc:
+        assert "TEXT2SQL_PROVIDER_URL is required" in str(exc)
+    else:
+        raise AssertionError("Expected Text2SqlProviderConfigError")
+
+
+def test_parse_sql_generation_response_validates_contract() -> None:
+    response = parse_sql_generation_response(
+        {
+            "answerability": "answerable",
+            "sql": "select campaign_id from ai_native.ai_campaign_roi_summary limit 5",
+            "expected_tables": ["ai_native.ai_campaign_roi_summary"],
+            "reason": "unit test",
+        }
+    )
+
+    assert response.answerability == "answerable"
+    assert response.expected_tables == ("ai_native.ai_campaign_roi_summary",)

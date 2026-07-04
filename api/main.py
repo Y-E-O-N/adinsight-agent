@@ -20,7 +20,7 @@ from agent.eval.run_campaign_roas_model import (
 )
 from agent.text2sql.audit import write_text2sql_audit
 from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
-from agent.text2sql.llm_client import MockSqlGenerationClient
+from agent.text2sql.provider import get_sql_generation_provider
 from agent.text2sql.registry import Text2SqlNoMatchError, Text2SqlUnsafeSqlError, execute_question
 from agent.text2sql.validator import Text2SqlValidationError
 from api.schemas import (
@@ -116,11 +116,14 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
     mode = "llm_generated_sql_v2_mock"
 
     try:
+        provider = get_sql_generation_provider()
+        mode = provider.mode
         with get_connection() as conn:
             result = execute_generated_question(
                 request.question,
                 conn,
-                client=MockSqlGenerationClient(),
+                client=provider.client,
+                mode=provider.mode,
             )
     except Text2SqlNotAnswerableError as exc:
         latency_ms = round((perf_counter() - started_at) * 1000, 3)
