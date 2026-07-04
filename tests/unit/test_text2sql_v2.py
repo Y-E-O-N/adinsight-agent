@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from agent.text2sql.generator import execute_generated_question
-from agent.text2sql.llm_client import MockSqlGenerationClient
+from agent.text2sql.llm_client import MockSqlGenerationClient, SqlGenerationRequest
 from agent.text2sql.validator import Text2SqlValidationError, validate_generated_sql
 
 
@@ -100,3 +100,16 @@ def test_mock_generator_executes_valid_generated_sql() -> None:
     assert result.row_count == 1
     assert result.rows[0]["campaign_id"] == "camp_000029"
     assert result.validation.referenced_tables == ("ai_native.ai_campaign_roi_summary",)
+
+
+def test_mock_provider_supports_campaign_objective_aggregation() -> None:
+    response = MockSqlGenerationClient().generate_sql(
+        SqlGenerationRequest(
+            question="Show average ROAS and net payment amount by campaign objective.",
+            schema_context="unit test schema",
+        )
+    )
+
+    assert response.answerability == "answerable"
+    assert response.expected_tables == ("ai_native.ai_campaign_roi_summary",)
+    assert "group by campaign_objective" in response.sql

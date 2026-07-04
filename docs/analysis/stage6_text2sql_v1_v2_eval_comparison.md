@@ -24,7 +24,7 @@ Text2SQL v1과 v2 mock harness를 같은 expected-SQL 평가셋 관점에서 비
 | Version | Mode | Total | PASS | FAIL | REFUSED | BLOCKED | Exec Acc | Refuse Rate | Unsafe Block Rate |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | v1 | `deterministic_expected_sql_registry_v1` | 18 | 18 | 0 | 0 | 0 | 1.0000 | 0.0000 | 0.0000 |
-| v2 mock | `llm_generated_sql_v2_mock` | 18 | 2 | 0 | 16 | 0 | 1.0000 answerable-only | 0.8889 | 0.0000 |
+| v2 mock | `llm_generated_sql_v2_mock` | 18 | 8 | 0 | 10 | 0 | 1.0000 answerable-only | 0.5556 | 0.0000 |
 
 ## 4. Interpretation
 
@@ -36,23 +36,22 @@ v1 is the production-safe baseline:
 
 v2 mock is a provider-boundary smoke:
 
-- It answers only the first two smoke questions implemented in `MockSqlGenerationClient`.
-- It refuses 16 unsupported questions.
+- It answers the campaign ROI and prediction-monitor questions implemented in `MockSqlGenerationClient`.
+- It refuses 10 unsupported creator-review questions.
 - It did not generate unsafe SQL.
-- Its answerable-only Exec Acc is `1.0`, but this does not mean v2 is better than v1. It means the two supported mock cases match expected-SQL behavior.
+- Its answerable-only Exec Acc is `1.0`, but this does not mean v2 is better than v1. It means the supported mock cases match expected-SQL behavior.
 
 ## 5. Failure / Refusal Cases
 
-The 16 REFUSED cases are expected until a richer mock provider or real LLM provider is added.
+The 10 REFUSED cases are expected until a richer mock provider or real LLM provider is added.
 
 Representative refusal categories:
 
 | Category | Example question id | Reason |
 |---|---|---|
-| Creator review questions | `p4_q001` | Mock provider only supports initial campaign ROAS and MAE/bias smoke questions. |
-| Campaign objective aggregation | `p5_q002` | Mock provider does not yet generate GROUP BY objective SQL. |
-| Korean conversion campaign query | `p5_q003` | Mock provider does not yet cover Korean business synonyms. |
-| Prediction error ranking | `p5_q005` | Mock provider does not yet generate latest snapshot error-ranking SQL. |
+| Creator review priority | `p4_q001` | Mock provider currently focuses on campaign ROI and prediction-monitor questions. |
+| Creator sponsored candidates | `p4_q004` | Creator-review schema coverage is deferred until the next provider expansion. |
+| Creator engagement signals | `p4_q009` | Mock provider does not yet generate creator-level review SQL. |
 
 ## 6. Safety Notes
 
@@ -64,8 +63,8 @@ Representative refusal categories:
 
 | Target | Current | Next target |
 |---|---:|---:|
-| v2 total PASS | 2 | 8+ |
-| v2 REFUSED | 16 | 10 or lower |
+| v2 total PASS | 8 | 12+ |
+| v2 REFUSED | 10 | 6 or lower |
 | v2 BLOCKED unsafe SQL | 0 | 0 |
 | v2 FAIL among answerable questions | 0 | 0 |
 

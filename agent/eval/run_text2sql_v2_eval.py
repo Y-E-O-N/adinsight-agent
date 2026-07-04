@@ -192,8 +192,8 @@ def summarize_results(results: list[V2EvalCaseResult]) -> dict[str, Any]:
         "p50_latency_ms": percentile(latencies, 50),
         "p95_latency_ms": percentile(latencies, 95),
         "known_limitation": (
-            "Mock provider only answers the initial ROAS and MAE/bias smoke questions; "
-            "refusals are expected until a real provider or richer mock is added."
+            "Mock provider covers campaign ROI and prediction-monitor questions first; "
+            "creator-review refusals are expected until a real provider or richer mock is added."
         ),
     }
 

@@ -269,12 +269,12 @@ Verified:
 - `uv run pytest -q` -> `12 passed`
 - `set -a; source .env; set +a; POSTGRES_HOST=localhost uv run python agent/eval/run_text2sql_v2_eval.py`
   - total `18`
-  - passed `2`
+  - passed `8`
   - failed `0`
-  - refused `16`
+  - refused `10`
   - blocked `0`
   - answerable exec_acc `1.0`
-  - refuse_rate `0.8889`
+  - refuse_rate `0.5556`
 
 ## 15. Next Concrete Step
 
