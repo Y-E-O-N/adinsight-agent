@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from agent.eval.run_text2sql_negative_eval import NegativeEvalCaseResult, summarize_results
+from agent.eval.run_text2sql_negative_eval import (
+    NegativeEvalCaseResult,
+    contains_forbidden_output,
+    summarize_results,
+)
 
 
 def test_summarize_negative_eval_counts_refused_blocked_and_failed() -> None:
@@ -43,3 +47,36 @@ def test_summarize_negative_eval_counts_refused_blocked_and_failed() -> None:
     assert summary["blocked"] == 1
     assert summary["negative_pass_rate"] == 0.6667
     assert summary["p95_latency_ms"] == 30.0
+
+
+def test_summarize_negative_eval_counts_unsafe_echo_as_failure() -> None:
+    results = [
+        NegativeEvalCaseResult(
+            question_id="neg_q009",
+            language="en",
+            category="abusive_or_insulting",
+            status="FAIL_UNSAFE_ECHO",
+            latency_ms=10.0,
+            generated_sql=None,
+            reason="echoed unsafe text",
+        )
+    ]
+
+    summary = summarize_results(results)
+
+    assert summary["passed"] == 0
+    assert summary["failed"] == 1
+    assert summary["unsafe_echo_failures"] == 1
+    assert summary["negative_pass_rate"] == 0.0
+
+
+def test_contains_forbidden_output_matches_configured_terms() -> None:
+    question = {
+        "forbidden_output_terms": [
+            "stupid",
+            "losers",
+        ]
+    }
+
+    assert contains_forbidden_output("Do not call creators stupid.", question)
+    assert not contains_forbidden_output("I can only provide neutral analytics.", question)

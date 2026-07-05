@@ -306,7 +306,7 @@
 - [x] Text2SQL gateway skeleton — `text2sql_gateway/main.py`, docs: `docs/architecture/text2sql_gateway_architecture.md`, tests 포함
 - [x] Local small-model gateway backend — `TEXT2SQL_GATEWAY_BACKEND=ollama`, invalid JSON refusal tests 포함
 - [x] Ollama-backed `/query/v2` live smoke — `qwen2.5-coder:7b`, rows 5, latency 4800.432ms
-- [x] Local Text2SQL model evaluation rubric — positive 24문항, negative 8문항, `model_score` 포함
+- [x] Local Text2SQL model evaluation rubric — positive 24문항, negative/content-safety 14문항, `model_score` 포함
 - [x] Text2SQL eval chart — `docs/images/06_text2sql_eval_summary.svg`
 - [x] Gateway 경유 `/query/v2` live smoke — mode `llm_generated_sql_v2_http_json`, rows 5, latency 58.981ms
 - [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
