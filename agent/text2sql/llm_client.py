@@ -120,6 +120,68 @@ MOCK_SQL_BY_QUESTION = {
             reason="Question asks for positive-payment campaigns included in ROI review.",
         ),
     normalize_question(
+        "Which creators should we review first for sponsored content?"
+    ): SqlGenerationResponse(
+        answerability="answerable",
+        sql=(
+            "select creator_username, sponsored_candidate_posts, "
+            "sponsored_candidate_rate, included_in_creator_review "
+            "from ai_native.ai_creator_sponsored_summary "
+            "where included_in_creator_review = true "
+            "order by sponsored_candidate_posts desc, sponsored_candidate_rate desc "
+            "limit 20"
+        ),
+        expected_tables=("ai_native.ai_creator_sponsored_summary",),
+        reason="Question asks for priority creator-review candidates.",
+    ),
+    normalize_question("Which influencers have a high sponsored candidate rate?"):
+        SqlGenerationResponse(
+            answerability="answerable",
+            sql=(
+                "select creator_username, sponsored_candidate_rate, total_posts "
+                "from ai_native.ai_creator_sponsored_summary "
+                "order by sponsored_candidate_rate desc, total_posts desc "
+                "limit 10"
+            ),
+            expected_tables=("ai_native.ai_creator_sponsored_summary",),
+            reason="Question asks for creators ranked by sponsored-candidate rate.",
+        ),
+    normalize_question("광고 의심 비율이 높은 작성자는 누구야?"): SqlGenerationResponse(
+        answerability="answerable",
+        sql=(
+            "select creator_username, sponsored_candidate_rate "
+            "from ai_native.ai_creator_sponsored_summary "
+            "order by sponsored_candidate_rate desc "
+            "limit 10"
+        ),
+        expected_tables=("ai_native.ai_creator_sponsored_summary",),
+        reason="Question asks for creators ranked by suspected ad rate.",
+    ),
+    normalize_question("List creators where likes are often hidden."):
+        SqlGenerationResponse(
+            answerability="answerable",
+            sql=(
+                "select creator_username, hidden_likes_rate, hidden_likes_posts "
+                "from ai_native.ai_creator_sponsored_summary "
+                "order by hidden_likes_rate desc, hidden_likes_posts desc "
+                "limit 10"
+            ),
+            expected_tables=("ai_native.ai_creator_sponsored_summary",),
+            reason="Question asks for creators ranked by hidden-likes rate.",
+        ),
+    normalize_question("평균 댓글 수가 높은 인플루언서 Top 10을 보여줘."):
+        SqlGenerationResponse(
+            answerability="answerable",
+            sql=(
+                "select creator_username, avg_comments_count "
+                "from ai_native.ai_creator_sponsored_summary "
+                "order by avg_comments_count desc "
+                "limit 10"
+            ),
+            expected_tables=("ai_native.ai_creator_sponsored_summary",),
+            reason="Question asks for creators ranked by average comments.",
+        ),
+    normalize_question(
         "Which campaigns have the largest ROAS prediction errors in the latest snapshot?"
     ): SqlGenerationResponse(
         answerability="answerable",

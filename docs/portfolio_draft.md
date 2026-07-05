@@ -300,7 +300,7 @@
 - [ ] locust 부하 테스트 스크린샷 (RPS, p95)
 - [x] CI 배지 (GitHub Actions) — `.github/workflows/ci.yml`
 - [x] AWS target architecture — `docs/architecture/aws_target_architecture.md`, skeleton: `infra/aws/README.md`
-- [x] LLM Text2SQL v2 design + mock endpoint/eval — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`, eval: `8 PASS / 10 REFUSED / 0 BLOCKED`
+- [x] LLM Text2SQL v2 design + mock endpoint/eval — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`, eval: `13 PASS / 5 REFUSED / 0 BLOCKED`
 - [x] Text2SQL v1/v2 eval comparison — `docs/analysis/stage6_text2sql_v1_v2_eval_comparison.md`
 - [x] Text2SQL v2 API hardening + provider adapter — statement timeout, audit JSONL, `TEXT2SQL_PROVIDER=mock|http_json`, pytest 20개 통과
 

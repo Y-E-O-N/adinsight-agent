@@ -326,6 +326,14 @@ Verified:
 - `uv run ruff check` -> pass
 - `uv run pytest -q` -> `20 passed`
 - `git diff --check` -> pass
+- mock eval after focused creator coverage:
+  - total `18`
+  - passed `13`
+  - failed `0`
+  - refused `5`
+  - blocked `0`
+  - answerable exec_acc `1.0`
+  - refuse_rate `0.2778`
 
 Remaining:
 
