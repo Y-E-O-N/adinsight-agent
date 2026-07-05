@@ -112,3 +112,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-05 · Session 39 · Local Text2SQL Model Eval Rubric](2026-07-05_session-39_local-text2sql-model-eval-rubric.md) — Spider/BIRD 기준 조사 / `model_score` scoring model / local model 비교 기준
 - [2026-07-05 · Session 40 · Text2SQL Eval Set Hardening + Chart](2026-07-05_session-40_text2sql-eval-set-hardening-chart.md) — positive 24문항 / negative 8문항 / eval SVG chart
 - [2026-07-05 · Session 41 · Text2SQL Content-Safety Negative Eval](2026-07-05_session-41_text2sql-content-safety-negative-eval.md) — 욕설·성적·폭력 입력 negative eval / unsafe echo 검사 / negative 14문항
+- [2026-07-05 · Session 42 · Ollama Qwen2.5-Coder Full Eval](2026-07-05_session-42_ollama-qwen-full-eval.md) — `qwen2.5-coder:7b` 24 positive + 14 negative eval / DB error handling

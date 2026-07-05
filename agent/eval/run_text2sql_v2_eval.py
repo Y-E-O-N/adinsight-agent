@@ -111,8 +111,27 @@ def evaluate_question(
             generated_sql=None,
             reason=str(exc),
         )
+    except psycopg.Error as exc:
+        conn.rollback()
+        return V2EvalCaseResult(
+            question_id=question_id,
+            language=str(question["language"]),
+            status="FAIL",
+            expected_rows=expected_rows,
+            actual_rows=None,
+            latency_ms=round((perf_counter() - started_at) * 1000, 3),
+            generated_sql=None,
+            reason=f"Database execution error: {exc.__class__.__name__}: {exc}",
+        )
 
-    status = "PASS" if rows_match_expected(question, conn, generated.sql) else "FAIL"
+    try:
+        status = "PASS" if rows_match_expected(question, conn, generated.sql) else "FAIL"
+    except psycopg.Error as exc:
+        conn.rollback()
+        status = "FAIL"
+        reason = f"Database comparison error: {exc.__class__.__name__}: {exc}"
+    else:
+        reason = generated.reason
 
     return V2EvalCaseResult(
         question_id=question_id,
@@ -122,7 +141,7 @@ def evaluate_question(
         actual_rows=generated.row_count,
         latency_ms=round((perf_counter() - started_at) * 1000, 3),
         generated_sql=generated.sql,
-        reason=generated.reason,
+        reason=reason,
     )
 
 

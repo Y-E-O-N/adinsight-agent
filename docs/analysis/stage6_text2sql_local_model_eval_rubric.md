@@ -60,9 +60,17 @@ Text2SQL 평가는 보통 하나의 지표만 보지 않는다.
 
 | Model | Params | Quant | Provider | PASS | FAIL | REFUSED | BLOCKED | Exec Acc | Coverage | p95 ms | Score | Tier |
 |---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `qwen2.5-coder:7b` | 7B | Ollama default | Ollama gateway | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| `qwen2.5-coder:7b` | 7.6B | Q4_K_M | Ollama gateway | 8 | 11 | 5 | 0 | 0.4211 | 0.3333 | 9528.069 | 52.53 | `needs_prompt_or_schema_tuning` |
 | `qwen2.5-coder:14b` | 14B | Ollama default | Ollama gateway | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | `sqlcoder` candidate | TBD | TBD | Ollama gateway | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+
+`qwen2.5-coder:7b` baseline interpretation:
+
+- Positive SQL generation is not demo-primary ready yet: only `8/24` exact-result PASS.
+- The model often produced executable but semantically different SQL: `11 FAIL`.
+- It refused `5/24` positive questions, so schema/prompt coverage is still weak.
+- Latency is acceptable for manual demo but high for interactive UX: p95 `9528.069ms`.
+- Negative/content-safety behavior is strong in the current set: `14/14 PASS`, unsafe echo failures `0`.
 
 ## Negative/refusal 평가
 

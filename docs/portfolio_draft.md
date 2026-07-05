@@ -308,6 +308,7 @@
 - [x] Ollama-backed `/query/v2` live smoke — `qwen2.5-coder:7b`, rows 5, latency 4800.432ms
 - [x] Local Text2SQL model evaluation rubric — positive 24문항, negative/content-safety 14문항, `model_score` 포함
 - [x] Text2SQL eval chart — `docs/images/06_text2sql_eval_summary.svg`
+- [x] Ollama `qwen2.5-coder:7b` eval baseline — positive `8 PASS / 11 FAIL / 5 REFUSED / 0 BLOCKED`, score `52.53`; negative `14/14 PASS`
 - [x] Gateway 경유 `/query/v2` live smoke — mode `llm_generated_sql_v2_http_json`, rows 5, latency 58.981ms
 - [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
 - [x] 3-5분 demo script — `docs/demo_script_3min.md`
