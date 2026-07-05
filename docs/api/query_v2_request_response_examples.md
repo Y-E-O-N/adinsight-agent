@@ -142,7 +142,7 @@ External gateway:
 
 ```bash
 TEXT2SQL_PROVIDER=http_json
-TEXT2SQL_PROVIDER_URL=https://example.com/text2sql
+TEXT2SQL_PROVIDER_URL=http://127.0.0.1:8010/text2sql/generate
 TEXT2SQL_PROVIDER_API_KEY=...
 TEXT2SQL_PROVIDER_TIMEOUT_SECONDS=20
 ```

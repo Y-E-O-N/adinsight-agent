@@ -1,8 +1,8 @@
 # =============================================================================
 # docker-compose.yml — AdInsight Agent 로컬 데이터 스택 (Phase 1)
 # -----------------------------------------------------------------------------
-# 서비스: postgres(pgvector) / redis / airflow(5종) / flower / superset / api
-# 포트:   5432 / 6379 / 8081 / 8088 / 5555 / 8000
+# 서비스: postgres(pgvector) / redis / airflow(5종) / flower / superset / api / text2sql-gateway
+# 포트:   5432 / 6379 / 8081 / 8088 / 5555 / 8000 / 8010
 # 실무 관례:
 #   - 이미지 태그 pin (latest 금지)
 #   - 모든 서비스 healthcheck + depends_on condition 으로 기동 순서 보장
@@ -276,6 +276,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       MODEL_ARTIFACT_PATH: agent/model_artifacts/campaign_roas_linear_v1.json
+      TEXT2SQL_PROVIDER: ${TEXT2SQL_PROVIDER:-mock}
+      TEXT2SQL_PROVIDER_URL: ${TEXT2SQL_PROVIDER_URL:-}
+      TEXT2SQL_PROVIDER_API_KEY: ${TEXT2SQL_PROVIDER_API_KEY:-}
+      TEXT2SQL_PROVIDER_TIMEOUT_SECONDS: ${TEXT2SQL_PROVIDER_TIMEOUT_SECONDS:-20}
     ports:
       - "8000:8000"
     depends_on:
@@ -283,6 +287,28 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # text2sql-gateway — provider-facing SQL generation gateway (localhost:8010)
+  # ---------------------------------------------------------------------------
+  text2sql-gateway:
+    build:
+      context: .
+      dockerfile: ./infra/api/Dockerfile
+    image: adinsight/api:0.1.0
+    container_name: adinsight-text2sql-gateway
+    restart: unless-stopped
+    command: ["uvicorn", "text2sql_gateway.main:app", "--host", "0.0.0.0", "--port", "8010"]
+    environment:
+      TEXT2SQL_GATEWAY_API_KEY: ${TEXT2SQL_GATEWAY_API_KEY:-}
+    ports:
+      - "8010:8010"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/health').read()"]
       interval: 30s
       timeout: 10s
       retries: 5

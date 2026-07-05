@@ -171,7 +171,16 @@ TEXT2SQL_PROVIDER_API_KEY=...
 TEXT2SQL_PROVIDER_TIMEOUT_SECONDS=20
 ```
 
-`http_json` provider는 `{question, schema_context}`를 POST하고 `{answerability, sql, expected_tables, reason}` JSON을 받는 내부 contract입니다. 실제 OpenAI/Bedrock 호출은 이 gateway 뒤에 붙이고, FastAPI와 eval runner는 같은 adapter boundary를 사용합니다.
+`http_json` provider는 `{question, schema_context}`를 POST하고 `{answerability, sql, expected_tables, reason}` JSON을 받는 내부 contract입니다. 실제 OpenAI/Bedrock 호출은 이 gateway 뒤에 붙이고, FastAPI와 eval runner는 같은 adapter boundary를 사용합니다. Gateway-first 설계와 로컬 실행 방법은 `docs/architecture/text2sql_gateway_architecture.md`에 정리했습니다.
+
+Text2SQL gateway smoke:
+```bash
+uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
+
+curl -s -X POST http://127.0.0.1:8010/text2sql/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Which campaigns have the highest ROAS?","schema_context":"Allowed tables: ai_native.ai_campaign_roi_summary"}'
+```
 
 API request/response examples는 `docs/api/query_v2_request_response_examples.md`, 3-5분 데모 스크립트는 `docs/demo_script_3min.md`, 면접 토크포인트는 `docs/interview_talking_points.md`에 정리했습니다.
 이력서 bullet 초안은 `docs/resume_bullets.md`에 정리했습니다.

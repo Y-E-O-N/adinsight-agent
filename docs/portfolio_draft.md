@@ -303,6 +303,7 @@
 - [x] LLM Text2SQL v2 design + mock endpoint/eval — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`, eval: `13 PASS / 5 REFUSED / 0 BLOCKED`
 - [x] Text2SQL v1/v2 eval comparison — `docs/analysis/stage6_text2sql_v1_v2_eval_comparison.md`
 - [x] Text2SQL v2 API hardening + provider adapter — statement timeout, audit JSONL, `TEXT2SQL_PROVIDER=mock|http_json`, pytest 20개 통과
+- [x] Text2SQL gateway skeleton — `text2sql_gateway/main.py`, docs: `docs/architecture/text2sql_gateway_architecture.md`, tests 포함
 - [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
 - [x] 3-5분 demo script — `docs/demo_script_3min.md`
 - [x] 면접 talking points — `docs/interview_talking_points.md`
