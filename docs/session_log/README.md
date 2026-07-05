@@ -104,3 +104,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-05 · Session 31 · Text2SQL v2 Focused Coverage Expansion](2026-07-05_session-31_text2sql-v2-focused-coverage.md) — creator-review mock coverage 추가 / v2 eval 13 PASS·5 REFUSED·0 BLOCKED / no-LIMIT failure case 문서화
 - [2026-07-05 · Session 32 · Portfolio API Examples + Demo Assets](2026-07-05_session-32_portfolio-api-examples-demo-assets.md) — `/query/v2` request/response examples / 3-5분 demo script / interview talking points
 - [2026-07-05 · Session 33 · Architecture Diagram Export](2026-07-05_session-33_architecture-diagram-export.md) — README용 `docs/images/00_architecture.svg` 추가 / portfolio checklist 반영
+- [2026-07-05 · Session 34 · Resume Bullets](2026-07-05_session-34_resume-bullets.md) — data platform / ML / Text2SQL / DevOps / AWS mapping 이력서 bullet 초안

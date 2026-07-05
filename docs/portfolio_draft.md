@@ -306,6 +306,7 @@
 - [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
 - [x] 3-5분 demo script — `docs/demo_script_3min.md`
 - [x] 면접 talking points — `docs/interview_talking_points.md`
+- [x] 이력서 bullet 초안 — `docs/resume_bullets.md`
 
 ## 권장 (블로그·심층 문서용)
 - [ ] Airflow task 실행 이력 (30일)
@@ -381,7 +382,7 @@ ADR = "왜 X 가 아니라 Y 를 선택했는가" 를 1~2페이지로 남긴 결
 ### 포트폴리오 배포물
 - [ ] GitHub public + pin
 - [ ] README.en.md (영문)
-- [ ] 이력서 bullet 5개
+- [x] 이력서 bullet 5개 — `docs/resume_bullets.md`
 - [ ] 1-pager PDF
 - [ ] (선택) 노션/블로그 회고 글
 - [ ] LinkedIn 프로젝트 추가

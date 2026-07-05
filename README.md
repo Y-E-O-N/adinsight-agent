@@ -174,6 +174,7 @@ TEXT2SQL_PROVIDER_TIMEOUT_SECONDS=20
 `http_json` provider는 `{question, schema_context}`를 POST하고 `{answerability, sql, expected_tables, reason}` JSON을 받는 내부 contract입니다. 실제 OpenAI/Bedrock 호출은 이 gateway 뒤에 붙이고, FastAPI와 eval runner는 같은 adapter boundary를 사용합니다.
 
 API request/response examples는 `docs/api/query_v2_request_response_examples.md`, 3-5분 데모 스크립트는 `docs/demo_script_3min.md`, 면접 토크포인트는 `docs/interview_talking_points.md`에 정리했습니다.
+이력서 bullet 초안은 `docs/resume_bullets.md`에 정리했습니다.
 
 ### 종료
 ```bash
