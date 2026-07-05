@@ -200,7 +200,7 @@ def summarize_results(results: list[V2EvalCaseResult]) -> dict[str, Any]:
         "p50_latency_ms": percentile(latencies, 50),
         "p95_latency_ms": percentile(latencies, 95),
         "known_limitation": (
-            "Model score is a portfolio evaluation rubric over the current 18 expected-SQL "
+            "Model score is a portfolio evaluation rubric over the current expected-SQL "
             "questions; it is not a public benchmark score."
         ),
     }

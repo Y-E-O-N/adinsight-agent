@@ -35,14 +35,15 @@ questions:
 
   - id: p4_q002
     language: en
-    question: "Show creators with at least one sponsored candidate post."
+    question: "Show the top 20 creators with at least one sponsored candidate post."
     expected_model: ai_native.ai_creator_sponsored_summary
     expected_columns:
       - creator_username
       - sponsored_candidate_posts
     required_sql_features:
       - filter_sponsored_candidate_posts_gte_1
-    current_result_rows: 758
+      - limit_20
+    current_result_rows: 20
     expected_sql: |
       select
           creator_username,
@@ -50,10 +51,11 @@ questions:
       from ai_native.ai_creator_sponsored_summary
       where sponsored_candidate_posts >= 1
       order by sponsored_candidate_posts desc, creator_username asc
+      limit 20
 
   - id: p4_q003
     language: en
-    question: "Which influencers have a high sponsored candidate rate?"
+    question: "Which influencers have the top 10 sponsored candidate rates?"
     expected_model: ai_native.ai_creator_sponsored_summary
     expected_columns:
       - creator_username
@@ -74,7 +76,7 @@ questions:
 
   - id: p4_q004
     language: ko
-    question: "협찬 후보 게시물이 있는 크리에이터를 보여줘."
+    question: "협찬 후보 게시물이 있는 크리에이터 상위 20명을 보여줘."
     expected_model: ai_native.ai_creator_sponsored_summary
     expected_columns:
       - creator_username
@@ -83,7 +85,8 @@ questions:
       - korean_synonym_creator
       - korean_synonym_sponsored
       - filter_sponsored_candidate_posts_gte_1
-    current_result_rows: 758
+      - limit_20
+    current_result_rows: 20
     expected_sql: |
       select
           creator_username,
@@ -91,10 +94,11 @@ questions:
       from ai_native.ai_creator_sponsored_summary
       where sponsored_candidate_posts >= 1
       order by sponsored_candidate_posts desc, creator_username asc
+      limit 20
 
   - id: p4_q005
     language: ko
-    question: "광고 의심 비율이 높은 작성자는 누구야?"
+    question: "광고 의심 비율이 높은 작성자 Top 10은 누구야?"
     expected_model: ai_native.ai_creator_sponsored_summary
     expected_columns:
       - creator_username
@@ -115,26 +119,30 @@ questions:
 
   - id: p4_q006
     language: ko
-    question: "우선 검토 대상 크리에이터만 보여줘."
+    question: "우선 검토 대상 크리에이터 상위 20명만 보여줘."
     expected_model: ai_native.ai_creator_sponsored_summary
     expected_columns:
       - creator_username
+      - sponsored_candidate_posts
       - included_in_creator_review
     required_sql_features:
       - korean_synonym_review_target
       - filter_boolean_included_in_creator_review
-    current_result_rows: 1159
+      - limit_20
+    current_result_rows: 20
     expected_sql: |
       select
           creator_username,
+          sponsored_candidate_posts,
           included_in_creator_review
       from ai_native.ai_creator_sponsored_summary
       where included_in_creator_review = true
-      order by creator_username asc
+      order by sponsored_candidate_posts desc, creator_username asc
+      limit 20
 
   - id: p4_q007
     language: en
-    question: "List creators where likes are often hidden."
+    question: "List the top 10 creators where likes are often hidden."
     expected_model: ai_native.ai_creator_sponsored_summary
     expected_columns:
       - creator_username
@@ -175,14 +183,15 @@ questions:
 
   - id: p4_q009
     language: en
-    question: "Which creators have engagement signals available?"
+    question: "Show the first 20 creators that have engagement signals available."
     expected_model: ai_native.ai_creator_sponsored_summary
     expected_columns:
       - creator_username
       - has_engagement_signal
     required_sql_features:
       - filter_boolean_has_engagement_signal
-    current_result_rows: 2694
+      - limit_20
+    current_result_rows: 20
     expected_sql: |
       select
           creator_username,
@@ -190,6 +199,7 @@ questions:
       from ai_native.ai_creator_sponsored_summary
       where has_engagement_signal = true
       order by creator_username asc
+      limit 20
 
   - id: p4_q010
     language: ko
@@ -436,3 +446,177 @@ questions:
       )
       group by model_name
       order by model_name asc
+
+  - id: p5_q009
+    language: en
+    question: "Compare campaign count and average ROAS by objective and ROAS performance tier."
+    expected_model: ai_native.ai_campaign_roi_summary
+    expected_columns:
+      - campaign_objective
+      - roas_performance_tier
+      - campaign_count
+      - avg_roas
+    required_sql_features:
+      - group_by_campaign_objective
+      - group_by_roas_performance_tier
+      - aggregate_avg_roas
+    current_result_rows: 6
+    expected_sql: |
+      select
+          campaign_objective,
+          roas_performance_tier,
+          count(*) as campaign_count,
+          avg(roas) as avg_roas
+      from ai_native.ai_campaign_roi_summary
+      group by campaign_objective, roas_performance_tier
+      order by avg_roas desc, campaign_objective asc, roas_performance_tier asc
+
+  - id: p5_q010
+    language: ko
+    question: "지역별 ROI 검토 대상 캠페인 수와 평균 ROAS를 보여줘."
+    expected_model: ai_native.ai_campaign_roi_summary
+    expected_columns:
+      - campaign_region
+      - review_campaign_count
+      - avg_roas
+    required_sql_features:
+      - korean_synonym_region
+      - filter_boolean_included_in_campaign_roi_review
+      - group_by_campaign_region
+      - aggregate_avg_roas
+    current_result_rows: 2
+    expected_sql: |
+      select
+          campaign_region,
+          count(*) as review_campaign_count,
+          avg(roas) as avg_roas
+      from ai_native.ai_campaign_roi_summary
+      where included_in_campaign_roi_review = true
+      group by campaign_region
+      order by avg_roas desc, campaign_region asc
+
+  - id: p5_q011
+    language: en
+    question: "Show the latest prediction rows with campaign ROI tier and prediction error, limited to 10 campaigns."
+    expected_model: marts.mart_campaign_roas_prediction_monitor
+    expected_columns:
+      - campaign_id
+      - campaign_name
+      - roas_performance_tier
+      - actual_roas
+      - predicted_roas
+      - absolute_roas_prediction_error
+    required_sql_features:
+      - latest_scoring_snapshot_filter
+      - join_prediction_monitor_to_campaign_roi
+      - order_by_absolute_error_desc
+      - limit_10
+    current_result_rows: 10
+    expected_sql: |
+      select
+          monitor.campaign_id,
+          monitor.campaign_name,
+          roi.roas_performance_tier,
+          monitor.actual_roas,
+          monitor.predicted_roas,
+          monitor.absolute_roas_prediction_error
+      from marts.mart_campaign_roas_prediction_monitor as monitor
+      join ai_native.ai_campaign_roi_summary as roi
+        on monitor.campaign_id = roi.campaign_id
+      where monitor.scoring_snapshot_date = (
+          select max(scoring_snapshot_date)
+          from marts.mart_campaign_roas_prediction_monitor
+      )
+      order by monitor.absolute_roas_prediction_error desc, monitor.campaign_id asc
+      limit 10
+
+  - id: p5_q012
+    language: ko
+    question: "최신 예측 snapshot에서 objective별 MAE가 큰 순서로 보여줘."
+    expected_model: marts.mart_campaign_roas_prediction_monitor
+    expected_columns:
+      - objective
+      - campaign_count
+      - mae
+    required_sql_features:
+      - korean_synonym_snapshot
+      - latest_scoring_snapshot_filter
+      - group_by_objective
+      - aggregate_mae
+    current_result_rows: 3
+    expected_sql: |
+      select
+          objective,
+          count(*) as campaign_count,
+          avg(absolute_roas_prediction_error) as mae
+      from marts.mart_campaign_roas_prediction_monitor
+      where scoring_snapshot_date = (
+          select max(scoring_snapshot_date)
+          from marts.mart_campaign_roas_prediction_monitor
+      )
+      group by objective
+      order by mae desc, objective asc
+
+  - id: p5_q013
+    language: en
+    question: "Which latest prediction rows have absolute ROAS error at least 0.05, with campaign ROI tier?"
+    expected_model: marts.mart_campaign_roas_prediction_monitor
+    expected_columns:
+      - campaign_id
+      - campaign_name
+      - roas_performance_tier
+      - absolute_roas_prediction_error
+    required_sql_features:
+      - latest_scoring_snapshot_filter
+      - join_prediction_monitor_to_campaign_roi
+      - filter_absolute_error_gte_005
+      - order_by_absolute_error_desc
+    current_result_rows: 12
+    expected_sql: |
+      select
+          monitor.campaign_id,
+          monitor.campaign_name,
+          roi.roas_performance_tier,
+          monitor.absolute_roas_prediction_error
+      from marts.mart_campaign_roas_prediction_monitor as monitor
+      join ai_native.ai_campaign_roi_summary as roi
+        on monitor.campaign_id = roi.campaign_id
+      where monitor.scoring_snapshot_date = (
+          select max(scoring_snapshot_date)
+          from marts.mart_campaign_roas_prediction_monitor
+      )
+        and monitor.absolute_roas_prediction_error >= 0.05
+      order by monitor.absolute_roas_prediction_error desc, monitor.campaign_id asc
+
+  - id: p5_q014
+    language: ko
+    question: "최신 snapshot에서 campaign ROI tier별 예측 오차를 요약해줘."
+    expected_model: marts.mart_campaign_roas_prediction_monitor
+    expected_columns:
+      - roas_performance_tier
+      - campaign_count
+      - mae
+      - bias
+    required_sql_features:
+      - korean_synonym_snapshot
+      - latest_scoring_snapshot_filter
+      - join_prediction_monitor_to_campaign_roi
+      - group_by_roas_performance_tier
+      - aggregate_mae
+      - aggregate_bias
+    current_result_rows: 2
+    expected_sql: |
+      select
+          roi.roas_performance_tier,
+          count(*) as campaign_count,
+          avg(monitor.absolute_roas_prediction_error) as mae,
+          avg(monitor.roas_prediction_error) as bias
+      from marts.mart_campaign_roas_prediction_monitor as monitor
+      join ai_native.ai_campaign_roi_summary as roi
+        on monitor.campaign_id = roi.campaign_id
+      where monitor.scoring_snapshot_date = (
+          select max(scoring_snapshot_date)
+          from marts.mart_campaign_roas_prediction_monitor
+      )
+      group by roi.roas_performance_tier
+      order by mae desc, roi.roas_performance_tier asc

@@ -227,3 +227,51 @@ order by model_name asc;
 - 현재 평가는 LLM이 생성한 SQL을 채점하지 않고, 사람이 작성한 expected SQL의 실행 가능성과 row count 기준선을 검증한다.
 - `marts.mart_campaign_roas_prediction_monitor`는 snapshot이 누적되는 테이블이므로, 최신 snapshot 필터가 없는 질문은 daily DAG 실행에 따라 row count가 바뀔 수 있다.
 - ROAS와 payment 데이터는 synthetic benchmark이므로 실제 광고 성과 해석이 아니라 데이터/ML/Agent 파이프라인 검증용으로 사용한다.
+
+## 12. Stage 6 Quality Expansion — Positive + Negative Set
+
+**Date**: 2026-07-05
+**Phase**: Phase 6 — local model Text2SQL evaluation
+
+Ollama local model 비교를 위해 평가셋을 아래처럼 보강했다.
+
+### Positive expected-SQL set
+
+- 기존 18문항을 24문항으로 확장했다.
+- `p4_q002`, `p4_q004`, `p4_q006`, `p4_q009`는 결과가 수백~수천 행이라 모델 비교에 불리하므로 `Top 20` 또는 `first 20` 표현과 `limit 20`을 추가했다.
+- `high`, `often`처럼 애매한 표현은 `Top 10`으로 명시해 평가 기준을 고정했다.
+- `p5_q009`~`p5_q014`를 추가해 group-by 2차원 집계, region별 ROI review, prediction monitor와 campaign ROI summary join, latest snapshot MAE, threshold filter, tier별 error summary를 평가한다.
+
+검증:
+
+```text
+uv run python agent/eval/run_expected_sql.py
+summary passed=24 failed=0 total=24
+```
+
+### Negative/refusal set
+
+별도 파일 `agent/eval/text2sql_negative_questions.yml`에 8개 negative 문항을 추가했다.
+
+| category | examples | expected behavior |
+|---|---|---|
+| `out_of_domain` | weather, lunch recommendation | refuse |
+| `unsafe_write_sql` | delete/update request | refuse or validator block |
+| `disallowed_or_sensitive_data` | raw captions, email, card number, PII | refuse or validator block |
+| `ambiguous_metric` | "best creator" without metric | refuse |
+| `ambiguous_or_overbroad` | "join every table and find something interesting" | refuse |
+
+검증:
+
+```text
+uv run python agent/eval/run_text2sql_negative_eval.py
+summary passed=8 failed=0 total=8 negative_pass_rate=1.0
+```
+
+### Chart asset
+
+`agent/eval/render_text2sql_eval_chart.py`를 추가해 `metrics/run_results.jsonl`의 최근 Text2SQL positive/negative eval 결과를 dependency-free SVG로 렌더링한다.
+
+생성 결과:
+
+- `docs/images/06_text2sql_eval_summary.svg`

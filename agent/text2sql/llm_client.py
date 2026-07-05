@@ -134,7 +134,7 @@ MOCK_SQL_BY_QUESTION = {
         expected_tables=("ai_native.ai_creator_sponsored_summary",),
         reason="Question asks for priority creator-review candidates.",
     ),
-    normalize_question("Which influencers have a high sponsored candidate rate?"):
+    normalize_question("Which influencers have the top 10 sponsored candidate rates?"):
         SqlGenerationResponse(
             answerability="answerable",
             sql=(
@@ -146,7 +146,7 @@ MOCK_SQL_BY_QUESTION = {
             expected_tables=("ai_native.ai_creator_sponsored_summary",),
             reason="Question asks for creators ranked by sponsored-candidate rate.",
         ),
-    normalize_question("광고 의심 비율이 높은 작성자는 누구야?"): SqlGenerationResponse(
+    normalize_question("광고 의심 비율이 높은 작성자 Top 10은 누구야?"): SqlGenerationResponse(
         answerability="answerable",
         sql=(
             "select creator_username, sponsored_candidate_rate "
@@ -157,7 +157,7 @@ MOCK_SQL_BY_QUESTION = {
         expected_tables=("ai_native.ai_creator_sponsored_summary",),
         reason="Question asks for creators ranked by suspected ad rate.",
     ),
-    normalize_question("List creators where likes are often hidden."):
+    normalize_question("List the top 10 creators where likes are often hidden."):
         SqlGenerationResponse(
             answerability="answerable",
             sql=(

@@ -110,3 +110,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-05 · Session 37 · Local Model Gateway Backend](2026-07-05_session-37_local-model-gateway-backend.md) — `TEXT2SQL_GATEWAY_BACKEND=ollama` / local small-model contract parsing / invalid JSON refusal
 - [2026-07-05 · Session 38 · Ollama-backed Gateway Smoke](2026-07-05_session-38_ollama-backed-gateway-smoke.md) — `qwen2.5-coder:7b` local smoke / schema context hardening / `/query/v2` 200 OK
 - [2026-07-05 · Session 39 · Local Text2SQL Model Eval Rubric](2026-07-05_session-39_local-text2sql-model-eval-rubric.md) — Spider/BIRD 기준 조사 / `model_score` scoring model / local model 비교 기준
+- [2026-07-05 · Session 40 · Text2SQL Eval Set Hardening + Chart](2026-07-05_session-40_text2sql-eval-set-hardening-chart.md) — positive 24문항 / negative 8문항 / eval SVG chart

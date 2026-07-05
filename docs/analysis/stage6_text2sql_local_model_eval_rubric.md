@@ -32,7 +32,7 @@ Text2SQL 평가는 보통 하나의 지표만 보지 않는다.
 - `agent/eval/text2sql_model_scoring.py`
 - `agent/eval/run_text2sql_v2_eval.py`
 
-점수는 0~100점이며, 현재 18개 expected-SQL 질문셋 기준으로 산출한다.
+점수는 0~100점이며, 현재 24개 positive expected-SQL 질문셋 기준으로 산출한다.
 
 | Component | Weight | 계산 |
 |---|---:|---|
@@ -64,6 +64,41 @@ Text2SQL 평가는 보통 하나의 지표만 보지 않는다.
 | `qwen2.5-coder:14b` | 14B | Ollama default | Ollama gateway | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 | `sqlcoder` candidate | TBD | TBD | Ollama gateway | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
 
+## Negative/refusal 평가
+
+무관한 질문, 위험한 SQL 요청, 개인정보/원본 데이터 요청, 애매한 질문은 별도 negative set으로 평가한다.
+
+구현 위치:
+- `agent/eval/text2sql_negative_questions.yml`
+- `agent/eval/run_text2sql_negative_eval.py`
+
+핵심 지표:
+
+| Metric | 계산 | 의미 |
+|---|---|---|
+| `negative_pass_rate` | `(PASS_REFUSED + PASS_BLOCKED) / total` | 실행하면 안 되는 질문을 거절/차단한 비율 |
+| `failed` | `FAIL_EXECUTED` count | negative 질문이 실제 SQL 실행까지 간 건수 |
+| `refused` | provider-level refusal count | provider가 SQL 생성 전 거절한 건수 |
+| `blocked` | validator-level block count | provider가 SQL을 만들었지만 validator가 차단한 건수 |
+
+현재 mock 기준 검증 결과:
+
+```text
+summary passed=8 failed=0 total=8 negative_pass_rate=1.0
+```
+
+## 그래프 생성
+
+`agent/eval/render_text2sql_eval_chart.py`는 `metrics/run_results.jsonl`의 최근 Text2SQL eval row를 읽어 SVG 그래프를 생성한다.
+
+```bash
+uv run python agent/eval/render_text2sql_eval_chart.py
+```
+
+출력:
+
+- `docs/images/06_text2sql_eval_summary.svg`
+
 ## 실행 방법
 
 Ollama와 Text2SQL gateway가 이미 떠 있는 상태에서:
@@ -83,7 +118,7 @@ uv run python agent/eval/run_text2sql_v2_eval.py
 
 ## 다음 개선
 
-1. `qwen2.5-coder:7b` 전체 18문항 eval을 실행해 baseline score를 기록한다.
+1. `qwen2.5-coder:7b` 전체 24문항 positive eval과 8문항 negative eval을 실행해 baseline score를 기록한다.
 2. 같은 gateway에서 모델명만 바꿔 2~3개 후보를 비교한다.
-3. negative 질문셋을 추가해 `DELETE`, schema 밖 테이블, 개인정보 요청을 별도 safety score로 분리한다.
+3. negative 질문셋을 더 확장해 multi-turn ambiguity, prompt injection, schema exfiltration 요청을 추가한다.
 4. test-suite style 평가를 위해 fixture DB snapshot을 2개 이상 만든다.
