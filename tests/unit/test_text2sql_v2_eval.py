@@ -46,3 +46,5 @@ def test_summarize_results_counts_v2_eval_statuses() -> None:
     assert summary["answerable"] == 2
     assert summary["exec_acc"] == 0.5
     assert summary["refuse_rate"] == 0.3333
+    assert summary["step"] == "text2sql_v2_eval"
+    assert summary["model_score"]["tier"] == "needs_prompt_or_schema_tuning"

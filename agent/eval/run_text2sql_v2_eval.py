@@ -12,6 +12,7 @@ import psycopg
 import yaml
 
 from agent.eval.run_expected_sql import QUESTIONS_PATH
+from agent.eval.text2sql_model_scoring import score_text2sql_model
 from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
 from agent.text2sql.llm_client import SqlGenerationClient
 from agent.text2sql.provider import get_sql_generation_provider
@@ -55,6 +56,8 @@ def main() -> None:
         f"total={summary['total']}",
         f"exec_acc={summary['exec_acc']}",
         f"refuse_rate={summary['refuse_rate']}",
+        f"model_score={summary['model_score']['composite_score']}",
+        f"tier={summary['model_score']['tier']}",
     )
 
     append_metrics(summary)
@@ -177,11 +180,14 @@ def summarize_results(results: list[V2EvalCaseResult]) -> dict[str, Any]:
     answerable = passed + failed + blocked
     latencies = [result.latency_ms for result in results]
 
-    return {
+    summary = {
         "phase": "p5c",
-        "step": "text2sql_v2_mock_eval",
+        "step": "text2sql_v2_eval",
         "ts": datetime.now(UTC).isoformat(),
-        "mode": "llm_generated_sql_v2_mock",
+        "mode": resolve_eval_mode(),
+        "provider": os.getenv("TEXT2SQL_PROVIDER", "mock").lower(),
+        "gateway_backend": os.getenv("TEXT2SQL_GATEWAY_BACKEND"),
+        "local_model": os.getenv("TEXT2SQL_OLLAMA_MODEL"),
         "total": total,
         "passed": passed,
         "failed": failed,
@@ -194,10 +200,20 @@ def summarize_results(results: list[V2EvalCaseResult]) -> dict[str, Any]:
         "p50_latency_ms": percentile(latencies, 50),
         "p95_latency_ms": percentile(latencies, 95),
         "known_limitation": (
-            "Mock provider covers campaign ROI and prediction-monitor questions first; "
-            "creator-review refusals are expected until a real provider or richer mock is added."
+            "Model score is a portfolio evaluation rubric over the current 18 expected-SQL "
+            "questions; it is not a public benchmark score."
         ),
     }
+    summary["model_score"] = score_text2sql_model(summary)
+    return summary
+
+
+def resolve_eval_mode() -> str:
+    provider = os.getenv("TEXT2SQL_PROVIDER", "mock").lower()
+    if provider == "http_json":
+        return "llm_generated_sql_v2_http_json"
+
+    return "llm_generated_sql_v2_mock"
 
 
 def count_status(results: list[V2EvalCaseResult], status: str) -> int:
