@@ -106,3 +106,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-05 · Session 33 · Architecture Diagram Export](2026-07-05_session-33_architecture-diagram-export.md) — README용 `docs/images/00_architecture.svg` 추가 / portfolio checklist 반영
 - [2026-07-05 · Session 34 · Resume Bullets](2026-07-05_session-34_resume-bullets.md) — data platform / ML / Text2SQL / DevOps / AWS mapping 이력서 bullet 초안
 - [2026-07-05 · Session 35 · Text2SQL Gateway Skeleton](2026-07-05_session-35_text2sql-gateway-skeleton.md) — 별도 FastAPI gateway `/text2sql/generate` / optional bearer auth / Docker Compose service `8010`
+- [2026-07-05 · Session 36 · Gateway Through API Smoke](2026-07-05_session-36_gateway-through-api-smoke.md) — `/query/v2 -> gateway -> validator -> Postgres` live smoke / mode `llm_generated_sql_v2_http_json`

@@ -123,3 +123,35 @@ Replace the gateway's mock backend with one of:
 - Gemini backend
 
 The serving API and future web UI do not need to know which provider is used behind the gateway.
+
+## Verified End-To-End Smoke
+
+On `2026-07-05`, `/query/v2` was run through the local gateway:
+
+```bash
+uv run uvicorn text2sql_gateway.main:app --host 127.0.0.1 --port 8010
+
+set -a; source .env; set +a; \
+POSTGRES_HOST=localhost \
+TEXT2SQL_PROVIDER=http_json \
+TEXT2SQL_PROVIDER_URL=http://127.0.0.1:8010/text2sql/generate \
+uv run uvicorn api.main:app --host 127.0.0.1 --port 8000
+```
+
+Smoke request:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/query/v2 \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Which campaigns have the highest ROAS?"}'
+```
+
+Result:
+
+- gateway `/health`: `200 OK`
+- API `/health`: `200 OK`
+- `/query/v2`: `200 OK`
+- response mode: `llm_generated_sql_v2_http_json`
+- row count: `5`
+- top campaign: `camp_000029`
+- latency: `58.981ms`

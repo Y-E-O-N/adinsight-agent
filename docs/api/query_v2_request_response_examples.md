@@ -166,3 +166,14 @@ The external gateway response contract is:
   "reason": "Question asks for campaigns ranked by ROAS."
 }
 ```
+
+## Verified Gateway Path
+
+Latest local smoke:
+
+- `TEXT2SQL_PROVIDER=http_json`
+- `TEXT2SQL_PROVIDER_URL=http://127.0.0.1:8010/text2sql/generate`
+- `/query/v2` response mode: `llm_generated_sql_v2_http_json`
+- row count: `5`
+- top campaign: `camp_000029`
+- latency: `58.981ms`
