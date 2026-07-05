@@ -102,3 +102,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-04 · Session 29 · Text2SQL v2 API Hardening](2026-07-04_session-29_text2sql-v2-api-hardening.md) — statement timeout / best-effort audit log / `/query/v2` 400·404·500 tests / pytest 16개 통과
 - [2026-07-04 · Session 30 · Text2SQL v2 Provider Adapter](2026-07-04_session-30_text2sql-v2-provider-adapter.md) — `TEXT2SQL_PROVIDER=mock|http_json` / API·eval runner 공통 provider factory / pytest 20개 통과
 - [2026-07-05 · Session 31 · Text2SQL v2 Focused Coverage Expansion](2026-07-05_session-31_text2sql-v2-focused-coverage.md) — creator-review mock coverage 추가 / v2 eval 13 PASS·5 REFUSED·0 BLOCKED / no-LIMIT failure case 문서화
+- [2026-07-05 · Session 32 · Portfolio API Examples + Demo Assets](2026-07-05_session-32_portfolio-api-examples-demo-assets.md) — `/query/v2` request/response examples / 3-5분 demo script / interview talking points

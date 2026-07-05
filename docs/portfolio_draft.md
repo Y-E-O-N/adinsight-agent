@@ -303,6 +303,9 @@
 - [x] LLM Text2SQL v2 design + mock endpoint/eval — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`, eval: `13 PASS / 5 REFUSED / 0 BLOCKED`
 - [x] Text2SQL v1/v2 eval comparison — `docs/analysis/stage6_text2sql_v1_v2_eval_comparison.md`
 - [x] Text2SQL v2 API hardening + provider adapter — statement timeout, audit JSONL, `TEXT2SQL_PROVIDER=mock|http_json`, pytest 20개 통과
+- [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
+- [x] 3-5분 demo script — `docs/demo_script_3min.md`
+- [x] 면접 talking points — `docs/interview_talking_points.md`
 
 ## 권장 (블로그·심층 문서용)
 - [ ] Airflow task 실행 이력 (30일)
@@ -341,14 +344,14 @@ ADR = "왜 X 가 아니라 Y 를 선택했는가" 를 1~2페이지로 남긴 결
 
 | 예상 질문 | 핵심 문장 | 증거 위치 | 상태 |
 |---|---|---|---|
-| 가장 어려웠던 문제 | TBD | `docs/failure_cases.md` (예정) | ⬜ |
+| 가장 어려웠던 문제 | no-LIMIT generated SQL을 validator가 차단했고, 안전 기준 유지를 위해 refusal로 남김 | `docs/analysis/stage6_text2sql_v2_failure_cases.md` | ✅ |
 | 쿼리 최적화 경험 | 18s → 1.2s, BRIN + 복합 B-tree (예정) | `docs/query_tuning.md` | ⬜ |
 | idempotency 어떻게? | DELETE+INSERT, merge, 백필 5회 검증 | `dags/dbt_run.py` (예정) | ⬜ |
-| 요청 처리 플로우 | 7단계 (Semaphore → retrieve → generate → validate → execute → format → log) | `docs/request_flow.md` (예정) | ⬜ |
+| 요청 처리 플로우 | request → provider → validate → timeout execute → format → audit | `docs/api/query_v2_request_response_examples.md` | ✅ |
 | 트래픽 10배 | 병목 식별 → 캐시 → fallback → async → back-pressure | `docs/traffic_experiments.md` (예정) | ⬜ |
 | 동시성 처리 | 4층위 (pipeline / data / serving / agent) | `docs/concurrency_notes.md` (예정) | ⬜ |
 | AI-Native 뭐가 다름? | 비정규화 + metadata + Agent 친화 | ADR 003 | ⬜ |
-| halucination 방지 | 5층위 (readonly / validator / prompt / refuse / eval) | `docs/agent_eval.md` (예정) | ⬜ |
+| hallucination 방지 | v1 registry baseline + v2 validator/refuse/eval/audit | `docs/interview_talking_points.md` | ✅ |
 
 ---
 
@@ -370,6 +373,7 @@ ADR = "왜 X 가 아니라 Y 를 선택했는가" 를 1~2페이지로 남긴 결
 ### 문서
 - [ ] ADR 최소 3개
 - [ ] request_flow / concurrency_notes / traffic_experiments / query_tuning / agent_eval / failure_cases / reliability_playbook / interview_talking_points
+  - Completed partials: `/query/v2` examples, Text2SQL failure cases, interview talking points, demo script
 
 ### 시각 자산
 - [ ] 아키텍처·ERD·DAG×3·대시보드×2·데모 GIF·Before/After EXPLAIN·locust
