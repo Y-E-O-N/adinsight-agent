@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
+  <title id="title">AdInsight Agent Architecture</title>
+  <desc id="desc">End-to-end architecture from Instagram collection through dbt layers, ROAS prediction, Superset dashboards, and Text2SQL APIs.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 700 30px Arial, sans-serif; fill: #111827; }
+      .subtitle { font: 400 15px Arial, sans-serif; fill: #4b5563; }
+      .lane-title { font: 700 17px Arial, sans-serif; fill: #111827; }
+      .box-title { font: 700 15px Arial, sans-serif; fill: #111827; }
+      .box-text { font: 400 12px Arial, sans-serif; fill: #374151; }
+      .small { font: 400 11px Arial, sans-serif; fill: #4b5563; }
+      .metric { font: 700 12px Arial, sans-serif; fill: #065f46; }
+      .lane { fill: #ffffff; stroke: #d1d5db; stroke-width: 1.5; }
+      .ingest { fill: #e0f2fe; stroke: #0284c7; stroke-width: 1.5; }
+      .dbt { fill: #ecfdf5; stroke: #059669; stroke-width: 1.5; }
+      .ai { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 1.5; }
+      .serve { fill: #fff7ed; stroke: #ea580c; stroke-width: 1.5; }
+      .ops { fill: #fef2f2; stroke: #dc2626; stroke-width: 1.5; }
+      .arrow { stroke: #475569; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .dash { stroke-dasharray: 6 5; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1280" height="760"/>
+  <text x="48" y="54" class="title">AdInsight Agent Architecture</text>
+  <text x="48" y="82" class="subtitle">Influencer campaign analytics with dbt marts, ROAS prediction, Superset monitoring, and guarded Text2SQL serving.</text>
+
+  <rect x="40" y="112" width="230" height="580" rx="10" class="lane"/>
+  <text x="62" y="145" class="lane-title">1. Ingestion</text>
+  <rect x="62" y="170" width="186" height="82" rx="8" class="ingest"/>
+  <text x="80" y="198" class="box-title">Airflow + Apify</text>
+  <text x="80" y="220" class="box-text">ig_collect_daily</text>
+  <text x="80" y="238" class="box-text">ig_collect_backfill</text>
+  <rect x="62" y="286" width="186" height="82" rx="8" class="ingest"/>
+  <text x="80" y="314" class="box-title">Raw Storage</text>
+  <text x="80" y="336" class="box-text">raw.ig_posts</text>
+  <text x="80" y="354" class="box-text">raw.ig_post_sources</text>
+  <rect x="62" y="402" width="186" height="82" rx="8" class="ingest"/>
+  <text x="80" y="430" class="box-title">Synthetic Inputs</text>
+  <text x="80" y="452" class="box-text">campaign attribution</text>
+  <text x="80" y="470" class="box-text">payment events</text>
+
+  <rect x="305" y="112" width="300" height="580" rx="10" class="lane"/>
+  <text x="327" y="145" class="lane-title">2. dbt Modeling</text>
+  <rect x="327" y="170" width="256" height="74" rx="8" class="dbt"/>
+  <text x="345" y="198" class="box-title">Staging</text>
+  <text x="345" y="220" class="box-text">stg_ig_posts, stg_syn_*</text>
+  <rect x="327" y="276" width="256" height="88" rx="8" class="dbt"/>
+  <text x="345" y="304" class="box-title">Intermediate</text>
+  <text x="345" y="326" class="box-text">creator quality</text>
+  <text x="345" y="344" class="box-text">campaign payment performance</text>
+  <rect x="327" y="396" width="256" height="98" rx="8" class="dbt"/>
+  <text x="345" y="424" class="box-title">Marts + Features</text>
+  <text x="345" y="446" class="box-text">mart_campaign_roi_summary</text>
+  <text x="345" y="464" class="box-text">feature_campaign_roas_*</text>
+  <text x="345" y="482" class="metric">dbt tests: 248/248 PASS</text>
+
+  <rect x="640" y="112" width="270" height="580" rx="10" class="lane"/>
+  <text x="662" y="145" class="lane-title">3. AI-Native Layer</text>
+  <rect x="662" y="170" width="226" height="88" rx="8" class="ai"/>
+  <text x="680" y="198" class="box-title">Semantic Marts</text>
+  <text x="680" y="220" class="box-text">ai_creator_sponsored_summary</text>
+  <text x="680" y="238" class="box-text">ai_campaign_roi_summary</text>
+  <rect x="662" y="292" width="226" height="94" rx="8" class="ai"/>
+  <text x="680" y="320" class="box-title">ROAS Prediction</text>
+  <text x="680" y="342" class="box-text">linear_regression_numpy_v1</text>
+  <text x="680" y="360" class="metric">MAE 0.0474 vs baseline 0.0892</text>
+  <rect x="662" y="420" width="226" height="96" rx="8" class="ai"/>
+  <text x="680" y="448" class="box-title">Text2SQL Eval</text>
+  <text x="680" y="470" class="box-text">18 bilingual questions</text>
+  <text x="680" y="488" class="metric">v1: 18/18 PASS</text>
+  <text x="680" y="506" class="metric">v2 mock: 13 PASS / 5 REFUSED</text>
+
+  <rect x="945" y="112" width="295" height="580" rx="10" class="lane"/>
+  <text x="967" y="145" class="lane-title">4. Serving + BI</text>
+  <rect x="967" y="170" width="250" height="86" rx="8" class="serve"/>
+  <text x="985" y="198" class="box-title">FastAPI</text>
+  <text x="985" y="220" class="box-text">/predict/campaign-roas</text>
+  <text x="985" y="238" class="box-text">/query and /query/v2</text>
+  <rect x="967" y="290" width="250" height="86" rx="8" class="serve"/>
+  <text x="985" y="318" class="box-title">Superset</text>
+  <text x="985" y="340" class="box-text">Campaign ROAS monitor</text>
+  <text x="985" y="358" class="box-text">Creator review dashboard</text>
+  <rect x="967" y="410" width="250" height="104" rx="8" class="ops"/>
+  <text x="985" y="438" class="box-title">Quality Gates</text>
+  <text x="985" y="460" class="box-text">GitHub Actions CI</text>
+  <text x="985" y="478" class="box-text">ruff + pytest</text>
+  <text x="985" y="496" class="metric">unit tests: 20 passed</text>
+  <rect x="967" y="548" width="250" height="88" rx="8" class="ops"/>
+  <text x="985" y="576" class="box-title">Target AWS</text>
+  <text x="985" y="598" class="box-text">MWAA, RDS/Aurora, S3</text>
+  <text x="985" y="616" class="box-text">ECS Fargate, ALB, CloudWatch</text>
+
+  <path d="M155 252 L155 286" class="arrow"/>
+  <path d="M155 368 L155 402" class="arrow"/>
+  <path d="M248 327 C278 327 292 207 327 207" class="arrow"/>
+  <path d="M455 244 L455 276" class="arrow"/>
+  <path d="M455 364 L455 396" class="arrow"/>
+  <path d="M583 445 C615 445 630 214 662 214" class="arrow"/>
+  <path d="M583 445 C620 445 625 339 662 339" class="arrow"/>
+  <path d="M888 214 C920 214 935 213 967 213" class="arrow"/>
+  <path d="M888 339 C920 339 935 213 967 213" class="arrow"/>
+  <path d="M888 468 C920 468 935 213 967 213" class="arrow"/>
+  <path d="M888 468 C920 468 935 333 967 333" class="arrow"/>
+  <path d="M1092 514 L1092 548" class="arrow dash"/>
+
+  <text x="48" y="730" class="small">Generated as a versioned SVG asset. Latest local evidence: expected-SQL v1 18/18 PASS, v2 mock 13 PASS / 5 REFUSED / 0 BLOCKED, unit tests 20 passed.</text>
+</svg>

@@ -289,7 +289,7 @@
 # Part B. 스크린샷 · 증거물 체크리스트 (`portfolio_template.md` §8)
 
 ## 필수 (README 용)
-- [ ] 아키텍처 다이어그램 (SVG/PNG 고해상도) — Mermaid 원본: `docs/analysis/2026-06-23_current_architecture_visualization.md`, 추후 export: `docs/images/00_architecture.svg`
+- [x] 아키텍처 다이어그램 (SVG 고해상도) — Mermaid 원본: `docs/analysis/2026-06-23_current_architecture_visualization.md`, export: `docs/images/00_architecture.svg`
 - [ ] ERD (ai_native 레이어 중심) — `docs/images/04_erd_ai_native.svg`
 - [ ] Bus Matrix (표 또는 이미지) — README 직접
 - [ ] Airflow DAG 그래프 × 3 (ingest / dbt_run / weekly_llm_report)

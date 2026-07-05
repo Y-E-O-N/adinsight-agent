@@ -185,6 +185,8 @@ make clean-confirm # 컨테이너 + 볼륨 삭제 (데이터 초기화)
 
 ## 아키텍처 (요약)
 
+![AdInsight architecture](docs/images/00_architecture.svg)
+
 ```
 [Ingestion]   Kaggle CSV / 공개 API / SDV 합성  ─┐
                                                    ▼
