@@ -191,3 +191,30 @@ Result:
 - row count: `5`
 - top campaign: `camp_000029`
 - latency: `58.981ms`
+
+## Verified Ollama End-To-End Smoke
+
+On `2026-07-05`, `/query/v2` was run through the gateway with:
+
+```bash
+TEXT2SQL_GATEWAY_BACKEND=ollama
+TEXT2SQL_OLLAMA_MODEL=qwen2.5-coder:7b
+```
+
+Initial result:
+
+- The model returned valid gateway JSON.
+- The first API execution failed because the model hallucinated a column/table combination.
+- The fix was to enrich `SCHEMA_CONTEXT_V1` with exact allowed columns and canonical query examples.
+
+Final result:
+
+- API `/health`: `200 OK`
+- `/query/v2`: `200 OK`
+- response mode: `llm_generated_sql_v2_http_json`
+- generated SQL table: `ai_native.ai_campaign_roi_summary`
+- row count: `5`
+- top campaign: `camp_000029`
+- latency: `4800.432ms`
+
+This shows why small local models need explicit schema context and why `/query/v2` keeps validator and execution guardrails after generation.

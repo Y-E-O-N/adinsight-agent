@@ -177,3 +177,13 @@ Latest local smoke:
 - row count: `5`
 - top campaign: `camp_000029`
 - latency: `58.981ms`
+
+Latest Ollama-backed local model smoke:
+
+- gateway backend: `TEXT2SQL_GATEWAY_BACKEND=ollama`
+- local model: `qwen2.5-coder:7b`
+- `/query/v2` response mode: `llm_generated_sql_v2_http_json`
+- generated table: `ai_native.ai_campaign_roi_summary`
+- row count: `5`
+- top campaign: `camp_000029`
+- latency: `4800.432ms`

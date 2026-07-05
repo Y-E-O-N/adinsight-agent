@@ -208,8 +208,8 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
         validation_tables=list(result.validation.referenced_tables),
         validation_limit=result.validation.limit,
         known_limitation=(
-            "Uses a provider-free mock SQL generator. This validates the v2 API boundary "
-            "and SQL guardrails before connecting a real LLM provider."
+            "Uses the configured Text2SQL generation provider. SQL is still validated, "
+            "bounded, timed out, and audited before execution."
         ),
     )
 

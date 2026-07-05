@@ -185,6 +185,7 @@ curl -s -X POST http://127.0.0.1:8010/text2sql/generate \
 Gateway 경유 `/query/v2` smoke도 확인했습니다. `TEXT2SQL_PROVIDER=http_json`, `TEXT2SQL_PROVIDER_URL=http://127.0.0.1:8010/text2sql/generate`로 API를 실행했을 때 `/query/v2`는 mode `llm_generated_sql_v2_http_json`, rows `5`, top campaign `camp_000029`, latency `58.981ms`를 반환했습니다.
 
 외부 LLM 없이 로컬 small model을 쓰는 경로도 gateway에 추가했습니다. `TEXT2SQL_GATEWAY_BACKEND=ollama`, `TEXT2SQL_OLLAMA_URL`, `TEXT2SQL_OLLAMA_MODEL`을 설정하면 gateway가 Ollama-compatible local model server를 호출하고, 모델 출력이 JSON contract를 만족하지 않으면 안전하게 `not_answerable`로 거절합니다.
+`qwen2.5-coder:7b` 기반 local smoke도 확인했습니다. 초기에는 스키마 정보가 부족해 hallucinated column으로 실패했고, 이후 schema context에 실제 컬럼과 canonical query example을 추가해 `/query/v2`가 mode `llm_generated_sql_v2_http_json`, rows `5`, top campaign `camp_000029`, latency `4800.432ms`를 반환했습니다.
 
 API request/response examples는 `docs/api/query_v2_request_response_examples.md`, 3-5분 데모 스크립트는 `docs/demo_script_3min.md`, 면접 토크포인트는 `docs/interview_talking_points.md`에 정리했습니다.
 이력서 bullet 초안은 `docs/resume_bullets.md`에 정리했습니다.
