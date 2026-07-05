@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 import text2sql_gateway.main as gateway_main
+from text2sql_gateway import backends
 
 
 def test_gateway_health_endpoint() -> None:
@@ -80,3 +81,86 @@ def test_gateway_generate_sql_requires_bearer_when_configured(monkeypatch) -> No
 
     assert unauthorized.status_code == 401
     assert authorized.status_code == 200
+
+
+def test_gateway_health_reports_ollama_backend(monkeypatch) -> None:
+    monkeypatch.setenv("TEXT2SQL_GATEWAY_BACKEND", "ollama")
+    client = TestClient(gateway_main.app)
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["mode"] == "text2sql_gateway_ollama_v1"
+
+
+def test_gateway_generate_sql_uses_ollama_backend(monkeypatch) -> None:
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+        def read(self) -> bytes:
+            return (
+                b'{"response":"{\\"answerability\\":\\"answerable\\",'
+                b'\\"sql\\":\\"select campaign_id from ai_native.ai_campaign_roi_summary '
+                b'limit 5\\",\\"expected_tables\\":[\\"ai_native.ai_campaign_roi_summary\\"],'
+                b'\\"reason\\":\\"unit test local model\\"}"}'
+            )
+
+    def fake_urlopen(request, timeout):
+        assert timeout == 9
+        return FakeResponse()
+
+    monkeypatch.delenv("TEXT2SQL_GATEWAY_API_KEY", raising=False)
+    monkeypatch.setenv("TEXT2SQL_GATEWAY_BACKEND", "ollama")
+    monkeypatch.setenv("TEXT2SQL_OLLAMA_URL", "http://127.0.0.1:11434/api/generate")
+    monkeypatch.setenv("TEXT2SQL_OLLAMA_MODEL", "unit-test-model")
+    monkeypatch.setenv("TEXT2SQL_OLLAMA_TIMEOUT_SECONDS", "9")
+    monkeypatch.setattr(backends, "urlopen", fake_urlopen)
+    client = TestClient(gateway_main.app)
+
+    response = client.post(
+        "/text2sql/generate",
+        json={
+            "question": "Which campaigns have the highest ROAS?",
+            "schema_context": "Allowed tables: ai_native.ai_campaign_roi_summary",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["answerability"] == "answerable"
+    assert payload["mode"] == "text2sql_gateway_ollama_v1"
+    assert payload["expected_tables"] == ["ai_native.ai_campaign_roi_summary"]
+
+
+def test_gateway_ollama_invalid_json_refuses(monkeypatch) -> None:
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+        def read(self) -> bytes:
+            return b'{"response":"not json"}'
+
+    monkeypatch.delenv("TEXT2SQL_GATEWAY_API_KEY", raising=False)
+    monkeypatch.setenv("TEXT2SQL_GATEWAY_BACKEND", "ollama")
+    monkeypatch.setattr(backends, "urlopen", lambda request, timeout: FakeResponse())
+    client = TestClient(gateway_main.app)
+
+    response = client.post(
+        "/text2sql/generate",
+        json={
+            "question": "Which campaigns have the highest ROAS?",
+            "schema_context": "Allowed tables: ai_native.ai_campaign_roi_summary",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["answerability"] == "not_answerable"
+    assert payload["sql"] is None

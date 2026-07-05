@@ -1,6 +1,6 @@
 # Text2SQL Gateway Architecture
 
-**Status**: implemented with mock backend
+**Status**: implemented with mock and local Ollama backend options
 **Gateway app**: `text2sql_gateway/main.py`
 **Local endpoint**: `POST /text2sql/generate`
 **Docker Compose service**: `text2sql-gateway` on port `8010`
@@ -35,13 +35,21 @@ This keeps provider-specific code out of the user-facing serving API.
 
 ## Current Implementation
 
-The gateway currently uses `MockSqlGenerationClient`.
+The gateway supports two backend modes:
+
+| Backend | Env | Purpose |
+|---|---|---|
+| Mock | `TEXT2SQL_GATEWAY_BACKEND=mock` | deterministic CI/demo backend |
+| Ollama/local model | `TEXT2SQL_GATEWAY_BACKEND=ollama` | local small-model Text2SQL backend |
+
+The default is `mock`.
 
 This means:
 
 - no external LLM API key is required
 - CI and local demos stay deterministic
 - the HTTP contract is already fixed for later real-provider work
+- local model output is still parsed into the same JSON contract before it can reach `/query/v2`
 
 ## Contract
 
@@ -98,6 +106,33 @@ Docker Compose service:
 docker compose up text2sql-gateway
 ```
 
+## Local Model Backend
+
+Run a local model server that exposes an Ollama-compatible `/api/generate` endpoint, then start the gateway with:
+
+```bash
+TEXT2SQL_GATEWAY_BACKEND=ollama
+TEXT2SQL_OLLAMA_URL=http://127.0.0.1:11434/api/generate
+TEXT2SQL_OLLAMA_MODEL=qwen2.5-coder:7b
+TEXT2SQL_OLLAMA_TIMEOUT_SECONDS=60
+uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
+```
+
+Docker Compose equivalent:
+
+```bash
+TEXT2SQL_GATEWAY_BACKEND=ollama \
+TEXT2SQL_OLLAMA_URL=http://host.docker.internal:11434/api/generate \
+TEXT2SQL_OLLAMA_MODEL=qwen2.5-coder:7b \
+docker compose up text2sql-gateway
+```
+
+Safety behavior:
+
+- The local model is asked to return the Text2SQL JSON contract only.
+- If the model returns invalid JSON, the gateway returns `not_answerable`.
+- `/query/v2` still validates SQL before executing it.
+
 ## Optional Gateway Auth
 
 Set:
@@ -116,8 +151,9 @@ The serving API sends this via `TEXT2SQL_PROVIDER_API_KEY`.
 
 ## Next Step
 
-Replace the gateway's mock backend with one of:
+Replace or extend the gateway backend with one of:
 
+- local Ollama model backend
 - OpenAI-compatible backend
 - Bedrock backend
 - Gemini backend

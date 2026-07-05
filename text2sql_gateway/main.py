@@ -5,9 +5,10 @@ import os
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from agent.text2sql.llm_client import MockSqlGenerationClient, SqlGenerationRequest
+from agent.text2sql.llm_client import SqlGenerationRequest
+from text2sql_gateway.backends import GatewayBackendError, generate_sql_with_backend
 
-GATEWAY_MODE = "text2sql_gateway_mock_v1"
+DEFAULT_GATEWAY_MODE = "text2sql_gateway_mock_v1"
 
 app = FastAPI(
     title="AdInsight Text2SQL Gateway",
@@ -40,7 +41,7 @@ def health() -> GatewayHealthResponse:
     return GatewayHealthResponse(
         status="ok",
         service="adinsight-text2sql-gateway",
-        mode=GATEWAY_MODE,
+        mode=current_gateway_mode(),
     )
 
 
@@ -50,19 +51,22 @@ def generate_sql(
     authorization: str | None = Header(default=None),
 ) -> GenerateSqlResponse:
     verify_gateway_auth(authorization)
-    generation = MockSqlGenerationClient().generate_sql(
-        SqlGenerationRequest(
-            question=request.question,
-            schema_context=request.schema_context,
+    try:
+        generation = generate_sql_with_backend(
+            SqlGenerationRequest(
+                question=request.question,
+                schema_context=request.schema_context,
+            )
         )
-    )
+    except GatewayBackendError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return GenerateSqlResponse(
-        answerability=generation.answerability,
-        sql=generation.sql,
-        expected_tables=list(generation.expected_tables),
-        reason=generation.reason,
-        mode=GATEWAY_MODE,
+        answerability=generation.response.answerability,
+        sql=generation.response.sql,
+        expected_tables=list(generation.response.expected_tables),
+        reason=generation.response.reason,
+        mode=generation.mode,
     )
 
 
@@ -77,3 +81,10 @@ def verify_gateway_auth(authorization: str | None) -> None:
             status_code=401,
             detail="Invalid Text2SQL gateway bearer token.",
         )
+
+
+def current_gateway_mode() -> str:
+    backend = os.getenv("TEXT2SQL_GATEWAY_BACKEND", "mock").lower()
+    if backend == "ollama":
+        return "text2sql_gateway_ollama_v1"
+    return DEFAULT_GATEWAY_MODE

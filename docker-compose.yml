@@ -305,6 +305,10 @@ services:
     command: ["uvicorn", "text2sql_gateway.main:app", "--host", "0.0.0.0", "--port", "8010"]
     environment:
       TEXT2SQL_GATEWAY_API_KEY: ${TEXT2SQL_GATEWAY_API_KEY:-}
+      TEXT2SQL_GATEWAY_BACKEND: ${TEXT2SQL_GATEWAY_BACKEND:-mock}
+      TEXT2SQL_OLLAMA_URL: ${TEXT2SQL_OLLAMA_URL:-http://host.docker.internal:11434/api/generate}
+      TEXT2SQL_OLLAMA_MODEL: ${TEXT2SQL_OLLAMA_MODEL:-qwen2.5-coder:7b}
+      TEXT2SQL_OLLAMA_TIMEOUT_SECONDS: ${TEXT2SQL_OLLAMA_TIMEOUT_SECONDS:-60}
     ports:
       - "8010:8010"
     healthcheck:
