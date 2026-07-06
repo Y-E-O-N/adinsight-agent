@@ -1,6 +1,6 @@
 # Text2SQL Gateway Architecture
 
-**Status**: implemented with mock and local Ollama backend options
+**Status**: implemented with mock, local Ollama, OpenAI, and Gemini backend options
 **Gateway app**: `text2sql_gateway/main.py`
 **Local endpoint**: `POST /text2sql/generate`
 **Docker Compose service**: `text2sql-gateway` on port `8010`
@@ -35,12 +35,14 @@ This keeps provider-specific code out of the user-facing serving API.
 
 ## Current Implementation
 
-The gateway supports two backend modes:
+The gateway supports these backend modes:
 
 | Backend | Env | Purpose |
 |---|---|---|
 | Mock | `TEXT2SQL_GATEWAY_BACKEND=mock` | deterministic CI/demo backend |
 | Ollama/local model | `TEXT2SQL_GATEWAY_BACKEND=ollama` | local small-model Text2SQL backend |
+| OpenAI | `TEXT2SQL_GATEWAY_BACKEND=openai` | external structured-output Text2SQL backend |
+| Gemini | `TEXT2SQL_GATEWAY_BACKEND=gemini` | external structured-output Text2SQL backend |
 
 The default is `mock`.
 
@@ -132,6 +134,45 @@ Safety behavior:
 - The local model is asked to return the Text2SQL JSON contract only.
 - If the model returns invalid JSON, the gateway returns `not_answerable`.
 - `/query/v2` still validates SQL before executing it.
+
+## External Provider Backends
+
+The external backends use the same gateway request/response contract as mock and Ollama. Provider-specific API calls stay inside `text2sql_gateway/main.py` and `text2sql_gateway/backends.py`; the serving API still only sees the internal `{question, schema_context} -> {answerability, sql, expected_tables, reason}` contract.
+
+OpenAI backend:
+
+```bash
+TEXT2SQL_GATEWAY_BACKEND=openai
+TEXT2SQL_OPENAI_API_KEY=$OPENAI_API_KEY
+TEXT2SQL_OPENAI_MODEL=gpt-5.5
+TEXT2SQL_OPENAI_TIMEOUT_SECONDS=60
+TEXT2SQL_OPENAI_TEMPERATURE=0
+uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
+```
+
+Gemini backend:
+
+```bash
+TEXT2SQL_GATEWAY_BACKEND=gemini
+TEXT2SQL_GEMINI_API_KEY=$GEMINI_API_KEY
+TEXT2SQL_GEMINI_MODEL=gemini-3.5-flash
+TEXT2SQL_GEMINI_TIMEOUT_SECONDS=60
+uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
+```
+
+Run model-only eval through the gateway:
+
+```bash
+set -a
+source .env
+set +a
+POSTGRES_HOST=localhost \
+TEXT2SQL_PROVIDER=http_json \
+TEXT2SQL_PROVIDER_URL=http://127.0.0.1:8010/text2sql/generate \
+TEXT2SQL_PROVIDER_TIMEOUT_SECONDS=90 \
+TEXT2SQL_EVAL_MODEL_LABEL=$TEXT2SQL_OPENAI_MODEL \
+uv run python agent/eval/run_text2sql_v2_eval.py
+```
 
 ## Optional Gateway Auth
 

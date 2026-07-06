@@ -1,7 +1,7 @@
 # Stage 6 LLM Text2SQL v2 Design
 
 **작성일**: 2026-07-04
-**상태**: v2.0 mock harness, `/query/v2` endpoint, v2 eval runner, provider adapter, local Ollama gateway, and deterministic registry fallback implemented
+**상태**: v2.0 mock harness, `/query/v2` endpoint, v2 eval runner, provider adapter, local Ollama gateway, OpenAI/Gemini gateway backends, and deterministic registry fallback implemented
 **기준선**: deterministic `/query` v1 with expected-SQL registry
 
 ## 1. 목적
@@ -321,6 +321,14 @@ Environment variables:
 - `TEXT2SQL_PROVIDER_URL`: required for `http_json`
 - `TEXT2SQL_PROVIDER_API_KEY`: optional bearer token
 - `TEXT2SQL_PROVIDER_TIMEOUT_SECONDS`: default `20`
+
+Gateway backend environment:
+
+- `TEXT2SQL_GATEWAY_BACKEND`: `mock`, `ollama`, `openai`, or `gemini`
+- `TEXT2SQL_OPENAI_API_KEY` / `OPENAI_API_KEY`: required for OpenAI backend
+- `TEXT2SQL_OPENAI_MODEL`: default `gpt-5.5`
+- `TEXT2SQL_GEMINI_API_KEY` / `GEMINI_API_KEY`: required for Gemini backend
+- `TEXT2SQL_GEMINI_MODEL`: default `gemini-3.5-flash`
 
 Verified:
 

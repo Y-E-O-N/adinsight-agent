@@ -206,7 +206,7 @@ def summarize_results(results: list[V2EvalCaseResult]) -> dict[str, Any]:
         "mode": resolve_eval_mode(),
         "provider": os.getenv("TEXT2SQL_PROVIDER", "mock").lower(),
         "gateway_backend": os.getenv("TEXT2SQL_GATEWAY_BACKEND"),
-        "local_model": os.getenv("TEXT2SQL_OLLAMA_MODEL"),
+        "local_model": os.getenv("TEXT2SQL_EVAL_MODEL_LABEL") or os.getenv("TEXT2SQL_OLLAMA_MODEL"),
         "total": total,
         "passed": passed,
         "failed": failed,

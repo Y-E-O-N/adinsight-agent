@@ -87,4 +87,8 @@ def current_gateway_mode() -> str:
     backend = os.getenv("TEXT2SQL_GATEWAY_BACKEND", "mock").lower()
     if backend == "ollama":
         return "text2sql_gateway_ollama_v1"
+    if backend == "openai":
+        return "text2sql_gateway_openai_v1"
+    if backend == "gemini":
+        return "text2sql_gateway_gemini_v1"
     return DEFAULT_GATEWAY_MODE

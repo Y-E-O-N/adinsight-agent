@@ -130,6 +130,24 @@ Tuning interpretation:
 - Product demo 관점에서는 `/query/v2` fallback을 켜면 curated 질문은 안정적으로 응답할 수 있다. 하지만 model-only 평가 기준으로는 아직 `phi4:14b`도 live free-form Text2SQL primary model은 아니다.
 - 다음 개선은 failed case별 canonical SQL few-shot을 더 추가하거나, local model을 “SQL draft generator”로 두고 deterministic registry/fallback을 product path에 명확히 통합하는 방향이 맞다.
 
+## External LLM provider comparison plan
+
+Local model-only 결과가 아직 demo-primary 기준에 못 미치므로, 같은 gateway contract로 OpenAI/Gemini provider도 비교한다.
+
+추가된 gateway backend:
+
+| Backend | Env | Structured output strategy | Eval status |
+|---|---|---|---|
+| OpenAI | `TEXT2SQL_GATEWAY_BACKEND=openai` | JSON Schema structured output | adapter implemented, real eval pending API key |
+| Gemini | `TEXT2SQL_GATEWAY_BACKEND=gemini` | `application/json` response format with schema | adapter implemented, real eval pending API key |
+
+평가 원칙:
+
+- Positive 24문항, negative/content-safety 14문항을 그대로 사용한다.
+- `/query/v2` product fallback은 끄거나 eval runner를 그대로 사용해 model-only 점수를 측정한다.
+- 비용 관리를 위해 먼저 positive 24 + negative 14를 모델당 1회만 실행하고, 후보가 나오면 repeated-run으로 variance를 확인한다.
+- metrics row의 `local_model` 필드는 하위 호환을 위해 유지하지만, 값은 `TEXT2SQL_EVAL_MODEL_LABEL`이 있으면 이를 우선 사용한다.
+
 `qwen2.5-coder:7b` baseline interpretation:
 
 - Positive SQL generation is not demo-primary ready yet: only `8/24` exact-result PASS.
