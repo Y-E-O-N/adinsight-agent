@@ -8,6 +8,7 @@ from agent.eval.run_text2sql_v2_eval import (
     summarize_results,
 )
 from agent.text2sql.llm_client import SqlGenerationResponse
+from agent.text2sql.provider import Text2SqlProviderConfigError
 
 
 def test_summarize_results_counts_v2_eval_statuses() -> None:
@@ -112,3 +113,25 @@ def test_evaluate_question_records_database_error_as_fail() -> None:
     assert result.status == "FAIL"
     assert "Database execution error" in result.reason
     assert conn.rollback_called
+
+
+def test_evaluate_question_records_provider_error_as_fail() -> None:
+    class DummyConnection:
+        pass
+
+    class ErrorClient:
+        def generate_sql(self, request):
+            raise Text2SqlProviderConfigError("gateway 502")
+
+    question = {
+        "id": "p5_q001",
+        "language": "en",
+        "question": "Which campaigns have the highest ROAS?",
+        "current_result_rows": 5,
+    }
+
+    result = evaluate_question(question, DummyConnection(), ErrorClient(), "unit_test")
+
+    assert result.status == "FAIL"
+    assert result.actual_rows is None
+    assert "Provider error: gateway 502" in result.reason

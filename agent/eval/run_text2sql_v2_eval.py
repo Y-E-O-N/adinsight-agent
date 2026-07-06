@@ -15,7 +15,7 @@ from agent.eval.run_expected_sql import QUESTIONS_PATH
 from agent.eval.text2sql_model_scoring import score_text2sql_model
 from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
 from agent.text2sql.llm_client import SqlGenerationClient
-from agent.text2sql.provider import get_sql_generation_provider
+from agent.text2sql.provider import Text2SqlProviderConfigError, get_sql_generation_provider
 from agent.text2sql.registry import serialize_value
 from agent.text2sql.validator import Text2SqlValidationError
 
@@ -89,6 +89,17 @@ def evaluate_question(
 
     try:
         generated = execute_generated_question(str(question["question"]), conn, client, mode=mode)
+    except Text2SqlProviderConfigError as exc:
+        return V2EvalCaseResult(
+            question_id=question_id,
+            language=str(question["language"]),
+            status="FAIL",
+            expected_rows=expected_rows,
+            actual_rows=None,
+            latency_ms=round((perf_counter() - started_at) * 1000, 3),
+            generated_sql=None,
+            reason=f"Provider error: {exc}",
+        )
     except Text2SqlNotAnswerableError as exc:
         return V2EvalCaseResult(
             question_id=question_id,

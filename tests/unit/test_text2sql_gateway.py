@@ -315,3 +315,42 @@ def test_gateway_generate_sql_uses_gemini_backend(monkeypatch) -> None:
     assert payload["mode"] == "text2sql_gateway_gemini_v1"
     assert payload["answerability"] == "not_answerable"
     assert payload["sql"] is None
+
+
+def test_gateway_gemini_interactions_steps_response(monkeypatch) -> None:
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+        def read(self) -> bytes:
+            return (
+                b'{"steps":[{"type":"thought"},{"type":"model_output","content":[{"type":"text",'
+                b'"text":"{\\"answerability\\":\\"answerable\\",'
+                b'\\"sql\\":\\"select campaign_id from ai_native.ai_campaign_roi_summary '
+                b'order by roas desc limit 10\\",'
+                b'\\"expected_tables\\":[\\"ai_native.ai_campaign_roi_summary\\"],'
+                b'\\"reason\\":\\"unit test gemini interactions shape\\"}"}]}]}'
+            )
+
+    monkeypatch.delenv("TEXT2SQL_GATEWAY_API_KEY", raising=False)
+    monkeypatch.setenv("TEXT2SQL_GATEWAY_BACKEND", "gemini")
+    monkeypatch.setenv("TEXT2SQL_GEMINI_API_KEY", "unit-test-gemini-key")
+    monkeypatch.setattr(backends, "urlopen", lambda request, timeout: FakeResponse())
+    client = TestClient(gateway_main.app)
+
+    response = client.post(
+        "/text2sql/generate",
+        json={
+            "question": "Which campaigns have the highest ROAS?",
+            "schema_context": "Allowed tables: ai_native.ai_campaign_roi_summary",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mode"] == "text2sql_gateway_gemini_v1"
+    assert payload["answerability"] == "answerable"
+    assert payload["expected_tables"] == ["ai_native.ai_campaign_roi_summary"]

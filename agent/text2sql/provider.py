@@ -4,7 +4,7 @@ import json
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from agent.text2sql.llm_client import (
@@ -63,6 +63,11 @@ class HttpJsonSqlGenerationClient:
         try:
             with urlopen(http_request, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            error_detail = exc.read().decode("utf-8", errors="replace")[:500]
+            raise Text2SqlProviderConfigError(
+                f"Text2SQL provider request failed with HTTP {exc.code}: {error_detail}"
+            ) from exc
         except URLError as exc:
             raise Text2SqlProviderConfigError(
                 f"Text2SQL provider request failed: {exc.reason}"

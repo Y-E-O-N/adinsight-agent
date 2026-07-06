@@ -326,9 +326,9 @@ Gateway backend environment:
 
 - `TEXT2SQL_GATEWAY_BACKEND`: `mock`, `ollama`, `openai`, or `gemini`
 - `TEXT2SQL_OPENAI_API_KEY` / `OPENAI_API_KEY`: required for OpenAI backend
-- `TEXT2SQL_OPENAI_MODEL`: default `gpt-5.5`
+- `TEXT2SQL_OPENAI_MODEL`: default `gpt-5.4-mini-2026-03-17`
 - `TEXT2SQL_GEMINI_API_KEY` / `GEMINI_API_KEY`: required for Gemini backend
-- `TEXT2SQL_GEMINI_MODEL`: default `gemini-3.5-flash`
+- `TEXT2SQL_GEMINI_MODEL`: default `gemini-3.1-flash-lite`
 
 Verified:
 
@@ -343,18 +343,21 @@ Verified:
   - blocked `0`
   - answerable exec_acc `1.0`
   - refuse_rate `0.2778`
+- external provider first pass:
+  - `gpt-5.4-mini-2026-03-17`: positive `12 PASS / 9 FAIL / 2 REFUSED / 1 BLOCKED`, score `66.21`; negative `13/14 PASS`
+  - `gemini-3.1-flash-lite`: positive `9 PASS / 15 FAIL / 0 REFUSED / 0 BLOCKED`, score `56.25`; negative `12/14 PASS`
+  - provider/gateway errors are recorded per eval case instead of aborting the entire run.
 
 Remaining:
 
-- deploy or choose an actual external provider gateway
-- run `agent/eval/run_text2sql_v2_eval.py` with `TEXT2SQL_PROVIDER=http_json`
-- compare mock vs real-provider Exec Acc, Refuse Rate, Unsafe Block Rate, p50/p95 latency
+- classify external-provider failed cases and add targeted schema/prompt examples.
+- decide whether product demo should use OpenAI mini + deterministic registry fallback or stay fully deterministic.
 
 ## 16. Next Concrete Step
 
-Connect a richer provider after keeping the same eval gate:
+Tune the best external provider after keeping the same eval gate:
 
 - keep `agent/eval/run_text2sql_v2_eval.py`
-- connect the real provider behind the existing `http_json` adapter
-- compare provider output against `agent/eval/text2sql_questions.yml`
-- record Exec Acc, Refuse Rate, Unsafe Block Rate, p50/p95 latency
+- group failed cases from `gpt-5.4-mini-2026-03-17`
+- add only high-signal schema/prompt examples
+- rerun positive 24 + negative 14 once

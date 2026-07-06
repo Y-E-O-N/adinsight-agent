@@ -18,9 +18,9 @@ DEFAULT_BACKEND = "mock"
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 DEFAULT_OLLAMA_MODEL = "qwen2.5-coder:7b"
 DEFAULT_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
-DEFAULT_OPENAI_MODEL = "gpt-5.5"
+DEFAULT_OPENAI_MODEL = "gpt-5.4-mini-2026-03-17"
 DEFAULT_GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/interactions"
-DEFAULT_GEMINI_MODEL = "gemini-3.5-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
 DEFAULT_TIMEOUT_SECONDS = 60
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_SEED = 7
@@ -141,7 +141,6 @@ def generate_with_openai(
             {"role": "system", "content": build_text2sql_system_prompt()},
             {"role": "user", "content": build_text2sql_user_prompt(request)},
         ],
-        "temperature": float(env.get("TEXT2SQL_OPENAI_TEMPERATURE", DEFAULT_TEMPERATURE)),
         "response_format": {
             "type": "json_schema",
             "json_schema": {
@@ -151,6 +150,8 @@ def generate_with_openai(
             },
         },
     }
+    if "TEXT2SQL_OPENAI_TEMPERATURE" in env:
+        payload["temperature"] = float(env["TEXT2SQL_OPENAI_TEMPERATURE"])
     http_request = Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
@@ -214,8 +215,9 @@ def post_json(http_request: Request, timeout_seconds: int) -> object:
             f"Provider request timed out after {timeout_seconds}s"
         ) from exc
     except HTTPError as exc:
+        error_detail = exc.read().decode("utf-8", errors="replace")[:500]
         raise GatewayBackendError(
-            f"Provider request failed with HTTP {exc.code}"
+            f"Provider request failed with HTTP {exc.code}: {error_detail}"
         ) from exc
     except URLError as exc:
         raise GatewayBackendError(f"Provider request failed: {exc.reason}") from exc
@@ -286,13 +288,13 @@ def build_ollama_options(env: Mapping[str, str]) -> dict[str, int | float]:
 
 def parse_model_payload(payload: object) -> SqlGenerationResponse:
     if not isinstance(payload, dict):
-        return not_answerable("Local model response was not a JSON object.")
+        return not_answerable("Model response was not a JSON object.")
 
     candidate = extract_contract_candidate(payload)
     try:
         return parse_sql_generation_response(candidate)
     except Text2SqlProviderConfigError as exc:
-        return not_answerable(f"Local model did not return a valid Text2SQL contract: {exc}")
+        return not_answerable(f"Model did not return a valid Text2SQL contract: {exc}")
 
 
 def extract_contract_candidate(payload: dict[str, object]) -> object:
@@ -302,6 +304,21 @@ def extract_contract_candidate(payload: dict[str, object]) -> object:
     output_text = payload.get("output_text")
     if isinstance(output_text, str):
         return parse_json_text(output_text)
+
+    steps = payload.get("steps")
+    if isinstance(steps, list):
+        for step in steps:
+            if not isinstance(step, dict) or step.get("type") != "model_output":
+                continue
+            content_parts = step.get("content")
+            if not isinstance(content_parts, list):
+                continue
+            for content_part in content_parts:
+                if not isinstance(content_part, dict):
+                    continue
+                text = content_part.get("text")
+                if isinstance(text, str):
+                    return parse_json_text(text)
 
     response_text = payload.get("response")
     if isinstance(response_text, str):

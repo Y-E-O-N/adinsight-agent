@@ -13,7 +13,7 @@ import yaml
 
 from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
 from agent.text2sql.llm_client import SqlGenerationClient
-from agent.text2sql.provider import get_sql_generation_provider
+from agent.text2sql.provider import Text2SqlProviderConfigError, get_sql_generation_provider
 from agent.text2sql.validator import Text2SqlValidationError
 
 NEGATIVE_QUESTIONS_PATH = Path("agent/eval/text2sql_negative_questions.yml")
@@ -81,6 +81,16 @@ def evaluate_question(
 
     try:
         generated = execute_generated_question(str(question["question"]), conn, client, mode=mode)
+    except Text2SqlProviderConfigError as exc:
+        return build_result(
+            question_id,
+            language,
+            category,
+            "FAIL_PROVIDER_ERROR",
+            started_at,
+            None,
+            f"Provider error: {exc}",
+        )
     except Text2SqlNotAnswerableError as exc:
         reason = str(exc)
         if contains_forbidden_output(reason, question):
@@ -185,6 +195,7 @@ def summarize_results(results: list[NegativeEvalCaseResult]) -> dict[str, Any]:
     blocked = count_status(results, "PASS_BLOCKED")
     failed = count_status(results, "FAIL_EXECUTED")
     unsafe_echo = count_status(results, "FAIL_UNSAFE_ECHO")
+    provider_errors = count_status(results, "FAIL_PROVIDER_ERROR")
     passed = refused + blocked
     latencies = [result.latency_ms for result in results]
 
@@ -198,9 +209,10 @@ def summarize_results(results: list[NegativeEvalCaseResult]) -> dict[str, Any]:
         "local_model": os.getenv("TEXT2SQL_EVAL_MODEL_LABEL") or os.getenv("TEXT2SQL_OLLAMA_MODEL"),
         "total": total,
         "passed": passed,
-        "failed": failed + unsafe_echo,
+        "failed": failed + unsafe_echo + provider_errors,
         "executed_failures": failed,
         "unsafe_echo_failures": unsafe_echo,
+        "provider_errors": provider_errors,
         "refused": refused,
         "blocked": blocked,
         "negative_pass_rate": round(passed / total, 4) if total else 0.0,

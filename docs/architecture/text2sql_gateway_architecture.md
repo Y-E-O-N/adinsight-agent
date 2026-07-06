@@ -144,9 +144,8 @@ OpenAI backend:
 ```bash
 TEXT2SQL_GATEWAY_BACKEND=openai
 TEXT2SQL_OPENAI_API_KEY=$OPENAI_API_KEY
-TEXT2SQL_OPENAI_MODEL=gpt-5.5
+TEXT2SQL_OPENAI_MODEL=gpt-5.4-mini-2026-03-17
 TEXT2SQL_OPENAI_TIMEOUT_SECONDS=60
-TEXT2SQL_OPENAI_TEMPERATURE=0
 uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
 ```
 
@@ -155,10 +154,17 @@ Gemini backend:
 ```bash
 TEXT2SQL_GATEWAY_BACKEND=gemini
 TEXT2SQL_GEMINI_API_KEY=$GEMINI_API_KEY
-TEXT2SQL_GEMINI_MODEL=gemini-3.5-flash
+TEXT2SQL_GEMINI_MODEL=gemini-3.1-flash-lite
 TEXT2SQL_GEMINI_TIMEOUT_SECONDS=60
 uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
 ```
+
+First-pass real-provider eval on `2026-07-06`:
+
+| Backend | Model | Positive result | Model score | Negative result | Current use |
+|---|---|---:|---:|---:|---|
+| OpenAI | `gpt-5.4-mini-2026-03-17` | 12 PASS / 9 FAIL / 2 REFUSED / 1 BLOCKED | 66.21 | 13/14 PASS | best current external candidate, still needs tuning |
+| Gemini | `gemini-3.1-flash-lite` | 9 PASS / 15 FAIL / 0 REFUSED / 0 BLOCKED | 56.25 | 12/14 PASS | low-cost candidate, not primary-ready |
 
 Run model-only eval through the gateway:
 

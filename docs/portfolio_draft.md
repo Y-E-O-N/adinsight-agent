@@ -5,7 +5,7 @@
 >
 > 이 문서가 충분히 채워지면 → `README.md`, 1-pager PDF, 이력서 bullet, 면접 토크포인트로 **거의 자동 변환** 됩니다.
 
-마지막 갱신: **2026-07-04** (Text2SQL v2 provider adapter + API hardening)
+마지막 갱신: **2026-07-06** (external Text2SQL provider eval)
 
 ---
 
@@ -315,6 +315,7 @@
 - [x] Ollama `qwen2.5-coder:7b` eval baseline — positive `8 PASS / 11 FAIL / 5 REFUSED / 0 BLOCKED`, score `52.53`; negative `14/14 PASS`
 - [x] Ollama local model benchmark — 7개 모델 다운로드/평가; complete positive 최고 `phi4:14b` score `46.56`, 전체 결론은 prompt/schema tuning 필요
 - [x] Prompt/schema/fallback tuning — `/query/v2` registry fallback 추가; tuned `phi4:14b` positive `11/24`, score `53.91`, negative `14/14 PASS`
+- [x] External Text2SQL provider eval — `gpt-5.4-mini-2026-03-17` score `66.21`, negative `13/14 PASS`; `gemini-3.1-flash-lite` score `56.25`, negative `12/14 PASS`
 - [x] Gateway 경유 `/query/v2` live smoke — mode `llm_generated_sql_v2_http_json`, rows 5, latency 58.981ms
 - [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
 - [x] 3-5분 demo script — `docs/demo_script_3min.md`
