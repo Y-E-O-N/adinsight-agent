@@ -164,3 +164,25 @@ def test_gateway_ollama_invalid_json_refuses(monkeypatch) -> None:
     payload = response.json()
     assert payload["answerability"] == "not_answerable"
     assert payload["sql"] is None
+
+
+def test_gateway_ollama_timeout_returns_bad_gateway(monkeypatch) -> None:
+    def fake_urlopen(request, timeout):
+        raise TimeoutError("unit test timeout")
+
+    monkeypatch.delenv("TEXT2SQL_GATEWAY_API_KEY", raising=False)
+    monkeypatch.setenv("TEXT2SQL_GATEWAY_BACKEND", "ollama")
+    monkeypatch.setenv("TEXT2SQL_OLLAMA_TIMEOUT_SECONDS", "3")
+    monkeypatch.setattr(backends, "urlopen", fake_urlopen)
+    client = TestClient(gateway_main.app)
+
+    response = client.post(
+        "/text2sql/generate",
+        json={
+            "question": "Which campaigns have the highest ROAS?",
+            "schema_context": "Allowed tables: ai_native.ai_campaign_roi_summary",
+        },
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "Local model request timed out after 3s"

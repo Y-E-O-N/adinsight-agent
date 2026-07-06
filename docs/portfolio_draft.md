@@ -172,31 +172,33 @@
 ## Phase 6 — Text2SQL Agent ⭐⭐ (가장 풍부한 메트릭)
 
 ### 평가셋
-- 크기: **18 expected-SQL questions** (creator 10 + campaign ROI 4 + prediction monitor 4; 목표 50)
-- 언어 분포: KO **9** / EN **9** / ZH-TW **0** / TH **0**
+- 크기: **24 positive expected-SQL questions** + **14 negative/content-safety questions**
+- 언어 분포: KO/EN bilingual 중심, content-safety는 abusive/sexual/violent category 포함
 - 난이도: easy **TBD** / medium **TBD** / hard **TBD**
 
 ### 결과 비교 표
 
-| Version | Prompt | Model | Exec Acc | p50 | p95 | $/query |
+| Version | Prompt | Model | PASS/24 | Exec Acc | p95 | Score |
 |---|---|---|---:|---:|---:|---:|
-| v1 | naive | Gemini Flash | **TBD** | **TBD** | **TBD** | **TBD** |
-| v2 | + schema retrieval | Gemini Flash | **TBD** | **TBD** | **TBD** | **TBD** |
-| v3 | + few-shot + CoT | Gemini Flash | **TBD** | **TBD** | **TBD** | **TBD** |
-| v3 | same | Claude Haiku 4.5 | **TBD** | **TBD** | **TBD** | **TBD** |
+| v2 local | schema context + JSON contract | `phi4:14b` | 8 | 0.3810 | 26103.743ms | 46.56 |
+| v2 local | schema context + JSON contract | `qwen2.5-coder:7b` previous baseline | 8 | 0.4211 | 9528.069ms | 52.53 |
+| v2 local | schema context + JSON contract | `qwen2.5-coder:7b` rerun | 6 | 0.2857 | 10516.514ms | 43.86 |
+| v2 local | schema context + JSON contract | `sqlcoder:7b` | 0 | 0.0000 | 7986.261ms | 25.43 |
+| v2 local | schema context + JSON contract | `qwen3.5:9b` | 0 | 0.0000 | 16235.585ms | 23.08 |
 
 ### 언어별 / 난이도별
 - KO **TBD** / EN **TBD** / ZH-TW **TBD** / TH **TBD**
 - easy **TBD** / medium **TBD** / hard **TBD**
 
 ### 안전성
-- Refuse Rate (negative set): **TBD**
-- DELETE/UPDATE/DROP/ALTER 차단: **TBD**
+- Negative/content-safety set: mock `14/14 PASS`; local model batch best refusal-only models `sqlcoder:7b`, `qwen3.5:9b` both `14/14 PASS`
+- Unsafe echo failures observed: `qwen2.5-coder:7b` 1, `qwen2.5-coder:14b` 2, `phi4:14b` 2
+- DELETE/UPDATE/DROP/ALTER 차단: validator와 negative set으로 검증
 
 ### 실패 사례 3선 (`agent/eval/failure_cases.md`)
-1. **TBD**
-2. **TBD**
-3. **TBD**
+1. `sqlcoder:7b`, `qwen3.5:9b`: answerable positive 질문 대부분을 거절해 negative pass와 demo utility가 충돌.
+2. `sqlcoder:15b`, `gemma4:12b`: positive eval 도중 local model timeout으로 summary incomplete.
+3. `qwen2.5-coder:14b`, `phi4:14b`: 일부 content-safety negative 질문에서 unsafe input term echo 실패.
 
 **스크린샷·GIF**: `docs/images/06_text2sql_demo.gif`
 
@@ -309,6 +311,7 @@
 - [x] Local Text2SQL model evaluation rubric — positive 24문항, negative/content-safety 14문항, `model_score` 포함
 - [x] Text2SQL eval chart — `docs/images/06_text2sql_eval_summary.svg`
 - [x] Ollama `qwen2.5-coder:7b` eval baseline — positive `8 PASS / 11 FAIL / 5 REFUSED / 0 BLOCKED`, score `52.53`; negative `14/14 PASS`
+- [x] Ollama local model benchmark — 7개 모델 다운로드/평가; complete positive 최고 `phi4:14b` score `46.56`, 전체 결론은 prompt/schema tuning 필요
 - [x] Gateway 경유 `/query/v2` live smoke — mode `llm_generated_sql_v2_http_json`, rows 5, latency 58.981ms
 - [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
 - [x] 3-5분 demo script — `docs/demo_script_3min.md`

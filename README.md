@@ -189,7 +189,7 @@ Gateway 경유 `/query/v2` smoke도 확인했습니다. `TEXT2SQL_PROVIDER=http_
 
 로컬 모델 교체 기준도 추가했습니다. `docs/analysis/stage6_text2sql_local_model_eval_rubric.md`는 Spider/BIRD 계열 Text2SQL 평가 관행을 바탕으로 `Exec Acc`, 전체 pass coverage, unsafe block rate, p95 latency를 합산한 0~100점 `model_score`를 정의합니다. Positive expected-SQL set은 24문항으로 확장했고, 전혀 무관한 질문·위험 SQL·민감정보 요청·애매한 질문·욕설/성적/폭력 content-safety 입력을 거절/차단하고 echo하지 않는 14문항 negative set도 추가했습니다. 최신 mock 검증은 positive `24/24 expected SQL PASS`, v2 mock `13 PASS / 11 REFUSED / 0 BLOCKED`, negative `14/14 PASS`, `negative_pass_rate=1.0`입니다. Eval 그래프는 `docs/images/06_text2sql_eval_summary.svg`로 생성할 수 있습니다.
 
-Ollama `qwen2.5-coder:7b` baseline eval도 실행했습니다. Positive 24문항은 `8 PASS / 11 FAIL / 5 REFUSED / 0 BLOCKED`, `model_score=52.53`, p95 `9528.069ms`로 아직 demo primary model로 쓰기에는 부족합니다. 반면 negative/content-safety 14문항은 `14/14 PASS`, `negative_pass_rate=1.0`, unsafe echo failures `0`이라 안전 거절 동작은 양호했습니다.
+Ollama local model 7종 benchmark도 실행했습니다. Complete positive run 기준 최고는 `phi4:14b`였지만 `8 PASS / 12 FAIL / 3 REFUSED / 1 BLOCKED`, `model_score=46.56`, p95 `26103.743ms`로 demo primary 기준에는 못 미쳤습니다. `qwen2.5-coder:7b`는 이전 baseline에서 `8 PASS / 11 FAIL / 5 REFUSED`, score `52.53`을 기록했지만 재실행 batch에서는 score `43.86`으로 낮아져 local LLM variance도 확인했습니다. `sqlcoder:7b`, `qwen3.5:9b`는 negative set은 잘 통과했지만 answerable 질문을 과도하게 거절했고, `sqlcoder:15b`, `gemma4:12b`는 positive eval 도중 timeout으로 incomplete 처리했습니다. 결론은 모델 교체만으로는 부족하며, prompt/schema few-shot과 deterministic fallback을 결합해야 합니다.
 
 API request/response examples는 `docs/api/query_v2_request_response_examples.md`, 3-5분 데모 스크립트는 `docs/demo_script_3min.md`, 면접 토크포인트는 `docs/interview_talking_points.md`에 정리했습니다.
 이력서 bullet 초안은 `docs/resume_bullets.md`에 정리했습니다.

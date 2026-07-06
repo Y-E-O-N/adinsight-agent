@@ -56,13 +56,48 @@ Text2SQL 평가는 보통 하나의 지표만 보지 않는다.
 | `needs_prompt_or_schema_tuning` | score >= 50 |
 | `not_recommended` | score < 50 또는 blocked/fail/refusal이 demo 기준을 넘음 |
 
-## 모델 비교표 템플릿
+## 2026-07-06 Ollama local model benchmark
+
+동일 조건:
+
+- Gateway: `text2sql_gateway_ollama_v1`
+- Provider adapter: `TEXT2SQL_PROVIDER=http_json`
+- Positive set: 24 expected-SQL questions
+- Negative/content-safety set: 14 questions
+- Mac local runtime: Ollama on Apple Silicon unified memory
+- Timeout: gateway `TEXT2SQL_OLLAMA_TIMEOUT_SECONDS=180`, provider `TEXT2SQL_PROVIDER_TIMEOUT_SECONDS=210`
+
+Positive 평가 결과:
 
 | Model | Params | Quant | Provider | PASS | FAIL | REFUSED | BLOCKED | Exec Acc | Coverage | p95 ms | Score | Tier |
 |---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `qwen2.5-coder:7b` | 7.6B | Q4_K_M | Ollama gateway | 8 | 11 | 5 | 0 | 0.4211 | 0.3333 | 9528.069 | 52.53 | `needs_prompt_or_schema_tuning` |
-| `qwen2.5-coder:14b` | 14B | Ollama default | Ollama gateway | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| `sqlcoder` candidate | TBD | TBD | Ollama gateway | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| `qwen2.5-coder:7b` | 7B | Ollama default | Ollama gateway | 6 | 15 | 3 | 0 | 0.2857 | 0.2500 | 10516.514 | 43.86 | `not_recommended` |
+| `qwen2.5-coder:14b` | 14B | Ollama default | Ollama gateway | 7 | 16 | 0 | 1 | 0.2917 | 0.2917 | 21068.660 | 41.96 | `not_recommended` |
+| `sqlcoder:7b` | 7B | Ollama default | Ollama gateway | 0 | 2 | 21 | 1 | 0.0000 | 0.0000 | 7986.261 | 25.43 | `not_recommended` |
+| `sqlcoder:15b` | 15B | Ollama default | Ollama gateway | incomplete | incomplete | incomplete | incomplete | n/a | n/a | timeout | n/a | `not_recommended` |
+| `gemma4:12b` | 12B | Ollama default | Ollama gateway | incomplete | incomplete | incomplete | incomplete | n/a | n/a | timeout | n/a | `not_recommended` |
+| `qwen3.5:9b` | 9B | Ollama default | Ollama gateway | 0 | 0 | 24 | 0 | 0.0000 | 0.0000 | 16235.585 | 23.08 | `not_recommended` |
+| `phi4:14b` | 14B | Ollama default | Ollama gateway | 8 | 12 | 3 | 1 | 0.3810 | 0.3333 | 26103.743 | 46.56 | `not_recommended` |
+
+Negative/content-safety 평가 결과:
+
+| Model | PASS | FAIL | Negative Pass Rate | Unsafe Echo Failures | Executed Failures | p95 ms |
+|---|---:|---:|---:|---:|---:|---:|
+| `qwen2.5-coder:7b` | 13 | 1 | 0.9286 | 1 | 0 | 2550.529 |
+| `qwen2.5-coder:14b` | 11 | 3 | 0.7857 | 2 | 1 | 10031.073 |
+| `sqlcoder:7b` | 14 | 0 | 1.0000 | 0 | 0 | 4045.759 |
+| `sqlcoder:15b` | 14 | 0 | 1.0000 | 0 | 0 | 7516.915 |
+| `gemma4:12b` | incomplete | incomplete | n/a | n/a | n/a | n/a |
+| `qwen3.5:9b` | 14 | 0 | 1.0000 | 0 | 0 | 7758.309 |
+| `phi4:14b` | 12 | 2 | 0.8571 | 2 | 0 | 7425.649 |
+
+Batch interpretation:
+
+- 이번 batch의 complete positive run 중 최고 점수는 `phi4:14b`였지만 score `46.56`으로 demo primary 기준에는 못 미친다.
+- 이전에 저장된 `qwen2.5-coder:7b` baseline은 `8 PASS / 11 FAIL / 5 REFUSED`, score `52.53`이었으나, 동일 모델 재실행에서는 `6 PASS / 15 FAIL / 3 REFUSED`, score `43.86`으로 낮아졌다. 로컬 LLM 평가에는 재실행 variance가 있으므로 candidate 판정에는 repeated run 또는 temperature/seed 고정이 필요하다.
+- `sqlcoder:7b`와 `qwen3.5:9b`는 negative set은 잘 통과했지만 answerable 질문을 과도하게 거절해 Text2SQL demo 모델로는 부적합하다.
+- `sqlcoder:15b`와 `gemma4:12b`는 positive eval 도중 local model timeout으로 summary를 남기지 못했다. 이는 모델 자체뿐 아니라 gateway timeout/error handling과 eval runner robustness 개선 과제다.
+- 결론: 현재 프롬프트와 schema context에서는 모델 교체만으로 충분하지 않다. 다음 개선은 prompt examples, table별 few-shot, deterministic fallback, repeated-run 평가가 우선이다.
 
 `qwen2.5-coder:7b` baseline interpretation:
 
@@ -135,7 +170,8 @@ uv run python agent/eval/run_text2sql_v2_eval.py
 
 ## 다음 개선
 
-1. `qwen2.5-coder:7b` 전체 24문항 positive eval과 14문항 negative/content-safety eval을 실행해 baseline score를 기록한다.
-2. 같은 gateway에서 모델명만 바꿔 2~3개 후보를 비교한다.
-3. negative 질문셋을 더 확장해 multi-turn ambiguity, prompt injection, schema exfiltration 요청을 추가한다.
-4. test-suite style 평가를 위해 fixture DB snapshot을 2개 이상 만든다.
+1. local model gateway prompt에 table별 canonical few-shot을 추가하고 `phi4:14b`, `qwen2.5-coder:7b`를 repeated-run으로 재평가한다.
+2. Ollama request에 deterministic option이 가능한지 검토해 temperature/seed를 고정한다.
+3. timeout과 provider 500을 eval row의 `BLOCKED` 또는 `PROVIDER_ERROR`로 기록하도록 runner를 확장한다.
+4. negative 질문셋을 더 확장해 multi-turn ambiguity, prompt injection, schema exfiltration 요청을 추가한다.
+5. test-suite style 평가를 위해 fixture DB snapshot을 2개 이상 만든다.

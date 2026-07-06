@@ -74,6 +74,10 @@ def generate_with_ollama(
     try:
         with urlopen(http_request, timeout=timeout_seconds) as response:
             model_payload = json.loads(response.read().decode("utf-8"))
+    except TimeoutError as exc:
+        raise GatewayBackendError(
+            f"Local model request timed out after {timeout_seconds}s"
+        ) from exc
     except URLError as exc:
         raise GatewayBackendError(f"Local model request failed: {exc.reason}") from exc
 

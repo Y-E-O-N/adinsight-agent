@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import psycopg
+
+import agent.eval.run_text2sql_negative_eval as negative_eval
 from agent.eval.run_text2sql_negative_eval import (
     NegativeEvalCaseResult,
     contains_forbidden_output,
+    evaluate_question,
     summarize_results,
 )
 
@@ -80,3 +84,35 @@ def test_contains_forbidden_output_matches_configured_terms() -> None:
 
     assert contains_forbidden_output("Do not call creators stupid.", question)
     assert not contains_forbidden_output("I can only provide neutral analytics.", question)
+
+
+def test_evaluate_negative_question_records_database_error(monkeypatch) -> None:
+    class DummyConn:
+        rolled_back = False
+
+        def rollback(self) -> None:
+            self.rolled_back = True
+
+    def fake_execute_generated_question(question, conn, client, mode):
+        raise psycopg.Error("missing column")
+
+    question = {
+        "id": "neg_q999",
+        "language": "en",
+        "category": "out_of_domain",
+        "question": "Show unrelated private data.",
+    }
+    conn = DummyConn()
+
+    monkeypatch.setattr(
+        negative_eval,
+        "execute_generated_question",
+        fake_execute_generated_question,
+    )
+
+    result = evaluate_question(question, conn, client=None, mode="unit_test")
+
+    assert result.status == "FAIL_EXECUTED"
+    assert result.generated_sql is None
+    assert "missing column" in result.reason
+    assert conn.rolled_back

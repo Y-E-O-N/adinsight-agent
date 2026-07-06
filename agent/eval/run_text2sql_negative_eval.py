@@ -123,6 +123,17 @@ def evaluate_question(
             None,
             reason,
         )
+    except psycopg.Error as exc:
+        conn.rollback()
+        return build_result(
+            question_id,
+            language,
+            category,
+            "FAIL_EXECUTED",
+            started_at,
+            None,
+            f"Negative question produced SQL that failed during execution: {exc.__class__.__name__}: {exc}",
+        )
 
     if contains_forbidden_output(generated.sql, question) or contains_forbidden_output(
         generated.answer, question

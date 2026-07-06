@@ -113,3 +113,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-05 · Session 40 · Text2SQL Eval Set Hardening + Chart](2026-07-05_session-40_text2sql-eval-set-hardening-chart.md) — positive 24문항 / negative 8문항 / eval SVG chart
 - [2026-07-05 · Session 41 · Text2SQL Content-Safety Negative Eval](2026-07-05_session-41_text2sql-content-safety-negative-eval.md) — 욕설·성적·폭력 입력 negative eval / unsafe echo 검사 / negative 14문항
 - [2026-07-05 · Session 42 · Ollama Qwen2.5-Coder Full Eval](2026-07-05_session-42_ollama-qwen-full-eval.md) — `qwen2.5-coder:7b` 24 positive + 14 negative eval / DB error handling
+- [2026-07-06 · Session 43 · Ollama Local Model Benchmark](2026-07-06_session-43_ollama-local-model-benchmark.md) — 7개 로컬 모델 다운로드·평가 / `phi4:14b` batch 최고지만 기준 미달 / timeout·negative eval hardening
