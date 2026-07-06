@@ -181,7 +181,9 @@
 | Version | Prompt | Model | PASS/24 | Exec Acc | p95 | Score |
 |---|---|---|---:|---:|---:|---:|
 | v2 local | schema context + JSON contract | `phi4:14b` | 8 | 0.3810 | 26103.743ms | 46.56 |
+| v2 local tuned | few-shot + deterministic options | `phi4:14b` | 11 | 0.4583 | 18781.653ms | 53.91 |
 | v2 local | schema context + JSON contract | `qwen2.5-coder:7b` previous baseline | 8 | 0.4211 | 9528.069ms | 52.53 |
+| v2 local tuned | few-shot + deterministic options | `qwen2.5-coder:7b` | 8 | 0.3333 | 8082.541ms | 49.52 |
 | v2 local | schema context + JSON contract | `qwen2.5-coder:7b` rerun | 6 | 0.2857 | 10516.514ms | 43.86 |
 | v2 local | schema context + JSON contract | `sqlcoder:7b` | 0 | 0.0000 | 7986.261ms | 25.43 |
 | v2 local | schema context + JSON contract | `qwen3.5:9b` | 0 | 0.0000 | 16235.585ms | 23.08 |
@@ -312,6 +314,7 @@
 - [x] Text2SQL eval chart — `docs/images/06_text2sql_eval_summary.svg`
 - [x] Ollama `qwen2.5-coder:7b` eval baseline — positive `8 PASS / 11 FAIL / 5 REFUSED / 0 BLOCKED`, score `52.53`; negative `14/14 PASS`
 - [x] Ollama local model benchmark — 7개 모델 다운로드/평가; complete positive 최고 `phi4:14b` score `46.56`, 전체 결론은 prompt/schema tuning 필요
+- [x] Prompt/schema/fallback tuning — `/query/v2` registry fallback 추가; tuned `phi4:14b` positive `11/24`, score `53.91`, negative `14/14 PASS`
 - [x] Gateway 경유 `/query/v2` live smoke — mode `llm_generated_sql_v2_http_json`, rows 5, latency 58.981ms
 - [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
 - [x] 3-5분 demo script — `docs/demo_script_3min.md`

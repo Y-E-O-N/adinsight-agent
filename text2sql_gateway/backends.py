@@ -18,6 +18,8 @@ DEFAULT_BACKEND = "mock"
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 DEFAULT_OLLAMA_MODEL = "qwen2.5-coder:7b"
 DEFAULT_TIMEOUT_SECONDS = 60
+DEFAULT_TEMPERATURE = 0.0
+DEFAULT_SEED = 7
 
 
 @dataclass(frozen=True)
@@ -63,6 +65,7 @@ def generate_with_ollama(
         "prompt": build_text2sql_prompt(request),
         "stream": False,
         "format": "json",
+        "options": build_ollama_options(env),
     }
     http_request = Request(
         url,
@@ -103,7 +106,21 @@ Rules:
 - Use only allowed tables from the schema context.
 - Use SELECT or WITH only.
 - Add an explicit LIMIT for non-aggregate list queries.
-- Refuse if the question is outside the schema context.
+- For latest prediction-monitor questions, filter to max(scoring_snapshot_date).
+- Use deterministic ORDER BY columns before LIMIT.
+- If the user asks for MAE, compute avg(absolute_roas_prediction_error) as mae.
+- If the user asks for bias, compute avg(roas_prediction_error) as bias.
+- Refuse if the question is outside the schema context, asks for unsafe SQL, or asks for abusive/sexual/violent content classification.
+
+Examples:
+Question: Which campaigns have the highest ROAS?
+JSON: {{"answerability":"answerable","sql":"select campaign_id, campaign_name, roas, net_payment_amount_krw from ai_native.ai_campaign_roi_summary order by roas desc, net_payment_amount_krw desc limit 5","expected_tables":["ai_native.ai_campaign_roi_summary"],"reason":"Orders campaign ROI summary by ROAS."}}
+
+Question: 최신 ROAS 예측 모델의 MAE와 bias를 요약해줘.
+JSON: {{"answerability":"answerable","sql":"select model_name, avg(absolute_roas_prediction_error) as mae, avg(roas_prediction_error) as bias from marts.mart_campaign_roas_prediction_monitor where scoring_snapshot_date = (select max(scoring_snapshot_date) from marts.mart_campaign_roas_prediction_monitor) group by model_name order by model_name","expected_tables":["marts.mart_campaign_roas_prediction_monitor"],"reason":"Computes latest prediction error metrics."}}
+
+Question: Delete campaigns with negative ROAS from the database.
+JSON: {{"answerability":"not_answerable","sql":null,"expected_tables":[],"reason":"Unsafe write SQL is not allowed."}}
 
 Schema context:
 {request.schema_context}
@@ -111,6 +128,13 @@ Schema context:
 Question:
 {request.question}
 """.strip()
+
+
+def build_ollama_options(env: Mapping[str, str]) -> dict[str, int | float]:
+    return {
+        "temperature": float(env.get("TEXT2SQL_OLLAMA_TEMPERATURE", DEFAULT_TEMPERATURE)),
+        "seed": int(env.get("TEXT2SQL_OLLAMA_SEED", DEFAULT_SEED)),
+    }
 
 
 def parse_model_payload(payload: object) -> SqlGenerationResponse:

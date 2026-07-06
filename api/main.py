@@ -21,7 +21,12 @@ from agent.eval.run_campaign_roas_model import (
 from agent.text2sql.audit import write_text2sql_audit
 from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
 from agent.text2sql.provider import get_sql_generation_provider
-from agent.text2sql.registry import Text2SqlNoMatchError, Text2SqlUnsafeSqlError, execute_question
+from agent.text2sql.registry import (
+    Text2SqlNoMatchError,
+    Text2SqlResult,
+    Text2SqlUnsafeSqlError,
+    execute_question,
+)
 from agent.text2sql.validator import Text2SqlValidationError
 from api.schemas import (
     CampaignRoasPredictRequest,
@@ -126,6 +131,18 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
                 mode=provider.mode,
             )
     except Text2SqlNotAnswerableError as exc:
+        with get_connection() as conn:
+            fallback_response = try_query_v2_registry_fallback(
+                request.question,
+                conn,
+                mode,
+                "provider_refused",
+                str(exc),
+                started_at,
+            )
+        if fallback_response is not None:
+            return fallback_response
+
         latency_ms = round((perf_counter() - started_at) * 1000, 3)
         record_query_v2_audit(
             {
@@ -144,6 +161,18 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
             },
         ) from exc
     except Text2SqlValidationError as exc:
+        with get_connection() as conn:
+            fallback_response = try_query_v2_registry_fallback(
+                request.question,
+                conn,
+                mode,
+                "provider_blocked",
+                str(exc),
+                started_at,
+            )
+        if fallback_response is not None:
+            return fallback_response
+
         latency_ms = round((perf_counter() - started_at) * 1000, 3)
         record_query_v2_audit(
             {
@@ -162,6 +191,18 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
             },
         ) from exc
     except Exception as exc:
+        with get_connection() as conn:
+            fallback_response = try_query_v2_registry_fallback(
+                request.question,
+                conn,
+                mode,
+                "provider_error",
+                type(exc).__name__,
+                started_at,
+            )
+        if fallback_response is not None:
+            return fallback_response
+
         latency_ms = round((perf_counter() - started_at) * 1000, 3)
         record_query_v2_audit(
             {
@@ -210,6 +251,79 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
         known_limitation=(
             "Uses the configured Text2SQL generation provider. SQL is still validated, "
             "bounded, timed out, and audited before execution."
+        ),
+    )
+
+
+def try_query_v2_registry_fallback(
+    question: str,
+    conn: psycopg.Connection,
+    provider_mode: str,
+    trigger_status: str,
+    trigger_error: str,
+    started_at: float,
+) -> QueryV2Response | None:
+    if not query_v2_registry_fallback_enabled():
+        return None
+
+    try:
+        fallback_result = execute_question(question, conn)
+    except Text2SqlNoMatchError:
+        return None
+    except Text2SqlUnsafeSqlError:
+        return None
+    except Exception:
+        return None
+
+    latency_ms = round((perf_counter() - started_at) * 1000, 3)
+    record_query_v2_audit(
+        {
+            "status": "fallback_success",
+            "mode": "deterministic_expected_sql_registry_fallback_v1",
+            "provider_mode": provider_mode,
+            "fallback_trigger_status": trigger_status,
+            "fallback_trigger_error": trigger_error,
+            "question": question,
+            "latency_ms": latency_ms,
+            "row_count": fallback_result.row_count,
+            "question_id": fallback_result.question_id,
+        }
+    )
+
+    return build_query_v2_fallback_response(question, fallback_result, latency_ms)
+
+
+def query_v2_registry_fallback_enabled() -> bool:
+    return os.getenv("TEXT2SQL_V2_REGISTRY_FALLBACK_ENABLED", "true").lower() not in {
+        "0",
+        "false",
+        "no",
+    }
+
+
+def build_query_v2_fallback_response(
+    question: str,
+    fallback_result: Text2SqlResult,
+    latency_ms: float,
+) -> QueryV2Response:
+    return QueryV2Response(
+        question=question,
+        sql=fallback_result.sql,
+        rows=fallback_result.rows,
+        row_count=fallback_result.row_count,
+        answer=fallback_result.answer,
+        latency_ms=latency_ms,
+        mode="deterministic_expected_sql_registry_fallback_v1",
+        expected_tables=[fallback_result.expected_model],
+        reason=(
+            "Provider result was not usable, so /query/v2 fell back to the "
+            f"curated expected-SQL registry question_id={fallback_result.question_id}."
+        ),
+        validation_tables=[fallback_result.expected_model],
+        validation_limit=None,
+        known_limitation=(
+            "Fallback handles only exact curated questions from "
+            "agent/eval/text2sql_questions.yml; model-only evaluation remains separate."
         ),
     )
 

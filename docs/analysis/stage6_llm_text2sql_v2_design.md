@@ -1,7 +1,7 @@
 # Stage 6 LLM Text2SQL v2 Design
 
 **작성일**: 2026-07-04
-**상태**: v2.0 mock harness, `/query/v2` endpoint, and v2 eval runner implemented; provider integration not implemented
+**상태**: v2.0 mock harness, `/query/v2` endpoint, v2 eval runner, provider adapter, local Ollama gateway, and deterministic registry fallback implemented
 **기준선**: deterministic `/query` v1 with expected-SQL registry
 
 ## 1. 목적
@@ -17,6 +17,7 @@ v2의 목적은 LLM SQL generation을 붙이되, v1에서 만든 guardrail과 ev
 - 실행 전 validator가 SQL shape, 허용 schema/table, row limit, statement timeout을 검사한다.
 - expected-SQL evaluator는 v2 regression benchmark로 계속 사용한다.
 - v2 실패 시 v1 registry match 또는 refusal로 fallback한다.
+- 구현 기준: `/query/v2`는 provider refusal/block/error 이후 curated v1 registry exact-match가 있으면 `deterministic_expected_sql_registry_fallback_v1` mode로 응답한다. Eval runner는 model-only 점수 왜곡을 막기 위해 fallback을 사용하지 않는다.
 
 ## 2. v1 기준선
 

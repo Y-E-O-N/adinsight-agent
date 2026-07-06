@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from fastapi.testclient import TestClient
 
 import text2sql_gateway.main as gateway_main
@@ -111,6 +113,9 @@ def test_gateway_generate_sql_uses_ollama_backend(monkeypatch) -> None:
 
     def fake_urlopen(request, timeout):
         assert timeout == 9
+        payload = json.loads(request.data.decode("utf-8"))
+        assert payload["options"] == {"temperature": 0.0, "seed": 7}
+        assert "latest prediction-monitor questions" in payload["prompt"]
         return FakeResponse()
 
     monkeypatch.delenv("TEXT2SQL_GATEWAY_API_KEY", raising=False)

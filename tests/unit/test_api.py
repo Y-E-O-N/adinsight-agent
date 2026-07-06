@@ -194,6 +194,84 @@ def test_query_v2_endpoint_returns_404_for_not_answerable(monkeypatch) -> None:
     assert audit_records[0]["status"] == "refused"
 
 
+def test_query_v2_endpoint_falls_back_to_registry_on_provider_refusal(monkeypatch) -> None:
+    audit_records = []
+
+    def fake_execute_generated_question(question, conn, client, mode):
+        raise Text2SqlNotAnswerableError("not answerable in unit test")
+
+    def fake_execute_question(question, conn):
+        return Text2SqlResult(
+            question_id="p5_q001",
+            matched_question="Which campaigns have the highest ROAS?",
+            expected_model="ai_native.ai_campaign_roi_summary",
+            sql="select campaign_id, roas from ai_native.ai_campaign_roi_summary limit 5",
+            rows=[{"campaign_id": "camp_000029", "roas": 0.597425}],
+            row_count=1,
+            answer="p5_q001 returned 1 rows from ai_native.ai_campaign_roi_summary.",
+        )
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.delenv("TEXT2SQL_V2_REGISTRY_FALLBACK_ENABLED", raising=False)
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+    monkeypatch.setattr(api_main, "execute_question", fake_execute_question)
+    monkeypatch.setattr(api_main, "write_text2sql_audit", lambda record: audit_records.append(record))
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query/v2",
+        json={"question": "Which campaigns have the highest ROAS?"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mode"] == "deterministic_expected_sql_registry_fallback_v1"
+    assert payload["expected_tables"] == ["ai_native.ai_campaign_roi_summary"]
+    assert payload["row_count"] == 1
+    assert "p5_q001" in payload["reason"]
+    assert audit_records[0]["status"] == "fallback_success"
+    assert audit_records[0]["fallback_trigger_status"] == "provider_refused"
+
+
+def test_query_v2_endpoint_can_disable_registry_fallback(monkeypatch) -> None:
+    audit_records = []
+
+    def fake_execute_generated_question(question, conn, client, mode):
+        raise Text2SqlNotAnswerableError("not answerable in unit test")
+
+    def fake_execute_question(question, conn):
+        raise AssertionError("Fallback should not run when disabled")
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.setenv("TEXT2SQL_V2_REGISTRY_FALLBACK_ENABLED", "false")
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+    monkeypatch.setattr(api_main, "execute_question", fake_execute_question)
+    monkeypatch.setattr(api_main, "write_text2sql_audit", lambda record: audit_records.append(record))
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query/v2",
+        json={"question": "Which campaigns have the highest ROAS?"},
+    )
+
+    assert response.status_code == 404
+    assert audit_records[0]["status"] == "refused"
+
+
 def test_query_v2_endpoint_returns_400_for_blocked_sql(monkeypatch) -> None:
     audit_records = []
 

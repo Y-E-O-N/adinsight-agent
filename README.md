@@ -191,6 +191,8 @@ Gateway 경유 `/query/v2` smoke도 확인했습니다. `TEXT2SQL_PROVIDER=http_
 
 Ollama local model 7종 benchmark도 실행했습니다. Complete positive run 기준 최고는 `phi4:14b`였지만 `8 PASS / 12 FAIL / 3 REFUSED / 1 BLOCKED`, `model_score=46.56`, p95 `26103.743ms`로 demo primary 기준에는 못 미쳤습니다. `qwen2.5-coder:7b`는 이전 baseline에서 `8 PASS / 11 FAIL / 5 REFUSED`, score `52.53`을 기록했지만 재실행 batch에서는 score `43.86`으로 낮아져 local LLM variance도 확인했습니다. `sqlcoder:7b`, `qwen3.5:9b`는 negative set은 잘 통과했지만 answerable 질문을 과도하게 거절했고, `sqlcoder:15b`, `gemma4:12b`는 positive eval 도중 timeout으로 incomplete 처리했습니다. 결론은 모델 교체만으로는 부족하며, prompt/schema few-shot과 deterministic fallback을 결합해야 합니다.
 
+이후 prompt/schema/fallback을 한 번 개선해 `qwen2.5-coder:7b`, `phi4:14b`만 재평가했습니다. Gateway prompt에 few-shot JSON examples와 deterministic Ollama options(`temperature=0.0`, `seed=7`)를 추가하고, `/query/v2`에는 provider refusal/block/error 시 curated registry exact-match fallback을 붙였습니다. Model-only eval 기준 `phi4:14b`는 positive `11 PASS / 12 FAIL / 0 REFUSED / 1 BLOCKED`, score `53.91`, negative `14/14 PASS`로 개선됐지만 여전히 primary free-form Text2SQL 모델은 아닙니다. Product demo는 fallback-enabled `/query/v2`와 deterministic `/query` v1을 함께 쓰는 전략이 안전합니다.
+
 API request/response examples는 `docs/api/query_v2_request_response_examples.md`, 3-5분 데모 스크립트는 `docs/demo_script_3min.md`, 면접 토크포인트는 `docs/interview_talking_points.md`에 정리했습니다.
 이력서 bullet 초안은 `docs/resume_bullets.md`에 정리했습니다.
 

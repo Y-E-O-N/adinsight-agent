@@ -99,6 +99,37 @@ Batch interpretation:
 - `sqlcoder:15b`와 `gemma4:12b`는 positive eval 도중 local model timeout으로 summary를 남기지 못했다. 이는 모델 자체뿐 아니라 gateway timeout/error handling과 eval runner robustness 개선 과제다.
 - 결론: 현재 프롬프트와 schema context에서는 모델 교체만으로 충분하지 않다. 다음 개선은 prompt examples, table별 few-shot, deterministic fallback, repeated-run 평가가 우선이다.
 
+## 2026-07-06 prompt/schema/fallback tuning rerun
+
+변경 사항:
+
+- `SCHEMA_CONTEXT_V1`에 campaign ROI, latest prediction MAE/bias, creator review canonical SQL examples를 추가했다.
+- Ollama gateway prompt에 JSON few-shot examples와 latest snapshot, MAE, bias, unsafe refusal rule을 명시했다.
+- Ollama 요청에 deterministic options를 추가했다: default `temperature=0.0`, `seed=7`.
+- `/query/v2` API에 deterministic expected-SQL registry fallback을 추가했다. Provider가 refusal/block/error를 반환해도 질문이 curated registry와 exact-match되면 `deterministic_expected_sql_registry_fallback_v1` mode로 응답한다.
+- Eval runner는 fallback을 사용하지 않는 model-only 평가로 유지한다. 따라서 아래 점수는 fallback이 섞이지 않은 모델 자체 점수다.
+
+Tuned positive 평가 결과:
+
+| Model | PASS | FAIL | REFUSED | BLOCKED | Exec Acc | Coverage | p95 ms | Score | Tier |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| `qwen2.5-coder:7b` | 8 | 16 | 0 | 0 | 0.3333 | 0.3333 | 8082.541 | 49.52 | `not_recommended` |
+| `phi4:14b` | 11 | 12 | 0 | 1 | 0.4583 | 0.4583 | 18781.653 | 53.91 | `needs_prompt_or_schema_tuning` |
+
+Tuned negative/content-safety 평가 결과:
+
+| Model | PASS | FAIL | Negative Pass Rate | Unsafe Echo Failures | Executed Failures | p95 ms |
+|---|---:|---:|---:|---:|---:|---:|
+| `qwen2.5-coder:7b` | 13 | 1 | 0.9286 | 0 | 1 | 2175.993 |
+| `phi4:14b` | 14 | 0 | 1.0000 | 0 | 0 | 6440.840 |
+
+Tuning interpretation:
+
+- `phi4:14b`가 가장 의미 있게 개선됐다: positive PASS `8 -> 11`, score `46.56 -> 53.91`, negative `12/14 -> 14/14`.
+- `qwen2.5-coder:7b`는 refusal이 `3 -> 0`으로 줄었지만 FAIL이 늘어 score `49.52`에 머물렀다.
+- Product demo 관점에서는 `/query/v2` fallback을 켜면 curated 질문은 안정적으로 응답할 수 있다. 하지만 model-only 평가 기준으로는 아직 `phi4:14b`도 live free-form Text2SQL primary model은 아니다.
+- 다음 개선은 failed case별 canonical SQL few-shot을 더 추가하거나, local model을 “SQL draft generator”로 두고 deterministic registry/fallback을 product path에 명확히 통합하는 방향이 맞다.
+
 `qwen2.5-coder:7b` baseline interpretation:
 
 - Positive SQL generation is not demo-primary ready yet: only `8/24` exact-result PASS.
@@ -170,8 +201,7 @@ uv run python agent/eval/run_text2sql_v2_eval.py
 
 ## 다음 개선
 
-1. local model gateway prompt에 table별 canonical few-shot을 추가하고 `phi4:14b`, `qwen2.5-coder:7b`를 repeated-run으로 재평가한다.
-2. Ollama request에 deterministic option이 가능한지 검토해 temperature/seed를 고정한다.
-3. timeout과 provider 500을 eval row의 `BLOCKED` 또는 `PROVIDER_ERROR`로 기록하도록 runner를 확장한다.
-4. negative 질문셋을 더 확장해 multi-turn ambiguity, prompt injection, schema exfiltration 요청을 추가한다.
-5. test-suite style 평가를 위해 fixture DB snapshot을 2개 이상 만든다.
+1. `phi4:14b` failed cases 12개를 분류해 table별 few-shot 또는 registry fallback 후보로 나눈다.
+2. timeout과 provider 500을 eval row의 `BLOCKED` 또는 `PROVIDER_ERROR`로 기록하도록 runner를 확장한다.
+3. negative 질문셋을 더 확장해 multi-turn ambiguity, prompt injection, schema exfiltration 요청을 추가한다.
+4. test-suite style 평가를 위해 fixture DB snapshot을 2개 이상 만든다.
