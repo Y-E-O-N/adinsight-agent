@@ -1,6 +1,6 @@
 # Text2SQL Gateway Architecture
 
-**Status**: implemented with mock, local Ollama, OpenAI, and Gemini backend options
+**Status**: implemented with mock, local Ollama, OpenAI, Gemini, and Gemini-primary/OpenAI-fallback backend options
 **Gateway app**: `text2sql_gateway/main.py`
 **Local endpoint**: `POST /text2sql/generate`
 **Docker Compose service**: `text2sql-gateway` on port `8010`
@@ -15,7 +15,7 @@ The cleaner long-term split is:
 Web UI
   -> Serving API /query/v2
       -> Text2SQL Gateway /text2sql/generate
-          -> LLM provider later
+          -> LLM provider or provider fallback
       -> SQL validator
       -> Postgres execution
       -> rows and answer back to UI
@@ -30,7 +30,7 @@ This keeps provider-specific code out of the user-facing serving API.
 | Web UI | Collect user question and render answer/table |
 | Serving API `/query/v2` | Validate generated SQL, execute against Postgres, audit request |
 | Text2SQL Gateway | Generate SQL candidate JSON from question + schema context |
-| LLM provider | Later backend for SQL generation |
+| LLM provider | Backend for SQL generation behind the gateway |
 | Postgres | Execute only validated SQL |
 
 ## Current Implementation
@@ -43,6 +43,7 @@ The gateway supports these backend modes:
 | Ollama/local model | `TEXT2SQL_GATEWAY_BACKEND=ollama` | local small-model Text2SQL backend |
 | OpenAI | `TEXT2SQL_GATEWAY_BACKEND=openai` | external structured-output Text2SQL backend |
 | Gemini | `TEXT2SQL_GATEWAY_BACKEND=gemini` | external structured-output Text2SQL backend |
+| Dual provider | `TEXT2SQL_GATEWAY_BACKEND=dual` | Gemini primary with OpenAI fallback |
 
 The default is `mock`.
 
@@ -50,8 +51,9 @@ This means:
 
 - no external LLM API key is required
 - CI and local demos stay deterministic
-- the HTTP contract is already fixed for later real-provider work
+- the HTTP contract is fixed for real-provider and fallback work
 - local model output is still parsed into the same JSON contract before it can reach `/query/v2`
+- external provider attempts can be preserved through `usage_attempts` for request-level cost and latency audit
 
 ## Contract
 
@@ -72,7 +74,10 @@ Response:
   "sql": "select ...",
   "expected_tables": ["ai_native.ai_campaign_roi_summary"],
   "reason": "Question asks for campaigns ranked by ROAS.",
-  "mode": "text2sql_gateway_mock_v1"
+  "mode": "text2sql_gateway_mock_v1",
+  "usage": null,
+  "usage_attempts": [],
+  "fallback_reason": null
 }
 ```
 
@@ -159,12 +164,25 @@ TEXT2SQL_GEMINI_TIMEOUT_SECONDS=60
 uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
 ```
 
-First-pass real-provider eval on `2026-07-06`:
+Gemini primary + OpenAI fallback backend:
 
-| Backend | Model | Positive result | Model score | Negative result | Current use |
-|---|---|---:|---:|---:|---|
-| OpenAI | `gpt-5.4-mini-2026-03-17` | 12 PASS / 9 FAIL / 2 REFUSED / 1 BLOCKED | 66.21 | 13/14 PASS | best current external candidate, still needs tuning |
-| Gemini | `gemini-3.1-flash-lite` | 9 PASS / 15 FAIL / 0 REFUSED / 0 BLOCKED | 56.25 | 12/14 PASS | low-cost candidate, not primary-ready |
+```bash
+TEXT2SQL_GATEWAY_BACKEND=dual
+TEXT2SQL_GEMINI_API_KEY=$GEMINI_API_KEY
+TEXT2SQL_GEMINI_MODEL=gemini-3.1-flash-lite
+TEXT2SQL_OPENAI_API_KEY=$OPENAI_API_KEY
+TEXT2SQL_OPENAI_MODEL=gpt-5.4-mini-2026-03-17
+uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
+```
+
+Latest real-provider eval after hardening on `2026-07-14`:
+
+| Backend | Model | Positive result | Negative result | Estimated cost | Provider elapsed | Current use |
+|---|---|---:|---:|---:|---:|---|
+| OpenAI | `gpt-5.4-mini-2026-03-17` | 24/24 PASS | 14/14 PASS | `$0.103027` | 124.799 s | reliability/safety fallback |
+| Gemini | `gemini-3.1-flash-lite` | 24/24 PASS | 12/14 PASS | `$0.064098` | 145.363 s | cost-efficient primary |
+
+The operational serving policy is recorded in `docs/adr/004-text2sql-dual-provider-fallback.md`: Gemini is primary, OpenAI is fallback, and deterministic expected-SQL registry remains the final curated fallback.
 
 Run model-only eval through the gateway:
 

@@ -14,8 +14,9 @@
 ## Text2SQL / AI-Native BI
 
 - Implemented deterministic Text2SQL v1 by matching natural-language questions to a curated expected-SQL registry, returning SQL, rows, answer text, and latency while keeping execution restricted to reviewed SELECT statements.
-- Built a generated-SQL Text2SQL v2 boundary with provider factory, SQL validator, statement timeout, best-effort audit logging, and explicit API error handling for success, refused, blocked, and unexpected-error paths.
-- Expanded Text2SQL v2 mock coverage to `13 PASS / 5 REFUSED / 0 BLOCKED` over 18 bilingual eval questions while preserving v1 as a `18/18 PASS` deterministic baseline.
+- Built a generated-SQL Text2SQL v2 boundary with provider factory, SQL validator, statement timeout, best-effort audit logging, provider usage/cost tracking, and explicit API error handling for success, refused, blocked, and unexpected-error paths.
+- Expanded Text2SQL evaluation to 24 positive questions and 14 negative/content-safety questions, with latest external-provider runs reaching OpenAI `24/24` positive and `14/14` negative pass, and Gemini `24/24` positive and `12/14` negative pass.
+- Added request-level `provider_summary` observability for `/query/v2`, exposing final provider, model, estimated cost, provider latency, cached input ratio, and fallback status; measured Gemini at `$0.064098` vs OpenAI at `$0.103027` over the same 38-case positive/negative scope.
 - Documented Text2SQL failure cases where broad no-LIMIT generated SQL is refused or blocked, turning guardrail behavior into an auditable safety decision.
 
 ## DevOps / Quality
@@ -26,9 +27,9 @@
 ## Portfolio / Cloud Mapping
 
 - Mapped the local architecture to an AWS target design using MWAA, RDS/Aurora PostgreSQL, S3, ECS Fargate, ALB, CloudWatch, and QuickSight, while explicitly documenting cost-control and non-deployed boundaries.
-- Produced portfolio-ready evidence including architecture SVG, Superset screenshots, Text2SQL demo GIF, API request/response examples, v1/v2 eval comparison, failure cases, 3-5 minute demo script, and interview talking points.
+- Produced portfolio-ready evidence including architecture SVG, Superset screenshots, Text2SQL demo GIF, API request/response examples, v1/v2 eval comparison, external-provider cost comparison, failure cases, 3-5 minute demo script, and interview talking points.
 
 ## Short Version
 
 - Built AdInsight, an AI-native influencer campaign analytics platform combining Airflow ingestion, dbt semantic marts, Superset dashboards, ROAS prediction serving, and guarded Text2SQL APIs.
-- Delivered deterministic Text2SQL v1 (`18/18 PASS`) and generated-SQL v2 guardrails (`13 PASS / 5 REFUSED / 0 BLOCKED`) with validator, timeout, audit logging, CI, and documented failure cases.
+- Delivered deterministic Text2SQL baseline (`24/24 PASS`) and generated-SQL v2 guardrails with OpenAI/Gemini gateway backends, validator, timeout, audit logging, provider cost observability, CI, and documented failure cases.

@@ -22,17 +22,24 @@ The deterministic `/query` endpoint creates a safety baseline. It proves that th
 
 Generated SQL has different failure modes. `/query/v2` has its own provider factory, validator, statement timeout, audit log, and error-path tests, while `/query` remains stable.
 
+### Why expose provider cost and latency?
+
+Text2SQL quality is not only execution accuracy. A usable serving boundary also needs provider choice, estimated cost, latency, cache ratio, fallback status, and failure reason to be visible per request. `/query/v2` exposes this through `provider_summary` and mirrors it into the audit log.
+
 ## Metrics To Mention
 
 | Area | Metric |
 |---|---:|
-| expected-SQL v1 eval | `18/18 PASS` |
-| v2 mock eval | `13 PASS / 5 REFUSED / 0 BLOCKED` |
-| v2 answerable exec accuracy | `1.0` |
-| v2 refuse rate | `0.2778` |
+| expected-SQL baseline | `24/24 PASS` |
+| OpenAI positive eval | `24/24 PASS` |
+| OpenAI negative eval | `14/14 PASS` |
+| Gemini positive eval | `24/24 PASS` |
+| Gemini negative eval | `12/14 PASS` |
+| Gemini cost over 38 cases | `$0.064098` |
+| OpenAI cost over 38 cases | `$0.103027` |
+| provider cost observation | request-level `provider_summary` + audit summary CLI |
 | ROAS model best MAE | `0.0474` |
 | ROAS baseline MAE | `0.0892` |
-| unit tests | `20 passed` |
 | CI | GitHub Actions ruff + pytest on push/PR |
 
 ## Failure Case Story
@@ -55,15 +62,21 @@ The project uses synthetic payment events because real advertiser payment data i
 
 The current labeled campaign set has 25 rows. I use leave-one-out comparison and artifact-backed serving to demonstrate the ML workflow, but I do not overclaim model generalization.
 
-### Mock v2 provider
+### Provider-backed v2
 
-The v2 provider defaults to mock because CI and demos should not depend on API keys. A real provider can be connected through `TEXT2SQL_PROVIDER=http_json`.
+The v2 provider defaults to mock because CI and demos should not depend on API keys. Real OpenAI/Gemini calls sit behind the same `TEXT2SQL_PROVIDER=http_json` gateway contract, so eval runner and API serving use the same boundary.
+
+### Why Gemini primary and OpenAI fallback?
+
+Gemini was cheaper in the latest measured 38-case positive/negative scope, while OpenAI was faster and cleaner on negative safety. ADR 004 therefore chooses Gemini as the cost-efficient primary path and OpenAI as the reliability/safety fallback, with deterministic registry fallback kept for curated demo stability.
+
+The policy has also been live-smoked through `/query/v2`: a normal ROAS query completed on Gemini without fallback, while a content-safety refusal triggered Gemini -> OpenAI fallback and recorded `fallback_reason=primary_content_safety_refusal` in `provider_summary`.
 
 ## Strong Interview Answers
 
 ### "What would you improve next?"
 
-I would connect a real provider gateway to the existing `http_json` contract, run the same 18-question eval, and compare mock vs real provider on Exec Acc, Refuse Rate, Unsafe Block Rate, and latency.
+I would collect more repeated dual-provider traffic and report fallback rate, p95 latency, and cost distribution from the audit summary CLI. The orchestration path is implemented; the next improvement is operational evidence over a larger request sample.
 
 ### "How would this move to AWS?"
 

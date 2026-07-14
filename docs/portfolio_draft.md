@@ -5,7 +5,7 @@
 >
 > 이 문서가 충분히 채워지면 → `README.md`, 1-pager PDF, 이력서 bullet, 면접 토크포인트로 **거의 자동 변환** 됩니다.
 
-마지막 갱신: **2026-07-06** (external Text2SQL provider eval)
+마지막 갱신: **2026-07-14** (OpenAI/Gemini Text2SQL eval hardening + provider cost observability)
 
 ---
 
@@ -187,6 +187,8 @@
 | v2 local | schema context + JSON contract | `qwen2.5-coder:7b` rerun | 6 | 0.2857 | 10516.514ms | 43.86 |
 | v2 local | schema context + JSON contract | `sqlcoder:7b` | 0 | 0.0000 | 7986.261ms | 25.43 |
 | v2 local | schema context + JSON contract | `qwen3.5:9b` | 0 | 0.0000 | 16235.585ms | 23.08 |
+| v2 external hardened | schema catalog + strict validator + retry/cost tracking | `gpt-5.4-mini-2026-03-17` | 24 | 1.0000 | 5307.774ms | production candidate |
+| v2 external hardened | schema catalog + strict validator + cost tracking | `gemini-3.1-flash-lite` | 24 | 1.0000 | 4581.632ms | cost-efficient candidate |
 
 ### 언어별 / 난이도별
 - KO **TBD** / EN **TBD** / ZH-TW **TBD** / TH **TBD**
@@ -214,7 +216,9 @@
 - Evaluation set: `agent/eval/text2sql_questions.yml`
 - Analysis note: `docs/analysis/stage4_text2sql_eval_questions.md`
 - Latest verified command: `set -a; source .env; set +a; POSTGRES_HOST=localhost uv run python agent/eval/run_expected_sql.py`
-- Result: `summary passed=18 failed=0 total=18`
+- Result: expected-SQL baseline `24/24 PASS`
+- Latest external provider result: OpenAI positive/negative `38/38 PASS`; Gemini positive/negative `36/38 PASS`
+- Cost evidence: Gemini `$0.064098` vs OpenAI `$0.103027` over the same 38 positive/negative cases
 
 **ROAS ML model v1**
 - Script: `agent/eval/run_campaign_roas_model.py`
@@ -281,9 +285,9 @@
 | locust 30 동접 p50 / p95 / p99 | **TBD** / **TBD** / **TBD** |
 | 동접 변화 커브 (10 / 20 / 30 / 50) | **TBD** |
 | Singleflight dedup 비율 | **TBD %** |
-| Gemini → Claude fallback 발동 횟수 | **TBD** |
+| Gemini → OpenAI fallback 발동 횟수 | **2** local smoke audit records (`primary_content_safety_refusal` patched evidence 1건 포함) |
 | Back-pressure 503 발동 임계점 | **TBD** |
-| ADR 문서 수 | **2** (목표 ≥ 3) |
+| ADR 문서 수 | **4** (목표 ≥ 3) |
 | Superset 기여 (issue / PR) | **TBD** |
 
 **스크린샷**: `docs/images/09_locust_30.png`
@@ -315,7 +319,8 @@
 - [x] Ollama `qwen2.5-coder:7b` eval baseline — positive `8 PASS / 11 FAIL / 5 REFUSED / 0 BLOCKED`, score `52.53`; negative `14/14 PASS`
 - [x] Ollama local model benchmark — 7개 모델 다운로드/평가; complete positive 최고 `phi4:14b` score `46.56`, 전체 결론은 prompt/schema tuning 필요
 - [x] Prompt/schema/fallback tuning — `/query/v2` registry fallback 추가; tuned `phi4:14b` positive `11/24`, score `53.91`, negative `14/14 PASS`
-- [x] External Text2SQL provider eval — `gpt-5.4-mini-2026-03-17` score `66.21`, negative `13/14 PASS`; `gemini-3.1-flash-lite` score `56.25`, negative `12/14 PASS`
+- [x] External Text2SQL provider eval — `gpt-5.4-mini-2026-03-17` positive `24/24`, negative `14/14`; `gemini-3.1-flash-lite` positive `24/24`, negative `12/14`
+- [x] Text2SQL provider cost observability — `/query/v2` `provider_summary`, audit summary CLI, Gemini `$0.064098` vs OpenAI `$0.103027` over 38 cases
 - [x] Gateway 경유 `/query/v2` live smoke — mode `llm_generated_sql_v2_http_json`, rows 5, latency 58.981ms
 - [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
 - [x] 3-5분 demo script — `docs/demo_script_3min.md`
@@ -351,7 +356,7 @@ ADR = "왜 X 가 아니라 Y 를 선택했는가" 를 1~2페이지로 남긴 결
 | 003 | AI-Native 레이어를 별도로 두는 이유 | `docs/adr/003-ai-native-layer.md` | ⏳ Phase 4 시 |
 | 004 | LangChain vs 직접 호출 | `docs/adr/004-langchain.md` | ⏳ Phase 6 시 |
 | 005 | Embedding 모델 선택 (bge-m3) | `docs/adr/005-embedding-model.md` | ⏳ Phase 6 시 |
-| 006 | Gemini primary + Claude fallback | `docs/adr/006-llm-provider.md` | ⏳ Phase 6 시 |
+| 004 | Text2SQL OpenAI/Gemini dual-provider fallback | `docs/adr/004-text2sql-dual-provider-fallback.md` | ✅ Phase 6 작성 |
 
 ---
 

@@ -65,19 +65,33 @@ curl -s -X POST http://127.0.0.1:8000/query/v2 \
 
 Talking point:
 
-"v2 is where generated SQL will live. Today it uses a provider-free mock by default, but the boundary is realistic: provider factory, SQL validator, statement timeout, audit log, error handling, and eval runner."
+"v2 is the guarded generated-SQL boundary. The API can run with a provider-free mock, or it can call an external Text2SQL gateway backed by Gemini or OpenAI. Regardless of provider, the generated SQL is validated, bounded, timed out, executed, and audited."
+
+Show in the response:
+
+- `mode`: `llm_generated_sql_v2_mock` or `llm_generated_sql_v2_http_json`
+- `sql`: generated and validated SQL
+- `row_count`: returned row count
+- `provider_summary.final_provider`: `gemini`, `openai`, or `deterministic_registry`
+- `provider_summary.estimated_cost_usd`
+- `provider_summary.provider_elapsed_ms`
+- `provider_summary.cached_input_ratio`
+- `provider_summary.fallback_used`
+- `provider_summary.fallback_reason`
 
 Current quality numbers:
 
-- v1 deterministic: `18 PASS / 0 FAIL`
-- v2 mock: `13 PASS / 5 REFUSED / 0 BLOCKED`
-- v2 answerable-only exec accuracy: `1.0`
+- expected-SQL deterministic baseline: `24/24 PASS`
+- OpenAI latest positive/negative: `38/38 PASS`, estimated cost `$0.103027`
+- Gemini latest positive/negative: `36/38 PASS`, estimated cost `$0.064098`
+- Gemini was about 37.8% cheaper; OpenAI was about 16.5% faster by total provider elapsed time.
+- Dual-provider live smoke: positive request completed on Gemini without fallback; safety refusal triggered Gemini -> OpenAI fallback with `fallback_reason=primary_content_safety_refusal`.
 
 ## 4:00-5:00 — Safety And AWS Mapping
 
 Talking point:
 
-"I do not let generated SQL directly hit arbitrary tables. The validator only allows approved semantic marts, SELECT or WITH statements, and bounded non-aggregate queries. Broad no-LIMIT creator lists are refused until pagination is implemented."
+"I do not let generated SQL directly hit arbitrary tables. The validator only allows approved semantic marts, SELECT or WITH statements, and bounded non-aggregate queries. `/query/v2` also records the provider, model, cost, latency, cache ratio, and fallback status so that the demo is not only a model-quality claim; it is an observable serving boundary."
 
 AWS mapping:
 
@@ -87,6 +101,7 @@ AWS mapping:
 - FastAPI -> ECS Fargate behind ALB
 - Superset -> QuickSight or managed BI
 - logs/metrics -> CloudWatch
+- Text2SQL gateway -> Bedrock, OpenAI, Gemini, or an internal model gateway behind a private endpoint
 
 Close:
 
