@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
+
 import psycopg
 
 from agent.eval.run_text2sql_v2_eval import (
     V2EvalCaseResult,
     evaluate_question,
     summarize_results,
+    write_case_artifact_if_configured,
 )
 from agent.text2sql.llm_client import SqlGenerationResponse
 from agent.text2sql.provider import Text2SqlProviderConfigError
@@ -135,3 +138,40 @@ def test_evaluate_question_records_provider_error_as_fail() -> None:
     assert result.status == "FAIL"
     assert result.actual_rows is None
     assert "Provider error: gateway 502" in result.reason
+
+
+def test_write_case_artifact_when_configured(tmp_path, monkeypatch) -> None:
+    artifact_path = tmp_path / "cases.json"
+    monkeypatch.setenv("TEXT2SQL_EVAL_CASES_PATH", str(artifact_path))
+    monkeypatch.setattr(
+        "agent.eval.run_text2sql_v2_eval.load_questions",
+        lambda: [
+            {
+                "id": "p5_q001",
+                "question": "Which campaigns have the highest ROAS?",
+                "expected_model": "ai_native.ai_campaign_roi_summary",
+                "expected_columns": ["campaign_id"],
+                "required_sql_features": ["limit_5"],
+                "expected_sql": "select campaign_id from ai_native.ai_campaign_roi_summary limit 5",
+            }
+        ],
+    )
+    results = [
+        V2EvalCaseResult(
+            question_id="p5_q001",
+            language="en",
+            status="FAIL",
+            expected_rows=5,
+            actual_rows=10,
+            latency_ms=12.3,
+            generated_sql="select campaign_id from ai_native.ai_campaign_roi_summary limit 10",
+            reason="unit test mismatch",
+        )
+    ]
+
+    write_case_artifact_if_configured(results, {"passed": 0, "failed": 1})
+
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    assert payload["summary"] == {"passed": 0, "failed": 1}
+    assert payload["cases"][0]["question_id"] == "p5_q001"
+    assert payload["cases"][0]["required_sql_features"] == ["limit_5"]

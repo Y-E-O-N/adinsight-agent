@@ -17,6 +17,7 @@ from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generat
 from agent.text2sql.llm_client import SqlGenerationClient
 from agent.text2sql.provider import Text2SqlProviderConfigError, get_sql_generation_provider
 from agent.text2sql.registry import serialize_value
+from agent.text2sql.usage import LlmUsage, summarize_usages
 from agent.text2sql.validator import Text2SqlValidationError
 
 METRICS_PATH = Path("metrics/run_results.jsonl")
@@ -32,6 +33,8 @@ class V2EvalCaseResult:
     latency_ms: float
     generated_sql: str | None
     reason: str
+    usage: LlmUsage | None = None
+    usage_attempts: tuple[LlmUsage, ...] = ()
 
 
 def main() -> None:
@@ -45,6 +48,9 @@ def main() -> None:
             f"expected_rows={result.expected_rows}",
             f"actual_rows={result.actual_rows}",
             f"latency_ms={result.latency_ms}",
+            f"input_tokens={result.usage.input_tokens if result.usage else None}",
+            f"output_tokens={result.usage.output_tokens if result.usage else None}",
+            f"cost_usd={result.usage.estimated_cost_usd if result.usage else None}",
         )
 
     print(
@@ -58,9 +64,13 @@ def main() -> None:
         f"refuse_rate={summary['refuse_rate']}",
         f"model_score={summary['model_score']['composite_score']}",
         f"tier={summary['model_score']['tier']}",
+        f"input_tokens={summary['usage']['input_tokens']}",
+        f"output_tokens={summary['usage']['output_tokens']}",
+        f"estimated_cost_usd={summary['usage']['estimated_cost_usd']}",
     )
 
     append_metrics(summary)
+    write_case_artifact_if_configured(results, summary)
 
     if summary["failed"] > 0 or summary["blocked"] > 0:
         raise SystemExit(1)
@@ -110,6 +120,8 @@ def evaluate_question(
             latency_ms=round((perf_counter() - started_at) * 1000, 3),
             generated_sql=None,
             reason=str(exc),
+            usage=getattr(exc, "usage", None),
+            usage_attempts=getattr(exc, "usage_attempts", ()),
         )
     except Text2SqlValidationError as exc:
         return V2EvalCaseResult(
@@ -121,6 +133,8 @@ def evaluate_question(
             latency_ms=round((perf_counter() - started_at) * 1000, 3),
             generated_sql=None,
             reason=str(exc),
+            usage=getattr(exc, "usage", None),
+            usage_attempts=getattr(exc, "usage_attempts", ()),
         )
     except psycopg.Error as exc:
         conn.rollback()
@@ -153,6 +167,8 @@ def evaluate_question(
         latency_ms=round((perf_counter() - started_at) * 1000, 3),
         generated_sql=generated.sql,
         reason=reason,
+        usage=generated.usage,
+        usage_attempts=generated.usage_attempts,
     )
 
 
@@ -209,6 +225,13 @@ def summarize_results(results: list[V2EvalCaseResult]) -> dict[str, Any]:
     blocked = count_status(results, "BLOCKED")
     answerable = passed + failed + blocked
     latencies = [result.latency_ms for result in results]
+    usage_summary = summarize_usages(
+        [
+            usage
+            for result in results
+            for usage in (result.usage_attempts or ((result.usage,) if result.usage else ()))
+        ]
+    )
 
     summary = {
         "phase": "p5c",
@@ -229,6 +252,7 @@ def summarize_results(results: list[V2EvalCaseResult]) -> dict[str, Any]:
         "unsafe_block_rate": round(blocked / total, 4) if total else 0.0,
         "p50_latency_ms": percentile(latencies, 50),
         "p95_latency_ms": percentile(latencies, 95),
+        "usage": usage_summary,
         "known_limitation": (
             "Model score is a portfolio evaluation rubric over the current expected-SQL "
             "questions; it is not a public benchmark score."
@@ -268,6 +292,59 @@ def append_metrics(summary: dict[str, Any]) -> None:
     METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
     with METRICS_PATH.open("a", encoding="utf-8") as metrics_file:
         metrics_file.write(json.dumps(summary, ensure_ascii=False) + "\n")
+
+
+def write_case_artifact_if_configured(
+    results: list[V2EvalCaseResult],
+    summary: dict[str, Any],
+) -> None:
+    artifact_path = os.getenv("TEXT2SQL_EVAL_CASES_PATH")
+    if not artifact_path:
+        return
+
+    questions_by_id = {str(question["id"]): question for question in load_questions()}
+    payload = {
+        "summary": summary,
+        "cases": [
+            build_case_artifact(result, questions_by_id.get(result.question_id))
+            for result in results
+        ],
+    }
+    path = Path(artifact_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def build_case_artifact(
+    result: V2EvalCaseResult,
+    question: dict[str, Any] | None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "question_id": result.question_id,
+        "language": result.language,
+        "status": result.status,
+        "expected_rows": result.expected_rows,
+        "actual_rows": result.actual_rows,
+        "latency_ms": result.latency_ms,
+        "generated_sql": result.generated_sql,
+        "reason": result.reason,
+        "usage": result.usage.to_dict() if result.usage else None,
+        "usage_attempts": [
+            usage.to_dict()
+            for usage in result.usage_attempts
+        ],
+    }
+    if question is not None:
+        payload.update(
+            {
+                "question": question.get("question"),
+                "expected_model": question.get("expected_model"),
+                "expected_columns": question.get("expected_columns", []),
+                "required_sql_features": question.get("required_sql_features", []),
+                "expected_sql": str(question.get("expected_sql", "")).strip(),
+            }
+        )
+    return payload
 
 
 def get_connection():

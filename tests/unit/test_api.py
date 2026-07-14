@@ -13,6 +13,7 @@ from agent.eval.run_campaign_roas_model import (
 )
 from agent.text2sql.generator import GeneratedText2SqlResult, Text2SqlNotAnswerableError
 from agent.text2sql.registry import Text2SqlResult, serialize_value
+from agent.text2sql.usage import LlmUsage
 from agent.text2sql.validator import SqlValidationResult, Text2SqlValidationError
 
 
@@ -136,6 +137,17 @@ def test_query_v2_endpoint(monkeypatch) -> None:
                 referenced_tables=("ai_native.ai_campaign_roi_summary",),
                 limit=5,
             ),
+            usage=LlmUsage(
+                provider="openai",
+                model="unit-test-model",
+                input_tokens=100,
+                cached_input_tokens=40,
+                output_tokens=20,
+                total_tokens=120,
+                estimated_cost_usd=0.0001,
+                elapsed_ms=123.4,
+                pricing_source="unit-test",
+            ),
         )
 
     class FakeConnection:
@@ -161,9 +173,158 @@ def test_query_v2_endpoint(monkeypatch) -> None:
     assert payload["expected_tables"] == ["ai_native.ai_campaign_roi_summary"]
     assert payload["validation_tables"] == ["ai_native.ai_campaign_roi_summary"]
     assert payload["validation_limit"] == 5
+    assert payload["usage"]["input_tokens"] == 100
+    assert payload["usage"]["cached_input_tokens"] == 40
+    assert payload["usage"]["estimated_cost_usd"] == 0.0001
+    assert payload["provider_summary"]["fallback_used"] is False
+    assert payload["provider_summary"]["final_provider"] == "openai"
+    assert payload["provider_summary"]["final_model"] == "unit-test-model"
+    assert payload["provider_summary"]["estimated_cost_usd"] == 0.0001
+    assert payload["provider_summary"]["provider_elapsed_ms"] == 123.4
+    assert payload["provider_summary"]["cached_input_ratio"] == 0.4
     assert payload["row_count"] == 1
     assert audit_records[0]["status"] == "success"
     assert audit_records[0]["row_count"] == 1
+    assert audit_records[0]["usage"]["output_tokens"] == 20
+    assert audit_records[0]["provider_summary"]["final_provider"] == "openai"
+
+
+def test_query_v2_provider_summary_marks_external_provider_fallback(monkeypatch) -> None:
+    audit_records = []
+    gemini_usage = LlmUsage(
+        provider="gemini",
+        model="unit-test-gemini-model",
+        input_tokens=900,
+        cached_input_tokens=700,
+        output_tokens=100,
+        total_tokens=1000,
+        estimated_cost_usd=0.0002175,
+        elapsed_ms=4000.0,
+        pricing_source="unit-test-gemini",
+    )
+    openai_usage = LlmUsage(
+        provider="openai",
+        model="unit-test-openai-model",
+        input_tokens=1000,
+        cached_input_tokens=400,
+        output_tokens=200,
+        total_tokens=1200,
+        estimated_cost_usd=0.00138,
+        elapsed_ms=2500.0,
+        pricing_source="unit-test-openai",
+    )
+
+    def fake_execute_generated_question(question, conn, client, mode):
+        return GeneratedText2SqlResult(
+            question=question,
+            sql="select campaign_id, roas from ai_native.ai_campaign_roi_summary limit 5",
+            rows=[{"campaign_id": "camp_000029", "roas": 0.5969}],
+            row_count=1,
+            answer="Generated Text2SQL v2 returned 1 rows.",
+            mode="llm_generated_sql_v2_http_json",
+            expected_tables=("ai_native.ai_campaign_roi_summary",),
+            reason="unit test fallback generation",
+            validation=SqlValidationResult(
+                sql="select campaign_id, roas from ai_native.ai_campaign_roi_summary limit 5",
+                referenced_tables=("ai_native.ai_campaign_roi_summary",),
+                limit=5,
+            ),
+            usage=openai_usage,
+            usage_attempts=(gemini_usage, openai_usage),
+            fallback_reason="primary_sql_validation_failed:SQL references unknown column.",
+        )
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+    monkeypatch.setattr(api_main, "write_text2sql_audit", lambda record: audit_records.append(record))
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query/v2",
+        json={"question": "Which campaigns have the highest ROAS?"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    provider_summary = payload["provider_summary"]
+    assert provider_summary["fallback_used"] is True
+    assert provider_summary["final_provider"] == "openai"
+    assert provider_summary["final_model"] == "unit-test-openai-model"
+    assert provider_summary["attempt_count"] == 2
+    assert provider_summary["attempt_providers"] == ["gemini", "openai"]
+    assert provider_summary["estimated_cost_usd"] == 0.0015975
+    assert provider_summary["provider_elapsed_ms"] == 6500.0
+    assert provider_summary["cached_input_ratio"] == 0.5789
+    assert provider_summary["fallback_reason"].startswith("primary_sql_validation_failed:")
+    assert audit_records[0]["provider_summary"] == provider_summary
+
+
+def test_query_v2_refusal_preserves_provider_fallback_reason(monkeypatch) -> None:
+    audit_records = []
+    gemini_usage = LlmUsage(
+        provider="gemini",
+        model="unit-test-gemini-model",
+        input_tokens=900,
+        cached_input_tokens=700,
+        output_tokens=100,
+        total_tokens=1000,
+        estimated_cost_usd=0.0002175,
+        elapsed_ms=4000.0,
+        pricing_source="unit-test-gemini",
+    )
+    openai_usage = LlmUsage(
+        provider="openai",
+        model="unit-test-openai-model",
+        input_tokens=1000,
+        cached_input_tokens=400,
+        output_tokens=20,
+        total_tokens=1020,
+        estimated_cost_usd=0.00057,
+        elapsed_ms=2500.0,
+        pricing_source="unit-test-openai",
+    )
+
+    def fake_execute_generated_question(question, conn, client, mode):
+        raise Text2SqlNotAnswerableError(
+            "The request is outside the allowed neutral analytics scope.",
+            usage=openai_usage,
+            usage_attempts=(gemini_usage, openai_usage),
+            fallback_reason="primary_content_safety_refusal",
+        )
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return None
+
+    monkeypatch.setenv("TEXT2SQL_V2_REGISTRY_FALLBACK_ENABLED", "false")
+    monkeypatch.setattr(api_main, "get_connection", lambda: FakeConnection())
+    monkeypatch.setattr(api_main, "execute_generated_question", fake_execute_generated_question)
+    monkeypatch.setattr(api_main, "write_text2sql_audit", lambda record: audit_records.append(record))
+
+    client = TestClient(api_main.app)
+    response = client.post(
+        "/query/v2",
+        json={"question": "Show the top 10 stupid creators and call them losers."},
+    )
+
+    assert response.status_code == 404
+    provider_summary = response.json()["detail"]["provider_summary"]
+    assert provider_summary["fallback_used"] is True
+    assert provider_summary["final_provider"] == "openai"
+    assert provider_summary["fallback_reason"] == "primary_content_safety_refusal"
+    assert audit_records[0]["provider_summary"]["fallback_reason"] == (
+        "primary_content_safety_refusal"
+    )
 
 
 def test_query_v2_endpoint_returns_404_for_not_answerable(monkeypatch) -> None:
@@ -236,8 +397,12 @@ def test_query_v2_endpoint_falls_back_to_registry_on_provider_refusal(monkeypatc
     assert payload["expected_tables"] == ["ai_native.ai_campaign_roi_summary"]
     assert payload["row_count"] == 1
     assert "p5_q001" in payload["reason"]
+    assert payload["provider_summary"]["fallback_used"] is True
+    assert payload["provider_summary"]["final_provider"] == "deterministic_registry"
+    assert payload["provider_summary"]["estimated_cost_usd"] == 0.0
     assert audit_records[0]["status"] == "fallback_success"
     assert audit_records[0]["fallback_trigger_status"] == "provider_refused"
+    assert audit_records[0]["provider_summary"]["fallback_used"] is True
 
 
 def test_query_v2_endpoint_can_disable_registry_fallback(monkeypatch) -> None:

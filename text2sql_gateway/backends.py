@@ -2,17 +2,24 @@ from __future__ import annotations
 
 import json
 import os
+import random
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass
+from time import perf_counter
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from agent.text2sql.generator import validate_intent_contract
 from agent.text2sql.llm_client import (
     MockSqlGenerationClient,
     SqlGenerationRequest,
     SqlGenerationResponse,
 )
 from agent.text2sql.provider import Text2SqlProviderConfigError, parse_sql_generation_response
+from agent.text2sql.schema_catalog import find_best_intent_for_question
+from agent.text2sql.usage import LlmUsage, build_llm_usage
+from agent.text2sql.validator import validate_generated_sql
 
 DEFAULT_BACKEND = "mock"
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
@@ -24,6 +31,31 @@ DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite"
 DEFAULT_TIMEOUT_SECONDS = 60
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_SEED = 7
+DEFAULT_MAX_RETRIES = 2
+DEFAULT_RETRY_INITIAL_DELAY_SECONDS = 1.0
+DEFAULT_RETRY_MAX_DELAY_SECONDS = 8.0
+RETRYABLE_HTTP_STATUS_CODES = {408, 409, 429, 500, 502, 503, 504}
+CONTENT_SAFETY_REFUSAL_REASON = (
+    "The request is outside the allowed neutral analytics scope."
+)
+CONTENT_SAFETY_SIGNAL_TERMS = (
+    "stupid",
+    "loser",
+    "losers",
+    "abusive",
+    "insult",
+    "insulting",
+    "sexually explicit",
+    "sexual",
+    "violent threat",
+    "violent threats",
+    "violent",
+    "멍청",
+    "조롱",
+    "성적인",
+    "폭력",
+    "위협",
+)
 
 TEXT2SQL_CONTRACT_SCHEMA = {
     "type": "object",
@@ -81,9 +113,12 @@ def generate_sql_with_backend(
     if backend == "gemini":
         return generate_with_gemini(request, resolved_env)
 
+    if backend in {"dual", "gemini_openai_fallback"}:
+        return generate_with_gemini_openai_fallback(request, resolved_env)
+
     raise GatewayBackendError(
         "Unsupported TEXT2SQL_GATEWAY_BACKEND="
-        f"{backend!r}; expected 'mock', 'ollama', 'openai', or 'gemini'."
+        f"{backend!r}; expected 'mock', 'ollama', 'openai', 'gemini', or 'dual'."
     )
 
 
@@ -108,6 +143,7 @@ def generate_with_ollama(
         method="POST",
     )
 
+    started_at = perf_counter()
     try:
         with urlopen(http_request, timeout=timeout_seconds) as response:
             model_payload = json.loads(response.read().decode("utf-8"))
@@ -118,8 +154,19 @@ def generate_with_ollama(
     except URLError as exc:
         raise GatewayBackendError(f"Local model request failed: {exc.reason}") from exc
 
+    elapsed_ms = round((perf_counter() - started_at) * 1000, 3)
+    usage = build_llm_usage(
+        provider="ollama",
+        model=model,
+        payload=model_payload,
+        elapsed_ms=elapsed_ms,
+        env=env,
+    )
     return GatewayGeneration(
-        response=parse_model_payload(model_payload),
+        response=with_usage(
+            sanitize_refusal_reason(parse_model_payload(model_payload), request.question),
+            usage,
+        ),
         mode="text2sql_gateway_ollama_v1",
     )
 
@@ -135,6 +182,7 @@ def generate_with_openai(
     url = env.get("TEXT2SQL_OPENAI_URL", DEFAULT_OPENAI_URL)
     model = env.get("TEXT2SQL_OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
     timeout_seconds = int(env.get("TEXT2SQL_OPENAI_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS))
+    retry_policy = build_retry_policy(env, "OPENAI")
     payload = {
         "model": model,
         "messages": [
@@ -162,9 +210,19 @@ def generate_with_openai(
         method="POST",
     )
 
-    model_payload = post_json(http_request, timeout_seconds)
+    model_payload, elapsed_ms = post_json(http_request, timeout_seconds, retry_policy)
+    usage = build_llm_usage(
+        provider="openai",
+        model=model,
+        payload=model_payload,
+        elapsed_ms=elapsed_ms,
+        env=env,
+    )
     return GatewayGeneration(
-        response=parse_model_payload(model_payload),
+        response=with_usage(
+            sanitize_refusal_reason(parse_model_payload(model_payload), request.question),
+            usage,
+        ),
         mode="text2sql_gateway_openai_v1",
     )
 
@@ -180,6 +238,7 @@ def generate_with_gemini(
     url = env.get("TEXT2SQL_GEMINI_URL", DEFAULT_GEMINI_URL)
     model = env.get("TEXT2SQL_GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
     timeout_seconds = int(env.get("TEXT2SQL_GEMINI_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS))
+    retry_policy = build_retry_policy(env, "GEMINI")
     payload = {
         "model": model,
         "input": f"{build_text2sql_system_prompt()}\n\n{build_text2sql_user_prompt(request)}",
@@ -199,28 +258,165 @@ def generate_with_gemini(
         method="POST",
     )
 
-    model_payload = post_json(http_request, timeout_seconds)
+    model_payload, elapsed_ms = post_json(http_request, timeout_seconds, retry_policy)
+    usage = build_llm_usage(
+        provider="gemini",
+        model=model,
+        payload=model_payload,
+        elapsed_ms=elapsed_ms,
+        env=env,
+    )
     return GatewayGeneration(
-        response=parse_model_payload(model_payload),
+        response=with_usage(
+            sanitize_refusal_reason(parse_model_payload(model_payload), request.question),
+            usage,
+        ),
         mode="text2sql_gateway_gemini_v1",
     )
 
 
-def post_json(http_request: Request, timeout_seconds: int) -> object:
+def generate_with_gemini_openai_fallback(
+    request: SqlGenerationRequest,
+    env: Mapping[str, str],
+) -> GatewayGeneration:
+    usage_attempts: list[LlmUsage] = []
+    fallback_reason: str
+
     try:
-        with urlopen(http_request, timeout=timeout_seconds) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except TimeoutError as exc:
-        raise GatewayBackendError(
-            f"Provider request timed out after {timeout_seconds}s"
-        ) from exc
-    except HTTPError as exc:
-        error_detail = exc.read().decode("utf-8", errors="replace")[:500]
-        raise GatewayBackendError(
-            f"Provider request failed with HTTP {exc.code}: {error_detail}"
-        ) from exc
-    except URLError as exc:
-        raise GatewayBackendError(f"Provider request failed: {exc.reason}") from exc
+        primary_generation = generate_with_gemini(request, env)
+        usage_attempts.extend(response_usage_attempts(primary_generation.response))
+        fallback_reason_candidate = find_gateway_fallback_reason(
+            primary_generation.response,
+            request,
+        )
+        if fallback_reason_candidate is None:
+            return GatewayGeneration(
+                response=with_fallback_metadata(
+                    primary_generation.response,
+                    usage_attempts,
+                    fallback_reason=None,
+                ),
+                mode="text2sql_gateway_gemini_openai_fallback_v1",
+            )
+        fallback_reason = fallback_reason_candidate
+    except GatewayBackendError as exc:
+        fallback_reason = f"primary_provider_error:{exc}"
+
+    fallback_generation = generate_with_openai(request, env)
+    usage_attempts.extend(response_usage_attempts(fallback_generation.response))
+    return GatewayGeneration(
+        response=with_fallback_metadata(
+            fallback_generation.response,
+            usage_attempts,
+            fallback_reason=fallback_reason,
+        ),
+        mode="text2sql_gateway_gemini_openai_fallback_v1",
+    )
+
+
+def find_gateway_fallback_reason(
+    response: SqlGenerationResponse,
+    request: SqlGenerationRequest,
+) -> str | None:
+    if response.answerability != "answerable" or response.sql is None:
+        if has_content_safety_signal(request.question, response.reason):
+            return "primary_content_safety_refusal"
+        return None
+
+    try:
+        validate_generated_sql(response.sql)
+        validate_intent_contract(response.sql, find_best_intent_for_question(request.question))
+    except Exception as exc:
+        return f"primary_sql_validation_failed:{exc}"
+
+    return None
+
+
+@dataclass(frozen=True)
+class RetryPolicy:
+    max_retries: int
+    initial_delay_seconds: float
+    max_delay_seconds: float
+
+
+def build_retry_policy(env: Mapping[str, str], provider_prefix: str) -> RetryPolicy:
+    return RetryPolicy(
+        max_retries=int(
+            env.get(
+                f"TEXT2SQL_{provider_prefix}_MAX_RETRIES",
+                env.get("TEXT2SQL_PROVIDER_MAX_RETRIES", DEFAULT_MAX_RETRIES),
+            )
+        ),
+        initial_delay_seconds=float(
+            env.get(
+                f"TEXT2SQL_{provider_prefix}_RETRY_INITIAL_DELAY_SECONDS",
+                env.get(
+                    "TEXT2SQL_PROVIDER_RETRY_INITIAL_DELAY_SECONDS",
+                    DEFAULT_RETRY_INITIAL_DELAY_SECONDS,
+                ),
+            )
+        ),
+        max_delay_seconds=float(
+            env.get(
+                f"TEXT2SQL_{provider_prefix}_RETRY_MAX_DELAY_SECONDS",
+                env.get(
+                    "TEXT2SQL_PROVIDER_RETRY_MAX_DELAY_SECONDS",
+                    DEFAULT_RETRY_MAX_DELAY_SECONDS,
+                ),
+            )
+        ),
+    )
+
+
+def post_json(
+    http_request: Request,
+    timeout_seconds: int,
+    retry_policy: RetryPolicy | None = None,
+) -> tuple[object, float]:
+    resolved_retry_policy = retry_policy or RetryPolicy(
+        max_retries=0,
+        initial_delay_seconds=DEFAULT_RETRY_INITIAL_DELAY_SECONDS,
+        max_delay_seconds=DEFAULT_RETRY_MAX_DELAY_SECONDS,
+    )
+    started_at = perf_counter()
+    attempt = 0
+    last_error: Exception | None = None
+    while attempt <= resolved_retry_policy.max_retries:
+        try:
+            with urlopen(http_request, timeout=timeout_seconds) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+                return payload, round((perf_counter() - started_at) * 1000, 3)
+        except TimeoutError:
+            last_error = GatewayBackendError(
+                f"Provider request timed out after {timeout_seconds}s"
+            )
+        except HTTPError as exc:
+            error_detail = exc.read().decode("utf-8", errors="replace")[:500]
+            last_error = GatewayBackendError(
+                f"Provider request failed with HTTP {exc.code}: {error_detail}"
+            )
+            if exc.code not in RETRYABLE_HTTP_STATUS_CODES:
+                raise last_error from exc
+        except URLError as exc:
+            last_error = GatewayBackendError(f"Provider request failed: {exc.reason}")
+
+        if attempt >= resolved_retry_policy.max_retries:
+            break
+        sleep_before_retry(attempt, resolved_retry_policy)
+        attempt += 1
+
+    if last_error is not None:
+        raise last_error
+    raise GatewayBackendError("Provider request failed for an unknown reason.")
+
+
+def sleep_before_retry(attempt: int, retry_policy: RetryPolicy) -> None:
+    delay = min(
+        retry_policy.initial_delay_seconds * (2 ** attempt),
+        retry_policy.max_delay_seconds,
+    )
+    jittered_delay = delay * (1 + random.random())
+    time.sleep(jittered_delay)
 
 
 def build_text2sql_system_prompt() -> str:
@@ -236,14 +432,27 @@ Return only one JSON object with this exact shape:
 
 Rules:
 - Generate PostgreSQL SQL only.
-- Use only allowed tables from the schema context.
+- First route the question through the schema context's Natural-Language Intent
+  Routing Catalog: major category -> middle category -> minor intent.
+- Use the selected minor intent's table, required output columns, and limit policy.
+- Use only allowed tables and columns from the schema context's Actual Allowed
+  Table and Column Catalog.
+- Do not treat rulebook concept names as SQL column names unless they are listed
+  in the actual column catalog.
+- Before generating SQL, apply the Text2SQL Positive Criteria Rulebook section
+  from the schema context when it is present.
+- Before generating SQL, apply the Text2SQL LLM Decision Guide section from
+  the schema context when it is present.
 - Use SELECT or WITH only.
-- Add an explicit LIMIT for non-aggregate list queries.
+- Add LIMIT only when the selected intent policy or user question calls for it.
 - For latest prediction-monitor questions, filter to max(scoring_snapshot_date).
 - Use deterministic ORDER BY columns before LIMIT.
 - If the user asks for MAE, compute avg(absolute_roas_prediction_error) as mae.
 - If the user asks for bias, compute avg(roas_prediction_error) as bias.
+- If the requested metric is unavailable, such as views, impressions, or clicks,
+  return not_answerable instead of inventing a proxy.
 - Refuse if the question is outside the schema context, asks for unsafe SQL, or asks for abusive/sexual/violent content classification.
+- For abusive, sexual, or violent content-safety refusals, do not quote or repeat user-provided unsafe wording. Use a generic neutral reason.
 
 Examples:
 Question: Which campaigns have the highest ROAS?
@@ -362,4 +571,65 @@ def not_answerable(reason: str) -> SqlGenerationResponse:
         sql=None,
         expected_tables=(),
         reason=reason,
+    )
+
+
+def sanitize_refusal_reason(
+    response: SqlGenerationResponse,
+    question: str,
+) -> SqlGenerationResponse:
+    if response.answerability != "not_answerable":
+        return response
+    if not has_content_safety_signal(question, response.reason):
+        return response
+
+    return SqlGenerationResponse(
+        answerability=response.answerability,
+        sql=response.sql,
+        expected_tables=response.expected_tables,
+        reason=CONTENT_SAFETY_REFUSAL_REASON,
+        usage=response.usage,
+        usage_attempts=response.usage_attempts,
+        fallback_reason=response.fallback_reason,
+    )
+
+
+def has_content_safety_signal(question: str, reason: str) -> bool:
+    combined = f"{question}\n{reason}".casefold()
+    return any(term.casefold() in combined for term in CONTENT_SAFETY_SIGNAL_TERMS)
+
+
+def with_usage(response: SqlGenerationResponse, usage: LlmUsage) -> SqlGenerationResponse:
+    return SqlGenerationResponse(
+        answerability=response.answerability,
+        sql=response.sql,
+        expected_tables=response.expected_tables,
+        reason=response.reason,
+        usage=usage,
+        usage_attempts=response.usage_attempts,
+        fallback_reason=response.fallback_reason,
+    )
+
+
+def response_usage_attempts(response: SqlGenerationResponse) -> tuple[LlmUsage, ...]:
+    if response.usage_attempts:
+        return response.usage_attempts
+    if response.usage is not None:
+        return (response.usage,)
+    return ()
+
+
+def with_fallback_metadata(
+    response: SqlGenerationResponse,
+    usage_attempts: list[LlmUsage],
+    fallback_reason: str | None,
+) -> SqlGenerationResponse:
+    return SqlGenerationResponse(
+        answerability=response.answerability,
+        sql=response.sql,
+        expected_tables=response.expected_tables,
+        reason=response.reason,
+        usage=response.usage,
+        usage_attempts=tuple(usage_attempts),
+        fallback_reason=fallback_reason,
     )

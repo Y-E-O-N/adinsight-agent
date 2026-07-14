@@ -27,6 +27,7 @@ from agent.text2sql.registry import (
     Text2SqlUnsafeSqlError,
     execute_question,
 )
+from agent.text2sql.usage import LlmUsage
 from agent.text2sql.validator import Text2SqlValidationError
 from api.schemas import (
     CampaignRoasPredictRequest,
@@ -144,6 +145,13 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
             return fallback_response
 
         latency_ms = round((perf_counter() - started_at) * 1000, 3)
+        usage = getattr(exc, "usage", None)
+        usage_attempts = tuple(getattr(exc, "usage_attempts", ()))
+        provider_summary = build_provider_summary(
+            usage,
+            usage_attempts,
+            getattr(exc, "fallback_reason", None),
+        )
         record_query_v2_audit(
             {
                 "status": "refused",
@@ -151,6 +159,12 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
                 "question": request.question,
                 "latency_ms": latency_ms,
                 "error": str(exc),
+                "usage": usage.to_dict() if usage else None,
+                "usage_attempts": [
+                    usage.to_dict()
+                    for usage in usage_attempts
+                ],
+                "provider_summary": provider_summary,
             }
         )
         raise HTTPException(
@@ -158,6 +172,7 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
             detail={
                 "message": str(exc),
                 "mode": mode,
+                "provider_summary": provider_summary,
             },
         ) from exc
     except Text2SqlValidationError as exc:
@@ -174,6 +189,13 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
             return fallback_response
 
         latency_ms = round((perf_counter() - started_at) * 1000, 3)
+        usage = getattr(exc, "usage", None)
+        usage_attempts = tuple(getattr(exc, "usage_attempts", ()))
+        provider_summary = build_provider_summary(
+            usage,
+            usage_attempts,
+            getattr(exc, "fallback_reason", None),
+        )
         record_query_v2_audit(
             {
                 "status": "blocked",
@@ -181,6 +203,12 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
                 "question": request.question,
                 "latency_ms": latency_ms,
                 "error": str(exc),
+                "usage": usage.to_dict() if usage else None,
+                "usage_attempts": [
+                    usage.to_dict()
+                    for usage in usage_attempts
+                ],
+                "provider_summary": provider_summary,
             }
         )
         raise HTTPException(
@@ -188,6 +216,7 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
             detail={
                 "message": str(exc),
                 "mode": mode,
+                "provider_summary": provider_summary,
             },
         ) from exc
     except Exception as exc:
@@ -223,6 +252,11 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
 
     latency_ms = (perf_counter() - started_at) * 1000
     rounded_latency_ms = round(latency_ms, 3)
+    provider_summary = build_provider_summary(
+        result.usage,
+        result.usage_attempts,
+        result.fallback_reason,
+    )
     record_query_v2_audit(
         {
             "status": "success",
@@ -233,6 +267,12 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
             "expected_tables": list(result.expected_tables),
             "validation_tables": list(result.validation.referenced_tables),
             "validation_limit": result.validation.limit,
+            "usage": result.usage.to_dict() if result.usage else None,
+            "usage_attempts": [
+                usage.to_dict()
+                for usage in result.usage_attempts
+            ],
+            "provider_summary": provider_summary,
         }
     )
 
@@ -248,6 +288,12 @@ def query_v2(request: QueryRequest) -> QueryV2Response:
         reason=result.reason,
         validation_tables=list(result.validation.referenced_tables),
         validation_limit=result.validation.limit,
+        usage=result.usage.to_dict() if result.usage else None,
+        usage_attempts=[
+            usage.to_dict()
+            for usage in result.usage_attempts
+        ],
+        provider_summary=provider_summary,
         known_limitation=(
             "Uses the configured Text2SQL generation provider. SQL is still validated, "
             "bounded, timed out, and audited before execution."
@@ -276,6 +322,7 @@ def try_query_v2_registry_fallback(
         return None
 
     latency_ms = round((perf_counter() - started_at) * 1000, 3)
+    provider_summary = build_fallback_provider_summary()
     record_query_v2_audit(
         {
             "status": "fallback_success",
@@ -287,10 +334,16 @@ def try_query_v2_registry_fallback(
             "latency_ms": latency_ms,
             "row_count": fallback_result.row_count,
             "question_id": fallback_result.question_id,
+            "provider_summary": provider_summary,
         }
     )
 
-    return build_query_v2_fallback_response(question, fallback_result, latency_ms)
+    return build_query_v2_fallback_response(
+        question,
+        fallback_result,
+        latency_ms,
+        provider_summary,
+    )
 
 
 def query_v2_registry_fallback_enabled() -> bool:
@@ -305,6 +358,7 @@ def build_query_v2_fallback_response(
     question: str,
     fallback_result: Text2SqlResult,
     latency_ms: float,
+    provider_summary: dict[str, object],
 ) -> QueryV2Response:
     return QueryV2Response(
         question=question,
@@ -321,11 +375,84 @@ def build_query_v2_fallback_response(
         ),
         validation_tables=[fallback_result.expected_model],
         validation_limit=None,
+        usage=None,
+        provider_summary=provider_summary,
         known_limitation=(
             "Fallback handles only exact curated questions from "
             "agent/eval/text2sql_questions.yml; model-only evaluation remains separate."
         ),
     )
+
+
+def build_fallback_provider_summary() -> dict[str, object]:
+    return {
+        "fallback_used": True,
+        "final_provider": "deterministic_registry",
+        "final_model": None,
+        "attempt_count": 0,
+        "estimated_cost_usd": 0.0,
+        "provider_elapsed_ms": 0.0,
+    }
+
+
+def build_provider_summary(
+    usage: LlmUsage | None,
+    usage_attempts: tuple[LlmUsage, ...],
+    fallback_reason: str | None = None,
+) -> dict[str, object] | None:
+    attempts = list(usage_attempts)
+    if not attempts and usage is not None:
+        attempts = [usage]
+    if not attempts:
+        return None
+
+    final_usage = attempts[-1] if attempts else usage
+    input_tokens = sum_optional_int(usage.input_tokens for usage in attempts)
+    cached_input_tokens = sum_optional_int(usage.cached_input_tokens for usage in attempts)
+    output_tokens = sum_optional_int(usage.output_tokens for usage in attempts)
+    total_tokens = sum_optional_int(usage.total_tokens for usage in attempts)
+    estimated_cost_usd = sum_optional_float(
+        usage.estimated_cost_usd for usage in attempts
+    )
+    provider_elapsed_ms = sum_optional_float(usage.elapsed_ms for usage in attempts)
+    cached_input_ratio = (
+        round(cached_input_tokens / input_tokens, 4)
+        if input_tokens and cached_input_tokens is not None
+        else None
+    )
+
+    provider_names = [
+        usage.provider
+        for usage in attempts
+        if usage.provider
+    ]
+    fallback_used = len(set(provider_names)) > 1
+
+    return {
+        "fallback_used": fallback_used,
+        "final_provider": final_usage.provider,
+        "final_model": final_usage.model,
+        "attempt_count": len(attempts),
+        "attempt_providers": provider_names,
+        "fallback_reason": fallback_reason if fallback_used else None,
+        "estimated_cost_usd": estimated_cost_usd,
+        "provider_elapsed_ms": provider_elapsed_ms,
+        "input_tokens": input_tokens,
+        "cached_input_tokens": cached_input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+        "cached_input_ratio": cached_input_ratio,
+    }
+
+
+def sum_optional_int(values: object) -> int | None:
+    resolved = [value for value in values if value is not None]
+    return sum(resolved) if resolved else None
+
+
+def sum_optional_float(values: object) -> float | None:
+    resolved = [value for value in values if value is not None]
+    return round(sum(resolved), 8) if resolved else None
 
 
 def record_query_v2_audit(record: dict[str, object]) -> None:

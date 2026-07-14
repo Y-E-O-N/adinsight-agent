@@ -13,6 +13,7 @@ from agent.text2sql.llm_client import (
     SqlGenerationRequest,
     SqlGenerationResponse,
 )
+from agent.text2sql.usage import LlmUsage
 
 DEFAULT_PROVIDER_KIND = "mock"
 DEFAULT_HTTP_TIMEOUT_SECONDS = 20
@@ -146,4 +147,76 @@ def parse_sql_generation_response(payload: object) -> SqlGenerationResponse:
         sql=sql,
         expected_tables=tuple(expected_tables),
         reason=reason,
+        usage=parse_usage(payload.get("usage")),
+        usage_attempts=parse_usage_attempts(payload.get("usage_attempts")),
+        fallback_reason=parse_optional_str(payload.get("fallback_reason")),
     )
+
+
+def parse_usage_attempts(payload: object) -> tuple[LlmUsage, ...]:
+    if payload is None:
+        return ()
+    if not isinstance(payload, list):
+        raise Text2SqlProviderConfigError(
+            "Text2SQL provider response usage_attempts must be a list."
+        )
+    attempts: list[LlmUsage] = []
+    for item in payload:
+        usage = parse_usage(item)
+        if usage is not None:
+            attempts.append(usage)
+    return tuple(attempts)
+
+
+def parse_usage(payload: object) -> LlmUsage | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, dict):
+        raise Text2SqlProviderConfigError("Text2SQL provider response usage must be an object.")
+
+    return LlmUsage(
+        provider=str(payload.get("provider", "")),
+        model=payload.get("model") if isinstance(payload.get("model"), str) else None,
+        input_tokens=parse_optional_int(payload.get("input_tokens")),
+        cached_input_tokens=parse_optional_int(payload.get("cached_input_tokens")),
+        output_tokens=parse_optional_int(payload.get("output_tokens")),
+        total_tokens=parse_optional_int(payload.get("total_tokens")),
+        estimated_cost_usd=parse_optional_float(payload.get("estimated_cost_usd")),
+        elapsed_ms=parse_optional_float(payload.get("elapsed_ms")),
+        pricing_source=(
+            payload.get("pricing_source") if isinstance(payload.get("pricing_source"), str) else None
+        ),
+    )
+
+
+def parse_optional_str(value: object) -> str | None:
+    return value if isinstance(value, str) else None
+
+
+def parse_optional_int(value: object) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str) and value.isdigit():
+        return int(value)
+    return None
+
+
+def parse_optional_float(value: object) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+    return None

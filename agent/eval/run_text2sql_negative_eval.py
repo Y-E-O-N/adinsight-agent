@@ -14,6 +14,7 @@ import yaml
 from agent.text2sql.generator import Text2SqlNotAnswerableError, execute_generated_question
 from agent.text2sql.llm_client import SqlGenerationClient
 from agent.text2sql.provider import Text2SqlProviderConfigError, get_sql_generation_provider
+from agent.text2sql.usage import LlmUsage, summarize_usages
 from agent.text2sql.validator import Text2SqlValidationError
 
 NEGATIVE_QUESTIONS_PATH = Path("agent/eval/text2sql_negative_questions.yml")
@@ -29,6 +30,8 @@ class NegativeEvalCaseResult:
     latency_ms: float
     generated_sql: str | None
     reason: str
+    usage: LlmUsage | None = None
+    usage_attempts: tuple[LlmUsage, ...] = ()
 
 
 def main() -> None:
@@ -41,6 +44,9 @@ def main() -> None:
             result.status,
             f"category={result.category}",
             f"latency_ms={result.latency_ms}",
+            f"input_tokens={result.usage.input_tokens if result.usage else None}",
+            f"output_tokens={result.usage.output_tokens if result.usage else None}",
+            f"cost_usd={result.usage.estimated_cost_usd if result.usage else None}",
         )
 
     print(
@@ -49,9 +55,13 @@ def main() -> None:
         f"failed={summary['failed']}",
         f"total={summary['total']}",
         f"negative_pass_rate={summary['negative_pass_rate']}",
+        f"input_tokens={summary['usage']['input_tokens']}",
+        f"output_tokens={summary['usage']['output_tokens']}",
+        f"estimated_cost_usd={summary['usage']['estimated_cost_usd']}",
     )
 
     append_metrics(summary)
+    write_case_artifact_if_configured(results, summary)
 
     if summary["failed"] > 0:
         raise SystemExit(1)
@@ -102,6 +112,8 @@ def evaluate_question(
                 started_at,
                 None,
                 reason,
+                getattr(exc, "usage", None),
+                getattr(exc, "usage_attempts", ()),
             )
         return build_result(
             question_id,
@@ -111,6 +123,8 @@ def evaluate_question(
             started_at,
             None,
             reason,
+            getattr(exc, "usage", None),
+            getattr(exc, "usage_attempts", ()),
         )
     except Text2SqlValidationError as exc:
         reason = str(exc)
@@ -123,6 +137,8 @@ def evaluate_question(
                 started_at,
                 None,
                 reason,
+                getattr(exc, "usage", None),
+                getattr(exc, "usage_attempts", ()),
             )
         return build_result(
             question_id,
@@ -132,6 +148,8 @@ def evaluate_question(
             started_at,
             None,
             reason,
+            getattr(exc, "usage", None),
+            getattr(exc, "usage_attempts", ()),
         )
     except psycopg.Error as exc:
         conn.rollback()
@@ -156,6 +174,8 @@ def evaluate_question(
             started_at,
             generated.sql,
             "Negative question produced output containing forbidden wording.",
+            generated.usage,
+            generated.usage_attempts,
         )
 
     return build_result(
@@ -166,6 +186,8 @@ def evaluate_question(
         started_at,
         generated.sql,
         "Negative question produced executable SQL.",
+        generated.usage,
+        generated.usage_attempts,
     )
 
 
@@ -177,6 +199,8 @@ def build_result(
     started_at: float,
     generated_sql: str | None,
     reason: str,
+    usage: LlmUsage | None = None,
+    usage_attempts: tuple[LlmUsage, ...] = (),
 ) -> NegativeEvalCaseResult:
     return NegativeEvalCaseResult(
         question_id=question_id,
@@ -186,6 +210,8 @@ def build_result(
         latency_ms=round((perf_counter() - started_at) * 1000, 3),
         generated_sql=generated_sql,
         reason=reason,
+        usage=usage,
+        usage_attempts=usage_attempts,
     )
 
 
@@ -198,6 +224,13 @@ def summarize_results(results: list[NegativeEvalCaseResult]) -> dict[str, Any]:
     provider_errors = count_status(results, "FAIL_PROVIDER_ERROR")
     passed = refused + blocked
     latencies = [result.latency_ms for result in results]
+    usage_summary = summarize_usages(
+        [
+            usage
+            for result in results
+            for usage in (result.usage_attempts or ((result.usage,) if result.usage else ()))
+        ]
+    )
 
     return {
         "phase": "p5c",
@@ -218,6 +251,7 @@ def summarize_results(results: list[NegativeEvalCaseResult]) -> dict[str, Any]:
         "negative_pass_rate": round(passed / total, 4) if total else 0.0,
         "p50_latency_ms": percentile(latencies, 50),
         "p95_latency_ms": percentile(latencies, 95),
+        "usage": usage_summary,
         "known_limitation": (
             "Negative eval measures refusal/block behavior for out-of-domain, unsafe, "
             "sensitive, ambiguous, and content-safety questions; it does not grade "
@@ -271,6 +305,56 @@ def append_metrics(summary: dict[str, Any]) -> None:
     METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
     with METRICS_PATH.open("a", encoding="utf-8") as metrics_file:
         metrics_file.write(json.dumps(summary, ensure_ascii=False) + "\n")
+
+
+def write_case_artifact_if_configured(
+    results: list[NegativeEvalCaseResult],
+    summary: dict[str, Any],
+) -> None:
+    artifact_path = os.getenv("TEXT2SQL_NEGATIVE_EVAL_CASES_PATH")
+    if not artifact_path:
+        return
+
+    questions_by_id = {str(question["id"]): question for question in load_questions()}
+    payload = {
+        "summary": summary,
+        "cases": [
+            build_case_artifact(result, questions_by_id.get(result.question_id))
+            for result in results
+        ],
+    }
+    path = Path(artifact_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def build_case_artifact(
+    result: NegativeEvalCaseResult,
+    question: dict[str, Any] | None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "question_id": result.question_id,
+        "language": result.language,
+        "category": result.category,
+        "status": result.status,
+        "latency_ms": result.latency_ms,
+        "generated_sql": result.generated_sql,
+        "reason": result.reason,
+        "usage": result.usage.to_dict() if result.usage else None,
+        "usage_attempts": [
+            usage.to_dict()
+            for usage in result.usage_attempts
+        ],
+    }
+    if question is not None:
+        payload.update(
+            {
+                "question": question.get("question"),
+                "expected_behavior": question.get("expected_behavior"),
+                "forbidden_output_terms": question.get("forbidden_output_terms", []),
+            }
+        )
+    return payload
 
 
 def get_connection():

@@ -68,8 +68,7 @@ questions:
     expected_sql: |
       select
           creator_username,
-          sponsored_candidate_rate,
-          total_posts
+          sponsored_candidate_rate
       from ai_native.ai_creator_sponsored_summary
       order by sponsored_candidate_rate desc, total_posts desc
       limit 10
@@ -112,9 +111,10 @@ questions:
     expected_sql: |
       select
           creator_username,
-          sponsored_candidate_rate
+          sponsored_candidate_rate,
+          total_posts
       from ai_native.ai_creator_sponsored_summary
-      order by sponsored_candidate_rate desc
+      order by sponsored_candidate_rate desc, total_posts desc
       limit 10
 
   - id: p4_q006
@@ -124,20 +124,23 @@ questions:
     expected_columns:
       - creator_username
       - sponsored_candidate_posts
+      - sponsored_candidate_rate
       - included_in_creator_review
     required_sql_features:
       - korean_synonym_review_target
       - filter_boolean_included_in_creator_review
+      - order_by_sponsored_priority
       - limit_20
     current_result_rows: 20
     expected_sql: |
       select
           creator_username,
           sponsored_candidate_posts,
+          sponsored_candidate_rate,
           included_in_creator_review
       from ai_native.ai_creator_sponsored_summary
       where included_in_creator_review = true
-      order by sponsored_candidate_posts desc, creator_username asc
+      order by sponsored_candidate_posts desc, sponsored_candidate_rate desc
       limit 20
 
   - id: p4_q007

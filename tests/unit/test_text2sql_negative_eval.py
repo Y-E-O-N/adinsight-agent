@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import psycopg
 
 import agent.eval.run_text2sql_negative_eval as negative_eval
@@ -8,6 +10,7 @@ from agent.eval.run_text2sql_negative_eval import (
     contains_forbidden_output,
     evaluate_question,
     summarize_results,
+    write_case_artifact_if_configured,
 )
 from agent.text2sql.provider import Text2SqlProviderConfigError
 
@@ -164,3 +167,38 @@ def test_evaluate_negative_question_records_provider_error(monkeypatch) -> None:
     assert result.status == "FAIL_PROVIDER_ERROR"
     assert result.generated_sql is None
     assert "Provider error: gateway 502" in result.reason
+
+
+def test_write_negative_case_artifact_when_configured(tmp_path, monkeypatch) -> None:
+    artifact_path = tmp_path / "negative_cases.json"
+    monkeypatch.setenv("TEXT2SQL_NEGATIVE_EVAL_CASES_PATH", str(artifact_path))
+    monkeypatch.setattr(
+        negative_eval,
+        "load_questions",
+        lambda: [
+            {
+                "id": "neg_q001",
+                "question": "What is the weather in Seoul tomorrow?",
+                "expected_behavior": "refuse",
+                "forbidden_output_terms": [],
+            }
+        ],
+    )
+    results = [
+        NegativeEvalCaseResult(
+            question_id="neg_q001",
+            language="en",
+            category="out_of_domain",
+            status="PASS_REFUSED",
+            latency_ms=10.0,
+            generated_sql=None,
+            reason="not answerable",
+        )
+    ]
+
+    write_case_artifact_if_configured(results, {"passed": 1, "failed": 0})
+
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    assert payload["summary"] == {"passed": 1, "failed": 0}
+    assert payload["cases"][0]["question_id"] == "neg_q001"
+    assert payload["cases"][0]["expected_behavior"] == "refuse"

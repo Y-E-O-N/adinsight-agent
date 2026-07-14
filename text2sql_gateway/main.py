@@ -34,6 +34,9 @@ class GenerateSqlResponse(BaseModel):
     expected_tables: list[str]
     reason: str
     mode: str
+    usage: dict | None = None
+    usage_attempts: list[dict] = Field(default_factory=list)
+    fallback_reason: str | None = None
 
 
 @app.get("/health", response_model=GatewayHealthResponse)
@@ -67,6 +70,16 @@ def generate_sql(
         expected_tables=list(generation.response.expected_tables),
         reason=generation.response.reason,
         mode=generation.mode,
+        usage=(
+            generation.response.usage.to_dict()
+            if generation.response.usage is not None
+            else None
+        ),
+        usage_attempts=[
+            usage.to_dict()
+            for usage in generation.response.usage_attempts
+        ],
+        fallback_reason=generation.response.fallback_reason,
     )
 
 
@@ -91,4 +104,6 @@ def current_gateway_mode() -> str:
         return "text2sql_gateway_openai_v1"
     if backend == "gemini":
         return "text2sql_gateway_gemini_v1"
+    if backend in {"dual", "gemini_openai_fallback"}:
+        return "text2sql_gateway_gemini_openai_fallback_v1"
     return DEFAULT_GATEWAY_MODE

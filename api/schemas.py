@@ -54,4 +54,7 @@ class QueryV2Response(BaseModel):
     reason: str
     validation_tables: list[str]
     validation_limit: int | None
+    usage: dict[str, object] | None = None
+    usage_attempts: list[dict[str, object]] = Field(default_factory=list)
+    provider_summary: dict[str, object] | None = None
     known_limitation: str

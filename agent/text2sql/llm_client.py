@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from agent.text2sql.registry import normalize_question
+from agent.text2sql.usage import LlmUsage
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,9 @@ class SqlGenerationResponse:
     sql: str | None
     expected_tables: tuple[str, ...]
     reason: str
+    usage: LlmUsage | None = None
+    usage_attempts: tuple[LlmUsage, ...] = ()
+    fallback_reason: str | None = None
 
 
 class SqlGenerationClient(Protocol):
@@ -151,7 +155,7 @@ MOCK_SQL_BY_QUESTION = {
         sql=(
             "select creator_username, sponsored_candidate_rate "
             "from ai_native.ai_creator_sponsored_summary "
-            "order by sponsored_candidate_rate desc "
+            "order by sponsored_candidate_rate desc, total_posts desc "
             "limit 10"
         ),
         expected_tables=("ai_native.ai_creator_sponsored_summary",),
