@@ -117,3 +117,4 @@ YYYY-MM-DD_session-NN_<topic-kebab-case>.md
 - [2026-07-06 · Session 44 · Text2SQL Prompt Schema Fallback Tuning](2026-07-06_session-44_text2sql-prompt-schema-fallback-tuning.md) — few-shot schema/prompt / `/query/v2` registry fallback / tuned `phi4:14b` score `53.91`
 - [2026-07-06 · Session 45 · External LLM Gateway Backends](2026-07-06_session-45_external-llm-gateway-backends.md) — OpenAI/Gemini gateway backend / provider-neutral eval label / real eval pending API keys
 - [2026-07-06 · Session 46 · External Text2SQL Provider Eval](2026-07-06_session-46_external-text2sql-provider-eval.md) — OpenAI/Gemini real provider eval / Gemini Interactions parser / provider error handling / OpenAI mini score `66.21`
+- [2026-07-14 · Session 47 · Text2SQL Dual-Provider Fallback + Demo Polish](2026-07-14_session-47_text2sql-dual-provider-fallback-demo.md) — OpenAI/Gemini hardening eval / `TEXT2SQL_GATEWAY_BACKEND=dual` / live fallback smoke / provider-summary demo GIF
