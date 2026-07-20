@@ -1,412 +1,216 @@
-# Portfolio Draft — AdInsight Agent
+# Portfolio Source — AdInsight Agent
 
-> **이 문서는 "빈 자리"입니다.** Phase 진행 중에 측정값·스크린샷·결정사항을 *그때그때* 채우세요.
-> 프로젝트 끝난 뒤 한 번에 정리하면 데모 데이터가 바뀌어 재현이 안 됩니다 (`docs/adinsight_portfolio_template.md` 부록 A).
->
-> 이 문서가 충분히 채워지면 → `README.md`, 1-pager PDF, 이력서 bullet, 면접 토크포인트로 **거의 자동 변환** 됩니다.
-
-마지막 갱신: **2026-07-14** (OpenAI/Gemini Text2SQL eval hardening + provider cost observability)
+마지막 갱신: **2026-07-20**
+용도: README, 이력서, 면접 답변, 1-pager PDF를 만들 때 참조할 공개 가능한 증거 모음.
 
 ---
 
-## How to use
-1. 매 Phase 작업 끝에 해당 섹션의 빈 자리 채우기
-2. 캡처 가능한 화면이 있으면 `docs/images/NN_topic.png` 로 저장 후 본문에 링크
-3. 큰 결정은 `docs/adr/00X-...md` 별도 ADR + 여기에 1줄 요약
-4. 매주 금요일 30분: 이번 주 수치 확인 + 안 채워진 칸 표시
+## 1. Portfolio Positioning
 
-**현재 아키텍처 시각화**
-- `docs/analysis/2026-06-23_current_architecture_visualization.md` — ingestion → dbt marts → ai_native → Text2SQL eval → ROAS model comparison 흐름
+**One-line pitch**
+
+AdInsight는 인플루언서 광고 집행 데이터를 결제 전환, campaign ROI, ROAS prediction, Superset monitoring, guarded Text2SQL API까지 연결한 데이터 엔지니어링 포트폴리오 프로젝트다.
+
+**What this project proves**
+
+| 역량 | 증거 |
+|---|---|
+| Workflow orchestration | Airflow collection, backfill, daily ROAS scoring DAG |
+| Analytics engineering | dbt `raw -> staging -> intermediate -> marts -> features -> ai_native` 모델링 |
+| Data quality | dbt tests, expected-SQL eval, negative Text2SQL eval, CI |
+| BI serving | Superset creator review and campaign ROAS monitor |
+| ML workflow | ROAS model comparison, artifact export, FastAPI prediction serving |
+| LLM/data interface | deterministic `/query`, generated-SQL `/query/v2`, validator, provider gateway, fallback |
+| Operations story | request-level provider cost, latency, fallback reason, audit log |
+| Cloud translation | AWS target mapping: MWAA, RDS/Aurora, S3, ECS Fargate, ALB, CloudWatch, QuickSight |
+
+**Portfolio claim boundary**
+
+- Payment and ROAS labels are synthetic benchmark data.
+- ROAS model scores prove the workflow and serving boundary, not production forecasting generalization.
+- Text2SQL v2 is guarded generated SQL, not arbitrary SQL execution.
+- AWS content is a target architecture and skeleton boundary, not a deployed cloud system.
 
 ---
 
-# Part A. Phase 별 메트릭 (`portfolio_template.md` §7 압축)
+## 2. Key Metrics
 
-## Phase 1 — 환경 셋업
+| Area | Metric |
+|---|---:|
+| Stage 0 Apify smoke | `20` items, `17.4s` actor runtime |
+| Stage 1 raw load | first load inserted `20`, idempotent reruns inserted `0` / updated `20` |
+| Round 1 collection | final `raw.ig_posts=49`, `raw.ig_post_sources=49` |
+| Phase 2B daily adaptive run | `items_collected_total=1725`, `inserted_total=1410` |
+| Phase 2C synthetic payment events | `raw.syn_payment_events=498` |
+| Synthetic net payment | KRW `6,329,923.59` |
+| Campaign ROI mart | `30` campaign rows, max ROAS `0.5969` |
+| Prediction monitor | `25` rows, MAE `0.0799`, bias `0.0000` |
+| ROAS baseline model | MAE `0.0892`, RMSE `0.1349` |
+| ROAS best model | `linear_regression_numpy_v1`, MAE `0.0474`, RMSE `0.0577` |
+| deterministic Text2SQL baseline | expected-SQL registry `24/24 PASS` |
+| OpenAI external Text2SQL eval | positive `24/24`, negative `14/14` |
+| Gemini external Text2SQL eval | positive `24/24`, negative `12/14` |
+| Provider cost comparison | Gemini `$0.064098` vs OpenAI `$0.103027` over 38 cases |
+| Dual positive live smoke | Gemini final provider, fallback `false`, rows `5`, cost `$0.0014719` |
+| Dual safety live smoke | Gemini -> OpenAI fallback, HTTP `404`, cost `$0.0067335` |
+| Latest documented quality gate | `ruff` pass, `pytest 82 passed`, `git diff --check` pass |
 
-| 메트릭 | 측정 방법 | 값 |
+---
+
+## 3. Evidence Assets
+
+### README-facing visuals
+
+| Asset | Path | Status |
 |---|---|---|
-| `make up` → 전부 healthy 시간 | `time make up` | **10.7s** (이미지 캐시 후) |
-| 이미지 총 크기 | `docker system df` | **8.7 GB** |
-| 컨테이너 수 | `docker compose ps` | **8개 (전부 healthy)** |
-| `.env.example` 변수 수 | 수동 | **18** |
-| Postgres extension 목록 | `\dx` | vector / pg_trgm / pg_stat_statements |
-| Smoke DAG 실행 시간 | Airflow UI | **1s** (SQLExecuteQueryOperator → Postgres) |
+| Architecture diagram | `docs/images/00_architecture.svg` | ready |
+| Airflow UI | `docs/images/01_airflow_ui.png` | ready |
+| Smoke DAG success | `docs/images/01_smoke_test_success.png` | ready |
+| dbt lineage | `docs/images/03_dbt_lineage.png` | ready |
+| Creator review dashboard | `docs/images/phase3_creator_review_table.jpg` | ready |
+| Campaign ROAS prediction monitor | `docs/images/05_campaign_roas_prediction_monitor.png` | ready |
+| Text2SQL demo GIF | `docs/images/06_text2sql_demo.gif` | ready |
+| Text2SQL eval summary chart | `docs/images/06_text2sql_eval_summary.svg` | ready |
+| Data loading flow | `docs/images/adinsight_execution_data_loading_flow.png` | optional |
+| Data loading flow with Korean notes | `docs/images/adinsight_execution_data_loading_flow_ko_notes.png` | optional |
 
-**스크린샷**:
-- `docs/images/01_airflow_ui.png` — Airflow DAGs 목록
-- `docs/images/01_smoke_test_success.png` — Smoke DAG 성공 화면
+### Documentation assets
 
----
-
-## Phase 2 — 데이터 생성·수집
-
-| 메트릭 | 값 |
+| Asset | Path |
 |---|---|
-| Stage 0 Apify smoke | **20 items / 17.4s actor runtime** |
-| Stage 0 Airflow DAG smoke | **20 items / 20s DAG runtime** |
-| Stage 1 raw 적재 대상 | **`raw.ig_posts` + `raw.ig_post_sources`** |
-| Stage 1 첫 적재 | **inserted 20 / updated 0 / source_links_inserted 20** |
-| Stage 1 멱등 재실행 | **4회 반복: inserted 0 / updated 20 / source_links_inserted 0** |
-| Stage 1 최종 raw row count | **20 posts / 20 source links** |
-| dim_creator 행 수 (목표 10K) | **TBD** |
-| fact_post 행 수 (목표 2M) | **TBD** |
-| fact_post_metrics_daily 행 수 (목표 20M) | **TBD** |
-| 국가 분포 (TW/TH/KR/JP) | **TBD** |
-| Parquet 총 크기 | **TBD** |
-| 생성 소요 시간 (시드 42) | **TBD** |
-| `ingest_synthetic` DAG 실행 시간 | **TBD** |
-| **Idempotency** 5회 재실행 후 행 수 변화 | **20 posts / 20 source links 유지** |
-| 합성 vs 공개 데이터 비율 | **TBD** |
+| Korean company submission portfolio | `docs/korean_company_portfolio_submission.md` |
+| Korean submission HTML export | `docs/adinsight_portfolio_submission_ko.html` |
+| Korean submission DOCX export | `docs/adinsight_portfolio_submission_ko.docx` |
+| Korean job application snippets | `docs/korean_job_application_snippets.md` |
+| English README | `README.en.md` |
+| Portfolio one-pager | `docs/portfolio_one_pager.md` |
+| 3-5 minute demo script | `docs/demo_script_3min.md` |
+| Interview talking points | `docs/interview_talking_points.md` |
+| Interview flashcards | `docs/interview_flashcards.md` |
+| Selected Korean resume bullets | `docs/resume_selected_bullets_ko.md` |
+| Resume bullets | `docs/resume_bullets.md` |
+| API request/response examples | `docs/api/query_v2_request_response_examples.md` |
+| Text2SQL demo evidence | `docs/analysis/stage6_text2sql_demo_evidence.md` |
+| Text2SQL v2 design | `docs/analysis/stage6_llm_text2sql_v2_design.md` |
+| Text2SQL after-fixes eval report | `docs/analysis/stage6_text2sql_after_fixes_eval_report.md` |
+| Text2SQL v1/v2 comparison | `docs/analysis/stage6_text2sql_v1_v2_eval_comparison.md` |
+| Text2SQL failure cases | `docs/analysis/stage6_text2sql_v2_failure_cases.md` |
+| Text2SQL strict eval report | `docs/analysis/stage6_text2sql_strict_eval_report.md` |
+| AWS target architecture | `docs/architecture/aws_target_architecture.md` |
+| Text2SQL gateway architecture | `docs/architecture/text2sql_gateway_architecture.md` |
 
-**스크린샷**: `docs/images/02_dag_ingest.png`, `docs/images/02_country_distribution.png`
+### BI exports
 
-**Stage 1 증거**
-- DAG run: `ig_collect_smoke` 5회 success (`2026-05-26T06:42:16+00:00` ~ `2026-05-26T06:48:15+00:00`)
-- Load metrics: 첫 실행 `inserted=20`, 이후 4회 `updated=20`, `source_links_inserted=0`
-- Known limitations: smoke 규모는 `#다이소화장품` 20건이며, Stage 2 본수집에서는 XCom 대신 task 내부 collect-and-load 또는 임시 landing 방식을 검토한다.
-
----
-
-## Phase 3 — dbt staging / intermediate / marts
-
-| 메트릭 | 값 |
+| Export | Path |
 |---|---|
-| 모델 수 (staging / intermediate / marts) | **1 / 3 / 1** |
-| `dbt run` 전체 시간 | **0.18s / 5 models** |
-| `dbt test` 전체 시간 / 통과 수 | **0.37s / 44 passed** |
-| 컬럼 description 커버리지 | **TBD %** |
-| 테스트 커버리지 (컬럼 대비) | **44 data tests / 5 models** |
-| incremental vs full-refresh 시간 차 | **TBD** |
-| SCD2 snapshot row 수 | **TBD** |
-| 최장 모델 실행 (모델명 + 시간) | **TBD** |
-| creator mart row 수 | **46 creators / 49 posts** |
-| creator review 대상 | **24 creators** |
-| 광고/협찬 후보 게시물 | **21 posts** |
-
-**스크린샷**:
-- `docs/images/03_dbt_lineage.png` — dbt docs lineage (`raw → staging → intermediate → mart`)
-- `docs/images/phase3_creator_review_table.jpg` — Superset creator review table (`marts.mart_creator_sponsored_summary`, `included_in_creator_review = true`)
-
-**BI export**:
-- `dashboards/superset_exports/adinsight_creator_review_export.zip` — Superset dashboard/chart/dataset export (`AdInsight Creator Review`)
-
-**Stage 3 증거**
-- dbt models: `staging.stg_ig_posts`, `intermediate.int_ig_post_source_quality`, `intermediate.int_ig_sponsored_candidates`, `intermediate.int_ig_owner_activity`, `marts.mart_creator_sponsored_summary`
-- dbt tests: `44/44` pass (`dbt-core 1.8.8`, `dbt-postgres 1.8.2`)
-- Superset dataset: `marts.mart_creator_sponsored_summary`
-- Superset chart: `Creator Sponsored Review Table`
-- Known limitations: Round 1 데이터가 49건으로 작아 creator ranking은 대표성이 낮고, `is_sponsored_candidate`는 caption 키워드 기반 후보값이다.
+| Creator review Superset export | `dashboards/superset_exports/adinsight_creator_review_export.zip` |
+| Campaign ROAS prediction Superset export | `dashboards/superset_exports/adinsight_campaign_roas_prediction_export.zip` |
 
 ---
 
-## Phase 4 — AI-Native Mart ⭐
+## 4. Phase Summary
 
-| 메트릭 | 값 |
+| Phase | Portfolio-readable result |
 |---|---|
-| ai_native 모델 수 | **TBD** |
-| 컬럼 description 커버리지 | **TBD %** |
-| `meta.synonyms` 언어 수 (ko/en/zh-tw/th) | **TBD** |
-| `meta.example_questions` 평균 수/모델 | **TBD** |
-| pgvector chunk 수 | **TBD** |
-| 임베딩 빌드 시간 (`make agent-index`) | **TBD** |
-| HNSW 인덱스 빌드 시간 | **TBD** |
-
-**ADR**: `docs/adr/003-ai-native-layer.md` — *왜 별도 레이어를 만들었는가 (예상 결과: Exec Acc 일반 마트 42% → ai_native 78%)*
-
-**스크린샷**: `docs/images/04_erd_ai_native.svg`
-
-**Stage 4/5 campaign AI-native 증거**
-- `ai_native.ai_creator_sponsored_summary` — creator-level semantic mart
-- `ai_native.ai_campaign_roi_summary` — campaign/payment semantic mart
-- `features.feature_campaign_roas_training_set` — ROAS training feature table
-- `features.feature_campaign_roas_scoring_set` — daily scoring feature table
-- Known limitations: `ai_campaign_roi_summary`는 synthetic payment benchmark 기반이며, 실제 광고 성과 일반화 주장이 아니다.
+| Phase 1 | Docker Compose local stack: Postgres, Airflow, Superset, Redis/worker services, smoke DAG evidence |
+| Phase 2 | Apify collection, raw loader, source-link table, idempotent reruns, daily/backfill DAGs |
+| Phase 2C | Synthetic campaign attribution and payment event generation from observed engagement signals |
+| Phase 3 | dbt staging/intermediate/mart models and Superset creator review dashboard |
+| Phase 3B | Campaign-grain ROI mart from synthetic payment events |
+| Phase 4/5 | `ai_native` semantic marts, feature tables, prediction monitor mart, Superset ROAS monitor |
+| Phase 6 | ROAS model comparison, artifact-backed FastAPI prediction serving, deterministic `/query` |
+| Phase 6B | Generated-SQL `/query/v2`, SQL validator, provider factory, gateway, audit, eval runners |
+| Phase 6C | Local/external Text2SQL model evaluation, provider cost tracking, Gemini -> OpenAI fallback |
+| Phase 8C | GitHub Actions CI with `ruff` and `pytest` |
+| Phase 9B | README, demo script, API examples, interview talking points, resume bullets |
 
 ---
 
-## Phase 5 — Superset + 쿼리 최적화 ⭐
+## 5. Resume Bullet Candidates
 
-| 메트릭 | 값 |
+Use 4-5 bullets from this list, depending on the job description.
+
+- Built an end-to-end influencer campaign analytics platform with Airflow, Postgres, dbt, Superset, and FastAPI, modeling raw Instagram collection and synthetic payment events into campaign ROI, ROAS prediction, and Text2SQL-ready semantic marts.
+- Designed a layered dbt warehouse (`raw -> staging -> intermediate -> marts -> features -> ai_native`) with immutable raw inputs, idempotent transformations, semantic metadata, and portfolio evidence captured through dbt tests, screenshots, and run metrics.
+- Implemented campaign payment and ROI marts from synthetic attribution/payment events, producing campaign-grain ROAS summaries and reusable feature tables for model training and daily scoring.
+- Built a ROAS model comparison runner using leave-one-out validation across baseline, linear, ridge, and KNN candidates; improved MAE from objective-mean baseline `0.0892` to `0.0474` with `linear_regression_numpy_v1`.
+- Served campaign ROAS predictions through FastAPI using a saved model artifact instead of request-time fitting, exposing reproducible response metadata such as model name, training rows, feature source, and scoring snapshot date.
+- Built a generated-SQL Text2SQL v2 boundary with provider factory, SQL validator, statement timeout, best-effort audit logging, provider usage/cost tracking, fallback orchestration, and explicit API error handling.
+- Expanded Text2SQL evaluation to 24 positive questions and 14 negative/content-safety questions, with latest external-provider runs reaching OpenAI `24/24` positive and `14/14` negative pass, and Gemini `24/24` positive and `12/14` negative pass.
+- Added GitHub Actions CI for Python 3.11 with `uv sync --dev --frozen`, full `ruff check`, and `pytest`.
+
+---
+
+## 6. Interview Talking Points
+
+| Question | Short answer | Evidence |
+|---|---|---|
+| Why synthetic payment data? | Real payment data is sensitive, so synthetic payment events are labeled as benchmark evidence and not real business performance. | `data_generation/`, `docs/interview_talking_points.md` |
+| Why a simple ROAS model? | With 25 labeled synthetic rows, simple leave-one-out models are more defensible than claiming a complex boosting model generalizes. | `agent/eval/run_campaign_roas_model.py` |
+| Why separate `ai_native` marts? | BI marts serve dashboards; `ai_native` marts expose clear grain, semantic metadata, and Text2SQL-friendly columns. | `dbt/models/ai_native/` |
+| How is hallucination controlled? | `/query` uses reviewed expected SQL; `/query/v2` uses provider contract, SQL validator, timeout, audit, negative eval, and fallback. | `agent/text2sql/`, `text2sql_gateway/` |
+| Why Gemini primary + OpenAI fallback? | Gemini was cheaper in the measured 38-case scope, OpenAI was cleaner on safety and faster overall, so ADR 004 uses Gemini primary plus OpenAI fallback. | `docs/adr/004-text2sql-dual-provider-fallback.md` |
+| How would this move to AWS? | Airflow -> MWAA, Postgres -> RDS/Aurora or Redshift, FastAPI -> ECS Fargate + ALB, logs -> CloudWatch, artifacts -> S3. | `docs/architecture/aws_target_architecture.md` |
+
+---
+
+## 7. Public README Checklist
+
+- [x] Clear one-line pitch
+- [x] Architecture image visible near the top
+- [x] Key results table with measured values only
+- [x] Demo GIF and evidence links
+- [x] Local Quickstart
+- [x] JD/evidence mapping
+- [x] Known limitations section
+- [x] AWS target mapping
+- [x] Local link check in current working tree
+- [x] Portfolio one-pager markdown
+- [x] Interview flashcards
+- [x] English-only `README.en.md`
+- [x] Korean company submission portfolio markdown
+- [x] Korean job application snippets
+- [x] Selected Korean resume bullets
+- [x] Korean submission HTML export
+- [x] Korean submission DOCX export
+- [ ] Optional: exported 1-pager PDF
+
+---
+
+## 8. Not Implemented / Stretch Backlog
+
+These should not be presented as completed work in the README.
+
+| Item | Status |
 |---|---|
-| 대시보드 수 | **2** (`AdInsight Creator Review`, `AdInsight Campaign ROAS Prediction Monitor`) |
-| 차트 수 | **2** |
-| Virtual dataset 수 | **0** (현재는 dbt physical mart 기반) |
-| 캐시 hit rate | **TBD** |
-
-### Before / After EXPLAIN — Case 1: 광고주 ROI
-
-```
-[빈 자리 — Phase 5 시 채울 것]
-```
-
-| 지표 | Before | After | Δ | 적용 기법 |
-|---|---:|---:|---:|---|
-| 실행 시간 | TBD ms | TBD ms | — | TBD |
-| Plan rows | TBD | TBD | — | — |
-| Shared reads | TBD | TBD | — | — |
-
-상세: `metrics/query_optimization_log.md` (Phase 5 시 생성)
-
-**스크린샷**:
-- `docs/images/05_campaign_roas_prediction_monitor.png` — Superset campaign ROAS prediction monitoring table
-- `docs/images/05_explain_before.png`, `docs/images/05_explain_after.png` — 쿼리 최적화 단계에서 추가 예정
-
-**BI export**:
-- `dashboards/superset_exports/adinsight_creator_review_export.zip` — creator review dashboard export
-- `dashboards/superset_exports/adinsight_campaign_roas_prediction_export.zip` — campaign ROAS prediction monitoring dashboard export
-
-**Stage 5 증거**
-- Superset dataset: `marts.mart_campaign_roas_prediction_monitor`
-- Superset chart: `Campaign ROAS Prediction Monitor Table`
-- Superset dashboard: `AdInsight Campaign ROAS Prediction Monitor`
-- Dashboard rebuild script: `dashboards/scripts/create_campaign_roas_prediction_dashboard.py`
-- Dashboard design note: `docs/analysis/stage5_campaign_roas_prediction_dashboard.md`
-- Airflow daily refresh DAG: `dags/dag_campaign_roas_prediction_daily.py`
-- Manual validation run: `manual__phase5_prediction_validation_20260619` → success
-- Prediction monitor metrics: rows `25`, MAE `0.0799`, bias `0.0000`
-- JD/cloud tooling strategy: `docs/analysis/stage5_jd_cloud_tooling_strategy.md`
+| Query optimization before/after EXPLAIN study | Not implemented |
+| Locust load test / traffic curve | Not implemented |
+| Weekly LLM report DAG | Not implemented |
+| Superset open-source contribution | Not implemented |
+| Full AWS deployment | Not implemented |
+| Exported 1-pager PDF | Not implemented |
+| Korean submission PDF | Blocked locally: `pdflatex` is not installed |
+| Live auth/rate-limit/tenant boundary for `/query/v2` | Not implemented |
 
 ---
 
-## Phase 6 — Text2SQL Agent ⭐⭐ (가장 풍부한 메트릭)
+## 9. ADR Index
 
-### 평가셋
-- 크기: **24 positive expected-SQL questions** + **14 negative/content-safety questions**
-- 언어 분포: KO/EN bilingual 중심, content-safety는 abusive/sexual/violent category 포함
-- 난이도: easy **TBD** / medium **TBD** / hard **TBD**
-
-### 결과 비교 표
-
-| Version | Prompt | Model | PASS/24 | Exec Acc | p95 | Score |
-|---|---|---|---:|---:|---:|---:|
-| v2 local | schema context + JSON contract | `phi4:14b` | 8 | 0.3810 | 26103.743ms | 46.56 |
-| v2 local tuned | few-shot + deterministic options | `phi4:14b` | 11 | 0.4583 | 18781.653ms | 53.91 |
-| v2 local | schema context + JSON contract | `qwen2.5-coder:7b` previous baseline | 8 | 0.4211 | 9528.069ms | 52.53 |
-| v2 local tuned | few-shot + deterministic options | `qwen2.5-coder:7b` | 8 | 0.3333 | 8082.541ms | 49.52 |
-| v2 local | schema context + JSON contract | `qwen2.5-coder:7b` rerun | 6 | 0.2857 | 10516.514ms | 43.86 |
-| v2 local | schema context + JSON contract | `sqlcoder:7b` | 0 | 0.0000 | 7986.261ms | 25.43 |
-| v2 local | schema context + JSON contract | `qwen3.5:9b` | 0 | 0.0000 | 16235.585ms | 23.08 |
-| v2 external hardened | schema catalog + strict validator + retry/cost tracking | `gpt-5.4-mini-2026-03-17` | 24 | 1.0000 | 5307.774ms | production candidate |
-| v2 external hardened | schema catalog + strict validator + cost tracking | `gemini-3.1-flash-lite` | 24 | 1.0000 | 4581.632ms | cost-efficient candidate |
-
-### 언어별 / 난이도별
-- KO **TBD** / EN **TBD** / ZH-TW **TBD** / TH **TBD**
-- easy **TBD** / medium **TBD** / hard **TBD**
-
-### 안전성
-- Negative/content-safety set: mock `14/14 PASS`; local model batch best refusal-only models `sqlcoder:7b`, `qwen3.5:9b` both `14/14 PASS`
-- Unsafe echo failures observed: `qwen2.5-coder:7b` 1, `qwen2.5-coder:14b` 2, `phi4:14b` 2
-- DELETE/UPDATE/DROP/ALTER 차단: validator와 negative set으로 검증
-
-### 실패 사례 3선 (`agent/eval/failure_cases.md`)
-1. `sqlcoder:7b`, `qwen3.5:9b`: answerable positive 질문 대부분을 거절해 negative pass와 demo utility가 충돌.
-2. `sqlcoder:15b`, `gemma4:12b`: positive eval 도중 local model timeout으로 summary incomplete.
-3. `qwen2.5-coder:14b`, `phi4:14b`: 일부 content-safety negative 질문에서 unsafe input term echo 실패.
-
-**스크린샷·GIF**: `docs/images/06_text2sql_demo.gif`
-
-**다음 Text2SQL 후보**
-- expected SQL benchmark: `agent/eval/run_expected_sql.py` 기준 **18/18 PASS**
-- `ai_native.ai_campaign_roi_summary` 대상 campaign ROI 질문 4개 추가 완료
-- `marts.mart_campaign_roas_prediction_monitor` 대상 prediction error/model metric 질문 4개 추가 완료
-- 다음: 실제 LLM-generated SQL 평가 runner, SQL validator, negative set 추가
-
-**Stage 6 eval 증거**
-- Evaluation set: `agent/eval/text2sql_questions.yml`
-- Analysis note: `docs/analysis/stage4_text2sql_eval_questions.md`
-- Latest verified command: `set -a; source .env; set +a; POSTGRES_HOST=localhost uv run python agent/eval/run_expected_sql.py`
-- Result: expected-SQL baseline `24/24 PASS`
-- Latest external provider result: OpenAI positive/negative `38/38 PASS`; Gemini positive/negative `36/38 PASS`
-- Cost evidence: Gemini `$0.064098` vs OpenAI `$0.103027` over the same 38 positive/negative cases
-
-**ROAS ML model v1**
-- Script: `agent/eval/run_campaign_roas_model.py`
-- Comparison: `campaign_roas_model_comparison_v1`
-- Validation: leave-one-out on `features.feature_campaign_roas_training_set`
-- Rows: `25`
-- Candidates: `global_mean_baseline_v1`, `objective_mean_roas_baseline_v1`, `linear_regression_numpy_v1`, `ridge_regression_numpy_v1`, `knn_regression_numpy_v1`
-- Baseline `objective_mean_roas_baseline_v1`: MAE `0.0892`, RMSE `0.1349`
-- Best candidate `linear_regression_numpy_v1`: MAE `0.0474`, RMSE `0.0577`
-- Delta vs baseline: MAE `-0.0418`, RMSE `-0.0771`
-- Deferred models: LightGBM, XGBoost, CatBoost. 25 synthetic labeled rows is too small for credible boosting-model comparison.
-- Known limitation: 25 synthetic labeled campaign rows only; benchmark evidence, not production performance claim.
-
-**FastAPI serving skeleton**
-- Service files: `api/main.py`, `api/schemas.py`
-- Docker service: `api` in `docker-compose.yml`, port `8000`
-- Endpoints:
-  - `GET /health`
-  - `POST /predict/campaign-roas`
-  - `POST /query`
-- Live smoke result:
-  - `/health` → `{"status":"ok","service":"adinsight-api"}`
-  - `/predict/campaign-roas` for `camp_000029` → model `linear_regression_numpy_v1`, predicted ROAS `0.597425`, latency `23.495ms`, training rows `25`, artifact `agent/model_artifacts/campaign_roas_linear_v1.json`
-  - `/query` English ROAS question → `p5_q001`, rows `5`, top campaign `camp_000029`, latency `41.013ms`
-  - `/query` Korean MAE/bias question → `p5_q008`, rows `1`, MAE `0.07988873820803322`, latency `42.839ms`
-- Serving improvement: request-time model fitting removed; API loads the exported linear model artifact.
-- API smoke tests: `tests/unit/test_api.py`, `uv run pytest -q` → `4 passed`
-- Text2SQL v1 mode: deterministic expected-SQL registry match from `agent/eval/text2sql_questions.yml`; live registry validation `18/18 PASS`.
-- Known limitation: artifact is still local JSON fitted on 25 synthetic rows, and `/query` does not yet perform free-form LLM SQL generation.
+| ADR | Decision | Status |
+|---|---|---|
+| `docs/adr/001-single-postgres-stack.md` | Use one local Postgres stack instead of adding a separate warehouse during the learning phase | Accepted |
+| `docs/adr/002-layered-mart-vs-obt.md` | Use layered dbt marts instead of one wide OBT-only model | Accepted |
+| `docs/adr/003-redesign-ac-strategy.md` | Reposition the project around influencer campaign analytics plus payment/ROAS/Text2SQL | Accepted |
+| `docs/adr/004-text2sql-dual-provider-fallback.md` | Use Gemini primary, OpenAI fallback, deterministic registry final fallback for Text2SQL v2 serving | Accepted |
 
 ---
 
-## Phase 7 — LLM 자동 리포트
+## 10. Next Portfolio Work
 
-| 메트릭 | 값 |
-|---|---|
-| 리포트 회차 | **TBD** |
-| 평균 생성 시간 | **TBD** s |
-| 평균 토큰 비용 | **$ TBD** |
-| 수치 검증 (수동 hand count, 5% 이상 오차) | **TBD %** |
-| Pydantic schema 실패율 | **TBD** |
+Recommended order:
 
-**샘플 리포트**: `reports/2026-WW/summary.md` (Phase 7 시 생성)
-
----
-
-## Phase 8 — 품질·관측·CI
-
-| 메트릭 | 값 |
-|---|---|
-| pytest 통과 / 커버리지 | **TBD** / **TBD %** |
-| dbt test 수 (generic / custom) | **TBD** / **TBD** |
-| GitHub Actions 전체 실행 시간 | **TBD** (workflow added: `.github/workflows/ci.yml`) |
-| source freshness 실패 알림 동작 검증 | **TBD** |
-
-**배지**: `[![CI](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml)`
-
----
-
-## Phase 9 — 트래픽·문서·기여
-
-| 메트릭 | 값 |
-|---|---|
-| locust 30 동접 p50 / p95 / p99 | **TBD** / **TBD** / **TBD** |
-| 동접 변화 커브 (10 / 20 / 30 / 50) | **TBD** |
-| Singleflight dedup 비율 | **TBD %** |
-| Gemini → OpenAI fallback 발동 횟수 | **2** local smoke audit records (`primary_content_safety_refusal` patched evidence 1건 포함) |
-| Back-pressure 503 발동 임계점 | **TBD** |
-| ADR 문서 수 | **4** (목표 ≥ 3) |
-| Superset 기여 (issue / PR) | **TBD** |
-
-**스크린샷**: `docs/images/09_locust_30.png`
-
----
-
-# Part B. 스크린샷 · 증거물 체크리스트 (`portfolio_template.md` §8)
-
-## 필수 (README 용)
-- [x] 아키텍처 다이어그램 (SVG 고해상도) — Mermaid 원본: `docs/analysis/2026-06-23_current_architecture_visualization.md`, export: `docs/images/00_architecture.svg`
-- [ ] ERD (ai_native 레이어 중심) — `docs/images/04_erd_ai_native.svg`
-- [ ] Bus Matrix (표 또는 이미지) — README 직접
-- [ ] Airflow DAG 그래프 × 3 (ingest / dbt_run / weekly_llm_report)
-- [x] dbt docs lineage 그래프 — `docs/images/03_dbt_lineage.png`
-- [ ] Superset 대시보드 × 2 (광고주 ROI, 크리에이터 성과)
-- [x] Text2SQL 데모 GIF — `docs/images/06_text2sql_demo.gif`, evidence: `docs/analysis/stage6_text2sql_demo_evidence.md`
-- [ ] EXPLAIN Before/After 콘솔 캡처
-- [ ] locust 부하 테스트 스크린샷 (RPS, p95)
-- [x] CI 배지 (GitHub Actions) — `.github/workflows/ci.yml`
-- [x] AWS target architecture — `docs/architecture/aws_target_architecture.md`, skeleton: `infra/aws/README.md`
-- [x] LLM Text2SQL v2 design + mock endpoint/eval — `docs/analysis/stage6_llm_text2sql_v2_design.md`, endpoint: `POST /query/v2`, eval: `13 PASS / 5 REFUSED / 0 BLOCKED`
-- [x] Text2SQL v1/v2 eval comparison — `docs/analysis/stage6_text2sql_v1_v2_eval_comparison.md`
-- [x] Text2SQL v2 API hardening + provider adapter — statement timeout, audit JSONL, `TEXT2SQL_PROVIDER=mock|http_json`, pytest 20개 통과
-- [x] Text2SQL gateway skeleton — `text2sql_gateway/main.py`, docs: `docs/architecture/text2sql_gateway_architecture.md`, tests 포함
-- [x] Local small-model gateway backend — `TEXT2SQL_GATEWAY_BACKEND=ollama`, invalid JSON refusal tests 포함
-- [x] Ollama-backed `/query/v2` live smoke — `qwen2.5-coder:7b`, rows 5, latency 4800.432ms
-- [x] Local Text2SQL model evaluation rubric — positive 24문항, negative/content-safety 14문항, `model_score` 포함
-- [x] Text2SQL eval chart — `docs/images/06_text2sql_eval_summary.svg`
-- [x] Ollama `qwen2.5-coder:7b` eval baseline — positive `8 PASS / 11 FAIL / 5 REFUSED / 0 BLOCKED`, score `52.53`; negative `14/14 PASS`
-- [x] Ollama local model benchmark — 7개 모델 다운로드/평가; complete positive 최고 `phi4:14b` score `46.56`, 전체 결론은 prompt/schema tuning 필요
-- [x] Prompt/schema/fallback tuning — `/query/v2` registry fallback 추가; tuned `phi4:14b` positive `11/24`, score `53.91`, negative `14/14 PASS`
-- [x] External Text2SQL provider eval — `gpt-5.4-mini-2026-03-17` positive `24/24`, negative `14/14`; `gemini-3.1-flash-lite` positive `24/24`, negative `12/14`
-- [x] Text2SQL provider cost observability — `/query/v2` `provider_summary`, audit summary CLI, Gemini `$0.064098` vs OpenAI `$0.103027` over 38 cases
-- [x] Gateway 경유 `/query/v2` live smoke — mode `llm_generated_sql_v2_http_json`, rows 5, latency 58.981ms
-- [x] `/query/v2` request/response examples — `docs/api/query_v2_request_response_examples.md`
-- [x] 3-5분 demo script — `docs/demo_script_3min.md`
-- [x] 면접 talking points — `docs/interview_talking_points.md`
-- [x] 이력서 bullet 초안 — `docs/resume_bullets.md`
-
-## 권장 (블로그·심층 문서용)
-- [ ] Airflow task 실행 이력 (30일)
-- [ ] pg_stat_statements Top 10 쿼리
-- [ ] pgvector HNSW 파라미터 비교 표
-- [ ] Agent failure case 스크린샷 3건
-- [ ] Redis 캐시 히트 로그
-- [ ] 다국어 질문 동작 예시 (4개 언어 각 1건)
-- [x] Text2SQL eval `run_results.jsonl` 차트 — dependency-free SVG: `docs/images/06_text2sql_eval_summary.svg`
-
-### 스크린샷 품질 가이드
-- **해상도**: retina 원본 (README 에서 `width=` 로 조절)
-- **민감 정보 제거**: 비밀번호, 실 URL
-- **테마 통일**: 다크/라이트 한 가지로
-- **캡션**: 각 이미지 아래 한 줄 설명
-- **파일명**: `docs/images/NN_topic.png` 번호 붙여 순서 유지
-
----
-
-# Part C. ADR (Architecture Decision Records) 작성 큐
-
-ADR = "왜 X 가 아니라 Y 를 선택했는가" 를 1~2페이지로 남긴 결정 문서. 면접 단골 답변 자료.
-
-| # | 제목 | 위치 | 상태 |
-|---|---|---|---|
-| 001 | Postgres 단일 스택 vs DuckDB / BigQuery | `docs/adr/001-single-postgres-stack.md` | ✅ Phase 1 작성 |
-| 002 | Layered mart vs OBT | `docs/adr/002-layered-mart-vs-obt.md` | ✅ Phase 3 작성 |
-| 003 | AI-Native 레이어를 별도로 두는 이유 | `docs/adr/003-ai-native-layer.md` | ⏳ Phase 4 시 |
-| 004 | LangChain vs 직접 호출 | `docs/adr/004-langchain.md` | ⏳ Phase 6 시 |
-| 005 | Embedding 모델 선택 (bge-m3) | `docs/adr/005-embedding-model.md` | ⏳ Phase 6 시 |
-| 004 | Text2SQL OpenAI/Gemini dual-provider fallback | `docs/adr/004-text2sql-dual-provider-fallback.md` | ✅ Phase 6 작성 |
-
----
-
-# Part D. 면접 토크포인트 ↔ 증거 매핑 (`portfolio_template.md` §6.1 채울 것)
-
-| 예상 질문 | 핵심 문장 | 증거 위치 | 상태 |
-|---|---|---|---|
-| 가장 어려웠던 문제 | no-LIMIT generated SQL을 validator가 차단했고, 안전 기준 유지를 위해 refusal로 남김 | `docs/analysis/stage6_text2sql_v2_failure_cases.md` | ✅ |
-| 쿼리 최적화 경험 | 18s → 1.2s, BRIN + 복합 B-tree (예정) | `docs/query_tuning.md` | ⬜ |
-| idempotency 어떻게? | DELETE+INSERT, merge, 백필 5회 검증 | `dags/dbt_run.py` (예정) | ⬜ |
-| 요청 처리 플로우 | request → provider → validate → timeout execute → format → audit | `docs/api/query_v2_request_response_examples.md` | ✅ |
-| 트래픽 10배 | 병목 식별 → 캐시 → fallback → async → back-pressure | `docs/traffic_experiments.md` (예정) | ⬜ |
-| 동시성 처리 | 4층위 (pipeline / data / serving / agent) | `docs/concurrency_notes.md` (예정) | ⬜ |
-| AI-Native 뭐가 다름? | 비정규화 + metadata + Agent 친화 | ADR 003 | ⬜ |
-| hallucination 방지 | v1 registry baseline + v2 validator/refuse/eval/audit | `docs/interview_talking_points.md` | ✅ |
-
----
-
-# Part E. 최종 완성도 체크리스트 (`portfolio_template.md` §10)
-
-> 프로젝트 끝내기 전에 훑어볼 것. 하나라도 빠지면 포트폴리오 완성도가 급락.
-
-### 저장소
-- [ ] README 가 16개 섹션 모두 채워짐
-- [ ] JD 매칭 표의 모든 링크가 실제로 동작
-- [ ] 모든 Before/After 표에 **실측 수치**
-- [ ] 라이선스·데이터 출처 명시
-- [ ] `.env.example` 제공, `.env` gitignore
-- [ ] `make up` 으로 낯선 맥에서 재현 가능
-- [x] GitHub Actions CI 배지 — README 상단
-- [ ] 커밋 메시지 conventional (feat/fix/docs)
-- [ ] Issues 에 "다음 할 일" 정리 (미완성도 공개)
-
-### 문서
-- [ ] ADR 최소 3개
-- [ ] request_flow / concurrency_notes / traffic_experiments / query_tuning / agent_eval / failure_cases / reliability_playbook / interview_talking_points
-  - Completed partials: `/query/v2` examples, Text2SQL failure cases, interview talking points, demo script
-
-### 시각 자산
-- [ ] 아키텍처·ERD·DAG×3·대시보드×2·데모 GIF·Before/After EXPLAIN·locust
-
-### 포트폴리오 배포물
-- [ ] GitHub public + pin
-- [ ] README.en.md (영문)
-- [x] 이력서 bullet 5개 — `docs/resume_bullets.md`
-- [ ] 1-pager PDF
-- [ ] (선택) 노션/블로그 회고 글
-- [ ] LinkedIn 프로젝트 추가
-
-### 면접 준비물
-- [ ] 토크포인트 카드 10~12장
-- [ ] 1분 자기소개 / 3분 프로젝트 소개 암기
-- [ ] 모든 숫자의 출처 설명 가능
+1. Run a final local documentation link check.
+2. Verify README Quickstart on a clean-ish local stack, or explicitly mark environment prerequisites.
+3. Create a one-page recruiter PDF from sections 1, 2, 3, and 5.
+4. Convert section 6 into 10 interview flashcards.
+5. Decide whether `README.en.md` is worth the time for the target applications.

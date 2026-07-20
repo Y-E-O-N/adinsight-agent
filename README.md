@@ -2,104 +2,146 @@
 
 [![CI](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml)
 
-> **인플루언서 광고 집행부터 결제 전환까지 추적하는 AI-Native 분석 플랫폼**
-> An influencer campaign-to-payment analytics platform with ROAS prediction and a Text2SQL BI agent — built on Airflow, dbt, Superset, FastAPI, LangChain, pgvector, and LightGBM.
+> 인플루언서 광고 집행 데이터를 결제 전환, 캠페인 ROI, ROAS 예측, Superset 모니터링, guarded Text2SQL API까지 연결한 데이터 엔지니어링 포트폴리오 프로젝트입니다.
 
-Instagram 인플루언서 광고 데이터를 수집·정제·모델링하고, 합성 결제 전환 이벤트를 결합해 캠페인 ROI/ROAS를 분석한다. 최종 목표는 Superset 대시보드, ROAS 예측 ML 모델, 자연어 질의를 처리하는 Text2SQL BI Agent, FastAPI 서빙 엔드포인트까지 연결된 포트폴리오형 데이터 플랫폼이다.
+[English README](README.en.md)
 
----
+AdInsight는 Instagram 수집 데이터와 합성 결제 이벤트를 결합해 캠페인 성과를 분석하는 로컬 데이터 플랫폼입니다. 핵심 목표는 단순 대시보드가 아니라 `Airflow ingestion -> dbt semantic marts -> ROAS model artifact -> FastAPI serving -> Text2SQL gateway/eval -> portfolio evidence` 흐름을 끝까지 보여주는 것입니다.
+
+![AdInsight architecture](docs/images/00_architecture.svg)
 
 ## TL;DR
-- **도메인**: 인플루언서 광고 집행 → 게시물 성과 → 결제 전환 → 캠페인 ROI/ROAS 분석
-- **스택**: Airflow 2.9 · Postgres 16 + pgvector · dbt-postgres 1.8 · Superset 4.x · FastAPI · LangChain · LightGBM · OpenAI / Gemini
-- **차별점**: Apify 운영 자동화 + 가설 기반 합성 결제 데이터 + dbt 5레이어 + ROAS 예측 ML + Text2SQL Agent Exec Acc 측정
-- **로컬 실행**: MacBook Apple Silicon, Docker Compose 한 방에 기동
 
----
-
-## JD ↔ 산출물 매핑
-
-| JD 항목 | 프로젝트 산출물 |
+| 구분 | 내용 |
 |---|---|
-| AI Native 데이터 마트 설계·운영 | `dbt/models/ai_native/` (LLM 친화 비정규화 + dbt YAML semantic metadata) |
-| 대규모 ETL 파이프라인 (Airflow) | `dags/` (수집 / 정제 / 집계 / 품질 / 리포트 DAG) + 백필 |
-| AI 학습용 데이터 전처리 | `ai_native.ai_campaign_roi_features` + LightGBM ROAS 예측 feature set |
-| Tableau / Superset 대시보드 | `dashboards/` (Campaign ROI / Creator Performance / Payment Conversion) |
-| ML 모델 개발·평가 | `ml/` LightGBM ROAS 예측 모델, Walk-forward CV, RMSE/MAE, Feature Importance |
-| API 연동·데이터 서빙 | `api/` FastAPI `/query`, `/predict` 엔드포인트 |
-| Text2SQL BI Agent | `agent/` (LangChain schema-aware SQL Agent + 평가 프레임워크) |
-| 데이터 리터러시 교육 | `docs/` 아키텍처·요청 플로우·동시성·면접 토크포인트 |
-| 대용량 쿼리 최적화 | `metrics/query_optimization_log.md` (Before/After 기록) |
-| Pandas + API 연동 | `data_generation/`, `dags/ingest_*.py` |
-| LangChain · Vector DB 우대 | LangChain SQL Agent + pgvector |
-| Superset 오픈소스 기여 우대 | `docs/superset_contribution_plan.md` |
-| 글로벌 협업 경험 우대 | 다국가 모델링 (timezone · i18n · currency) + 영문 README 병행 |
+| 문제 | 인플루언서 광고 성과는 게시물 반응, 캠페인 attribution, 결제 전환, ROAS 지표가 흩어져 있어 분석과 의사결정이 느립니다. |
+| 해결 | Airflow, Postgres, dbt, Superset, FastAPI, Text2SQL gateway를 로컬에서 연결해 재현 가능한 분석 플랫폼을 구성했습니다. |
+| 차별점 | raw 보존, idempotent 적재, dbt layered mart, synthetic payment benchmark, ROAS artifact serving, SQL validator, provider fallback, CI를 함께 다룹니다. |
+| 한계 | 결제 데이터와 ROAS label은 합성 benchmark입니다. 모델 성능은 운영 일반화 주장이 아니라 평가/서빙 패턴 증거로 해석해야 합니다. |
 
----
+## Key Results
 
-## 빠른 시작 (Quick Start)
+| 영역 | 결과 |
+|---|---:|
+| Apify daily adaptive run | `items_collected_total=1725`, `inserted_total=1410` |
+| Synthetic payment benchmark | `498` payment events, net payment KRW `6,329,923.59` |
+| Campaign ROI mart | `30` campaign rows, max ROAS `0.5969` |
+| ROAS prediction monitor | `25` rows, MAE `0.0799`, bias `0.0000` |
+| ROAS model comparison | baseline MAE `0.0892` -> linear model MAE `0.0474` |
+| deterministic Text2SQL baseline | expected-SQL registry `24/24 PASS` |
+| external Text2SQL eval | OpenAI `24/24` positive + `14/14` negative, Gemini `24/24` positive + `12/14` negative |
+| provider cost scope | Gemini `$0.064098` vs OpenAI `$0.103027` over the same 38-case eval scope |
+| quality gate | latest documented gate: `ruff` pass, `pytest 82 passed`, `git diff --check` pass |
 
-### 전제 조건
-- Docker Desktop (메모리 12GB 할당 권장: Settings → Resources → Memory)
-- Python 3.11, [uv](https://docs.astral.sh/uv/) 패키지 매니저
+## Demo Assets
 
-### 1단계 — 환경 변수 준비
-```bash
-cp .env.example .env
-# .env 파일을 열어 비밀번호·시크릿 키 변경 (POSTGRES_PASSWORD, SUPERSET_SECRET_KEY 등)
+| 자산 | 위치 |
+|---|---|
+| Text2SQL demo GIF | [docs/images/06_text2sql_demo.gif](docs/images/06_text2sql_demo.gif) |
+| Demo evidence | [docs/analysis/stage6_text2sql_demo_evidence.md](docs/analysis/stage6_text2sql_demo_evidence.md) |
+| Korean company submission portfolio | [docs/korean_company_portfolio_submission.md](docs/korean_company_portfolio_submission.md) |
+| Korean submission HTML export | [docs/adinsight_portfolio_submission_ko.html](docs/adinsight_portfolio_submission_ko.html) |
+| Korean submission DOCX export | [docs/adinsight_portfolio_submission_ko.docx](docs/adinsight_portfolio_submission_ko.docx) |
+| Korean job application snippets | [docs/korean_job_application_snippets.md](docs/korean_job_application_snippets.md) |
+| Portfolio one-pager | [docs/portfolio_one_pager.md](docs/portfolio_one_pager.md) |
+| 3-5 minute demo script | [docs/demo_script_3min.md](docs/demo_script_3min.md) |
+| API examples | [docs/api/query_v2_request_response_examples.md](docs/api/query_v2_request_response_examples.md) |
+| Interview talking points | [docs/interview_talking_points.md](docs/interview_talking_points.md) |
+| Interview flashcards | [docs/interview_flashcards.md](docs/interview_flashcards.md) |
+| Selected Korean resume bullets | [docs/resume_selected_bullets_ko.md](docs/resume_selected_bullets_ko.md) |
+| Resume bullets | [docs/resume_bullets.md](docs/resume_bullets.md) |
+
+## Architecture
+
+```text
+[Ingestion]
+  Airflow DAGs + Apify collector + synthetic payment generator
+      |
+      v
+[Storage]
+  Postgres schemas: raw -> staging -> intermediate -> marts -> features -> ai_native
+      |
+      +--> Superset dashboards
+      +--> ROAS model comparison and scoring
+      +--> FastAPI /predict/campaign-roas
+      +--> FastAPI /query and /query/v2
+              |
+              v
+          Text2SQL gateway: mock | Ollama | OpenAI | Gemini | dual fallback
 ```
 
-### 2단계 — Python 의존성 설치 (개발 도구)
-```bash
-uv sync
+| Layer | Local implementation | AWS target mapping |
+|---|---|---|
+| Orchestration | Airflow in Docker Compose | MWAA |
+| Storage/serving DB | PostgreSQL 16 | RDS/Aurora PostgreSQL or Redshift |
+| Transform | dbt-postgres | dbt on managed warehouse |
+| BI | Superset | QuickSight or managed Superset |
+| API serving | FastAPI | ECS Fargate + ALB |
+| Model artifact | local JSON artifact | S3 + model registry |
+| Text2SQL gateway | FastAPI gateway | ECS/Lambda + Bedrock/OpenAI/Gemini/internal gateway |
+| Logs/metrics | JSONL + metrics docs | CloudWatch Logs + S3 |
+
+Detailed docs:
+
+- [AWS target architecture](docs/architecture/aws_target_architecture.md)
+- [Text2SQL gateway architecture](docs/architecture/text2sql_gateway_architecture.md)
+- [Dual-provider fallback ADR](docs/adr/004-text2sql-dual-provider-fallback.md)
+
+## Data Platform
+
+The dbt model design keeps raw data immutable and moves calculations through explicit layers.
+
+```text
+raw
+  stg_ig_posts
+  stg_syn_campaigns
+  stg_syn_post_campaign_attributions
+  stg_syn_payment_events
+    |
+    v
+intermediate
+  int_ig_post_source_quality
+  int_ig_sponsored_candidates
+  int_ig_owner_activity
+  int_campaign_payment_performance
+    |
+    v
+marts / features / ai_native
+  mart_creator_sponsored_summary
+  mart_campaign_roi_summary
+  mart_campaign_roas_prediction_monitor
+  feature_campaign_roas_training_set
+  feature_campaign_roas_scoring_set
+  ai_creator_sponsored_summary
+  ai_campaign_roi_summary
 ```
 
-### 3단계 — 포트 충돌 확인
+Representative evidence:
+
+- dbt lineage screenshot: [docs/images/03_dbt_lineage.png](docs/images/03_dbt_lineage.png)
+- Creator review dashboard screenshot: [docs/images/phase3_creator_review_table.jpg](docs/images/phase3_creator_review_table.jpg)
+- Campaign ROAS monitor screenshot: [docs/images/05_campaign_roas_prediction_monitor.png](docs/images/05_campaign_roas_prediction_monitor.png)
+- Superset exports: [dashboards/superset_exports](dashboards/superset_exports)
+
+## ROAS Prediction Serving
+
+The project compares small, defensible benchmark models before serving predictions. With only 25 labeled synthetic campaign rows, the selected model is a NumPy linear regression artifact rather than a heavier boosting model.
+
+| Candidate | MAE | RMSE |
+|---|---:|---:|
+| objective mean baseline | `0.0892` | `0.1349` |
+| linear_regression_numpy_v1 | `0.0474` | `0.0577` |
+
+The FastAPI endpoint loads [agent/model_artifacts/campaign_roas_linear_v1.json](agent/model_artifacts/campaign_roas_linear_v1.json) instead of fitting a model at request time.
+
 ```bash
-# 아래 포트가 비어있어야 함: 5432 / 6379 / 8081 / 8088 / 5555 / 8000
-lsof -i :5432,6379,8081,8088,5555,8000
-```
-
-### 4단계 — 스택 기동
-```bash
-time make up   # 최초 실행 시 이미지 pull 로 5~15분 소요
-```
-
-### 5단계 — 기동 확인
-```bash
-make ps        # 모든 서비스 STATUS = healthy 확인
-
-# 각 UI 접속
-#   Airflow  → http://localhost:8081  (admin / admin)
-#   Superset → http://localhost:8088  (make superset-init 후 admin / admin)
-#   Flower   → http://localhost:5555  (Celery 모니터링)
-#   FastAPI  → http://localhost:8000  (ROAS prediction serving)
-#   Postgres → localhost:5432         (make psql)
-```
-
-### 6단계 — Superset 초기화 (최초 1회)
-```bash
-make superset-init
-```
-
-### 7단계 — Smoke Test DAG 실행
-```bash
-# Airflow UI → DAGs → sample_smoke_test → Toggle ON → Trigger DAG
-# Graph view 에서 select_one task 초록색 = 스택 정상
-make airflow-cli cmd='dags trigger sample_smoke_test'
-```
-
-### 8단계 — FastAPI ROAS 예측 API 확인
-```bash
-# Docker Compose API 서비스 사용
-curl -s http://127.0.0.1:8000/health
-
 curl -s -X POST http://127.0.0.1:8000/predict/campaign-roas \
   -H 'Content-Type: application/json' \
   -d '{"campaign_id":"camp_000029"}'
 ```
 
-ROAS 예측 응답 예시:
+Example response:
+
 ```json
 {
   "campaign_id": "camp_000029",
@@ -107,73 +149,88 @@ ROAS 예측 응답 예시:
   "predicted_roas": 0.597425,
   "latency_ms": 23.495,
   "training_rows_used": 25,
-  "scoring_snapshot_date": "2026-06-26",
   "feature_source": "features.feature_campaign_roas_scoring_set",
   "model_artifact_path": "agent/model_artifacts/campaign_roas_linear_v1.json",
   "known_limitation": "Fitted on 25 synthetic labeled campaign rows; benchmark artifact only."
 }
 ```
 
-자연어 질의 API:
+## Text2SQL BI Agent
+
+AdInsight keeps two Text2SQL paths separate.
+
+| Path | Purpose | Safety boundary |
+|---|---|---|
+| `/query` | deterministic baseline using curated expected SQL | exact-match registry, reviewed SELECT only |
+| `/query/v2` | generated-SQL serving boundary | provider contract, SQL validator, statement timeout, audit log, fallback |
+
+The v2 gateway supports `mock`, `ollama`, `openai`, `gemini`, and `dual` backends. The product demo path uses Gemini primary, OpenAI fallback, and deterministic registry final fallback.
+
 ```bash
-curl -s -X POST http://127.0.0.1:8000/query \
+curl -s -X POST http://127.0.0.1:8000/query/v2 \
   -H 'Content-Type: application/json' \
   -d '{"question":"Which campaigns have the highest ROAS?"}'
+```
+
+Request-level observability is exposed through `provider_summary`:
+
+- final provider and model
+- estimated cost
+- provider elapsed time
+- cached input ratio
+- fallback status
+- fallback reason
+- attempt providers
+
+Latest documented external-provider result:
+
+| Provider | Positive | Negative | Estimated cost | Provider elapsed |
+|---|---:|---:|---:|---:|
+| OpenAI `gpt-5.4-mini-2026-03-17` | `24/24` | `14/14` | `$0.103027` | `124.799s` |
+| Gemini `gemini-3.1-flash-lite` | `24/24` | `12/14` | `$0.064098` | `145.363s` |
+
+## Quickstart
+
+Requirements:
+
+- Docker Desktop
+- Python 3.11
+- [uv](https://docs.astral.sh/uv/)
+
+```bash
+cp .env.example .env
+uv sync
+time make up
+make ps
+make superset-init
+```
+
+Service URLs:
+
+| Service | URL |
+|---|---|
+| Airflow | <http://localhost:8081> |
+| Superset | <http://localhost:8088> |
+| Flower | <http://localhost:5555> |
+| FastAPI | <http://localhost:8000> |
+| Postgres | `localhost:5432` |
+
+Basic smoke commands:
+
+```bash
+curl -s http://127.0.0.1:8000/health
 
 curl -s -X POST http://127.0.0.1:8000/query \
   -H 'Content-Type: application/json' \
-  -d '{"question":"최신 ROAS 예측 모델의 MAE와 bias를 요약해줘."}'
+  -d '{"question":"Which campaigns have the highest ROAS?"}'
 
 curl -s -X POST http://127.0.0.1:8000/query/v2 \
   -H 'Content-Type: application/json' \
   -d '{"question":"Which campaigns have the highest ROAS?"}'
 ```
 
-자연어 질의 응답 예시:
-```json
-{
-  "question_id": "p5_q001",
-  "matched_question": "Which campaigns have the highest ROAS?",
-  "expected_model": "ai_native.ai_campaign_roi_summary",
-  "row_count": 5,
-  "rows": [
-    {
-      "campaign_id": "camp_000029",
-      "campaign_name": "beauty_kr_conversion_000029",
-      "roas": 0.5969125239376458,
-      "net_payment_amount_krw": 500281.34
-    }
-  ],
-  "latency_ms": 41.013,
-  "mode": "deterministic_expected_sql_registry_v1"
-}
-```
+Gateway smoke:
 
-로컬 FastAPI 서비스는 `api/` 코드와 `agent/model_artifacts/`의 모델 산출물을 연결하는 serving layer입니다. AWS로 옮기면 이 역할은 보통 ECS/Fargate 또는 Lambda 컨테이너 + ALB/API Gateway가 맡고, Postgres는 RDS/Aurora, 모델 산출물은 S3 또는 모델 registry로 분리합니다. 현재 구현은 포트폴리오용 로컬 skeleton이라 인증, rate limit, model registry versioning은 후속 hardening 대상입니다.
-
-`/query`는 현재 LLM이 자유롭게 SQL을 생성하는 방식이 아니라, `agent/eval/text2sql_questions.yml`의 검증된 expected-SQL registry에서 질문을 매칭한 뒤 SELECT만 실행하는 deterministic v1입니다. 이 구조는 hallucination 위험을 줄이고, 이후 LLM SQL generation을 붙일 때 validator 기준선으로 사용할 수 있습니다.
-
-Superset dashboard와 `/query`를 함께 보여주는 데모 흐름은 `docs/analysis/stage6_text2sql_superset_demo_runbook.md`에 정리했습니다.
-Text2SQL 데모 GIF는 `docs/images/06_text2sql_demo.gif`, 실측 evidence는 `docs/analysis/stage6_text2sql_demo_evidence.md`에 저장했습니다.
-
-AWS target architecture는 `docs/architecture/aws_target_architecture.md`, 인프라 skeleton은 `infra/aws/README.md`에 정리했습니다.
-LLM SQL generation v2 설계와 provider adapter는 `docs/analysis/stage6_llm_text2sql_v2_design.md`에 정리했습니다. 현재 `/query/v2` 기본값은 mock provider이며 SQL generation boundary, validator, statement timeout, audit log를 검증합니다. Positive expected-SQL set은 24문항, negative safety/guardrail set은 14문항으로 확장했고, v1 expected-SQL registry는 guardrail/eval baseline과 curated fallback으로 유지합니다.
-
-Text2SQL v2 provider 선택:
-```bash
-# 기본값: provider-free mock
-TEXT2SQL_PROVIDER=mock
-
-# 외부 Text2SQL gateway 연결 시
-TEXT2SQL_PROVIDER=http_json
-TEXT2SQL_PROVIDER_URL=https://example.com/text2sql
-TEXT2SQL_PROVIDER_API_KEY=...
-TEXT2SQL_PROVIDER_TIMEOUT_SECONDS=20
-```
-
-`http_json` provider는 `{question, schema_context}`를 POST하고 `{answerability, sql, expected_tables, reason, usage, usage_attempts, fallback_reason}` JSON을 받는 내부 contract입니다. 실제 OpenAI/Gemini 호출은 이 gateway 뒤에 붙이고, FastAPI와 eval runner는 같은 adapter boundary를 사용합니다. Gateway-first 설계와 로컬 실행 방법은 `docs/architecture/text2sql_gateway_architecture.md`에 정리했습니다.
-
-Text2SQL gateway smoke:
 ```bash
 uv run uvicorn text2sql_gateway.main:app --host 0.0.0.0 --port 8010
 
@@ -182,118 +239,80 @@ curl -s -X POST http://127.0.0.1:8010/text2sql/generate \
   -d '{"question":"Which campaigns have the highest ROAS?","schema_context":"Allowed tables: ai_native.ai_campaign_roi_summary"}'
 ```
 
-Gateway 경유 `/query/v2` smoke도 확인했습니다. `TEXT2SQL_PROVIDER=http_json`, `TEXT2SQL_PROVIDER_URL=http://127.0.0.1:8010/text2sql/generate`로 API를 실행했을 때 `/query/v2`는 mode `llm_generated_sql_v2_http_json`, rows `5`, top campaign `camp_000029`, latency `58.981ms`를 반환했습니다.
+## Project Structure
 
-외부 LLM 없이 로컬 small model을 쓰는 경로도 gateway에 추가했습니다. `TEXT2SQL_GATEWAY_BACKEND=ollama`, `TEXT2SQL_OLLAMA_URL`, `TEXT2SQL_OLLAMA_MODEL`을 설정하면 gateway가 Ollama-compatible local model server를 호출하고, 모델 출력이 JSON contract를 만족하지 않으면 안전하게 `not_answerable`로 거절합니다.
-`qwen2.5-coder:7b` 기반 local smoke도 확인했습니다. 초기에는 스키마 정보가 부족해 hallucinated column으로 실패했고, 이후 schema context에 실제 컬럼과 canonical query example을 추가해 `/query/v2`가 mode `llm_generated_sql_v2_http_json`, rows `5`, top campaign `camp_000029`, latency `4800.432ms`를 반환했습니다.
-
-로컬 모델 교체 기준도 추가했습니다. `docs/analysis/stage6_text2sql_local_model_eval_rubric.md`는 Spider/BIRD 계열 Text2SQL 평가 관행을 바탕으로 `Exec Acc`, 전체 pass coverage, unsafe block rate, p95 latency를 합산한 0~100점 `model_score`를 정의합니다. Positive expected-SQL set은 24문항으로 확장했고, 전혀 무관한 질문·위험 SQL·민감정보 요청·애매한 질문·욕설/성적/폭력 content-safety 입력을 거절/차단하고 echo하지 않는 14문항 negative set도 추가했습니다. 최신 mock 검증은 positive `24/24 expected SQL PASS`, v2 mock `13 PASS / 11 REFUSED / 0 BLOCKED`, negative `14/14 PASS`, `negative_pass_rate=1.0`입니다. Eval 그래프는 `docs/images/06_text2sql_eval_summary.svg`로 생성할 수 있습니다.
-
-Ollama local model 7종 benchmark도 실행했습니다. Complete positive run 기준 최고는 `phi4:14b`였지만 `8 PASS / 12 FAIL / 3 REFUSED / 1 BLOCKED`, `model_score=46.56`, p95 `26103.743ms`로 demo primary 기준에는 못 미쳤습니다. `qwen2.5-coder:7b`는 이전 baseline에서 `8 PASS / 11 FAIL / 5 REFUSED`, score `52.53`을 기록했지만 재실행 batch에서는 score `43.86`으로 낮아져 local LLM variance도 확인했습니다. `sqlcoder:7b`, `qwen3.5:9b`는 negative set은 잘 통과했지만 answerable 질문을 과도하게 거절했고, `sqlcoder:15b`, `gemma4:12b`는 positive eval 도중 timeout으로 incomplete 처리했습니다. 결론은 모델 교체만으로는 부족하며, prompt/schema few-shot과 deterministic fallback을 결합해야 합니다.
-
-이후 prompt/schema/fallback을 한 번 개선해 `qwen2.5-coder:7b`, `phi4:14b`만 재평가했습니다. Gateway prompt에 few-shot JSON examples와 deterministic Ollama options(`temperature=0.0`, `seed=7`)를 추가하고, `/query/v2`에는 provider refusal/block/error 시 curated registry exact-match fallback을 붙였습니다. Model-only eval 기준 `phi4:14b`는 positive `11 PASS / 12 FAIL / 0 REFUSED / 1 BLOCKED`, score `53.91`, negative `14/14 PASS`로 개선됐지만 여전히 primary free-form Text2SQL 모델은 아닙니다. Product demo는 fallback-enabled `/query/v2`와 deterministic `/query` v1을 함께 쓰는 전략이 안전합니다.
-
-외부 LLM 비교를 위해 gateway backend에 `openai`, `gemini`, `dual`도 추가했습니다. OpenAI backend는 JSON Schema structured output contract를 사용하고, Gemini backend는 Interactions API의 JSON response를 parsing합니다. 2026-07-14 기준 최신 hardening 후 `gpt-5.4-mini-2026-03-17`은 positive `24/24 PASS`, negative `14/14 PASS`를 기록했고, `gemini-3.1-flash-lite`는 positive `24/24 PASS`, negative `12/14 PASS`를 기록했습니다. `/query/v2` 응답과 audit log에는 `provider_summary`를 추가해 provider, model, cost, latency, cached input ratio, fallback status를 request 단위로 확인할 수 있습니다. 같은 38개 positive/negative 범위에서 Gemini 추정 비용은 `$0.064098`, OpenAI 추정 비용은 `$0.103027`였고, OpenAI가 total provider elapsed 기준 약 16.5% 빨랐습니다. 이 결과를 바탕으로 `docs/adr/004-text2sql-dual-provider-fallback.md`에서 Gemini primary + OpenAI fallback 정책을 결정했고, `TEXT2SQL_GATEWAY_BACKEND=dual`로 gateway orchestration을 구현했습니다.
-
-API request/response examples는 `docs/api/query_v2_request_response_examples.md`, 3-5분 데모 스크립트는 `docs/demo_script_3min.md`, 면접 토크포인트는 `docs/interview_talking_points.md`에 정리했습니다.
-이력서 bullet 초안은 `docs/resume_bullets.md`에 정리했습니다.
-
-### 종료
-```bash
-make down          # 컨테이너 중지 (볼륨 유지)
-make clean-confirm # 컨테이너 + 볼륨 삭제 (데이터 초기화)
-```
-
----
-
-## 아키텍처 (요약)
-
-![AdInsight architecture](docs/images/00_architecture.svg)
-
-```
-[Ingestion]   Kaggle CSV / 공개 API / SDV 합성  ─┐
-                                                   ▼
-[Storage]     Postgres schemas: raw → staging → intermediate → marts → ai_native
-                                                   │
-                                  ┌────────────────┼─────────────────────┐
-                                  ▼                ▼                     ▼
-[Consumption] Superset 대시보드   Text2SQL Agent   Weekly LLM Report DAG
-                                       │
-                                       ▼
-                               pgvector (schema embedding store)
-```
-
-상세 다이어그램: `docs/adinsight_project_blueprint.md` (섹션 3-3)
-
----
-
-## 폴더 구조 (요약)
-
-```
+```text
 adinsight-agent/
-├── CLAUDE.md                  # Claude Code 컨텍스트
-├── Makefile
-├── pyproject.toml             # uv
-├── docker-compose.yml         # (Phase 1)
-├── infra/{airflow,superset,postgres}
-├── data_generation/           # SDV / Faker 합성 데이터
-├── dags/                      # Airflow DAG
-├── dbt/                       # dbt-postgres
-│   └── models/{staging,intermediate,marts,ai_native}
-├── agent/                     # Text2SQL BI Agent
-├── dashboards/                # Superset YAML export
-├── metrics/                   # 포트폴리오 지표 자동 기록
-├── reports/                   # 주간 LLM 리포트 (gitignore)
-├── docs/
-│   ├── adinsight_project_blueprint.md   # ⭐ 마스터 설계서
-│   └── session_log/                      # 세션별 작업 로그
-└── tests/{unit,integration}
+├── dags/                  # Airflow DAGs
+├── dbt/                   # dbt-postgres models and tests
+├── data_generation/       # Apify/synthetic data helpers
+├── agent/                 # ROAS eval and Text2SQL modules
+├── api/                   # FastAPI serving endpoints
+├── text2sql_gateway/      # Provider-specific Text2SQL gateway
+├── dashboards/            # Superset scripts and exports
+├── metrics/               # run metrics and portfolio metrics
+├── docs/                  # architecture, ADRs, demo, interview, session logs
+├── tests/                 # unit/integration tests
+└── infra/                 # Docker images and AWS skeleton notes
 ```
 
-전체 트리: 블루프린트 섹션 4
+## JD Alignment
 
----
+| Data engineering signal | Evidence |
+|---|---|
+| Workflow orchestration | Airflow collection, backfill, and daily scoring DAGs in [dags](dags) |
+| Warehouse modeling | dbt `raw -> staging -> intermediate -> marts -> features -> ai_native` layers in [dbt/models](dbt/models) |
+| Data quality | dbt tests, expected-SQL eval, negative Text2SQL eval, CI |
+| Serving/API | FastAPI `/health`, `/predict/campaign-roas`, `/query`, `/query/v2` in [api](api) |
+| AI/LLM boundary | SQL validator, provider gateway, audit log, fallback orchestration in [agent/text2sql](agent/text2sql) and [text2sql_gateway](text2sql_gateway) |
+| BI evidence | Superset screenshots and exports in [docs/images](docs/images) and [dashboards/superset_exports](dashboards/superset_exports) |
+| Cloud readiness | AWS target mapping in [docs/architecture/aws_target_architecture.md](docs/architecture/aws_target_architecture.md) |
 
-## Phase 진행 상황
+## Current Status
 
-| Phase | 내용 | 상태 |
-|---|---|---|
-| 0~3 | 기존 작업: Docker/Airflow/Postgres/dbt/Superset/ai_native/eval YAML 초안 | ✅ |
-| P | 포지셔닝 재정립: A+C 전략 문서 정렬, ADR 003 | ✅ |
-| 2B | Apify 운영 등급 자동화: watermark, freshness, backfill | ✅ |
-| 2C | 합성 결제 데이터 생성: creator/campaign/post metrics/payment events | ✅ |
-| 3B | dbt 모델 확장: campaign ROI, payment conversion, ML feature store | ✅ |
-| 4B | ROAS 예측 ML 모델: baseline + NumPy model comparison + artifact export | ✅ |
-| 5B | Text2SQL Agent 실구현: deterministic expected-SQL registry v1 + evaluator | 🟡 |
-| 5C | LLM SQL generation v2: validator + mock harness + eval baseline | 🟡 |
-| 6B | FastAPI 엔드포인트: `/query`, `/predict` | ✅ |
-| 7B | Superset 대시보드 + Text2SQL 데모 연결 | 🟡 |
-| 8B | AWS target architecture + IaC skeleton | 🟡 |
-| 8C | CI/CD: GitHub Actions `ruff check` + `pytest -q` | ✅ |
-| 9B | 문서화 + 데모 준비: 토크포인트, 데모 영상, README 최종화 | ⬜ |
+| Area | Status |
+|---|---|
+| Local data platform | Implemented |
+| Campaign ROI mart | Implemented |
+| Superset monitor | Implemented |
+| ROAS benchmark model + artifact serving | Implemented |
+| deterministic Text2SQL v1 | Implemented |
+| generated-SQL v2 gateway/eval/fallback | Implemented |
+| GitHub Actions CI | Implemented |
+| AWS IaC | Skeleton boundary only |
+| Load testing / locust | Not implemented |
+| Query optimization before/after study | Not implemented |
+| Weekly LLM report DAG | Not implemented |
 
----
+## Known Limitations
 
-## 포트폴리오 메트릭 (자동 기록)
+- Payment and ROAS labels are synthetic. They are useful for pipeline, modeling, serving, and evaluation patterns, not for real advertiser performance claims.
+- The ROAS model uses 25 labeled synthetic campaign rows, so model generalization is intentionally not overclaimed.
+- External provider cost and latency are measured from saved eval/smoke runs and can drift when provider pricing or model behavior changes.
+- `/query/v2` validates and constrains generated SQL, but broad production use would need authentication, rate limiting, tenant boundaries, and larger repeated traffic measurements.
+- AWS docs describe the target mapping and boundaries; this repository is currently a local Docker Compose implementation.
 
-`metrics/portfolio_metrics.md` 참조. Phase별 행 수·dbt 테스트 커버리지·쿼리 최적화 비율·Text2SQL Execution Accuracy 등이 자동 누적됩니다.
+## Documentation Map
 
----
-
-## 세션 로그
-모든 작업 세션은 `docs/session_log/`에 기록됩니다. 세션 시작 시 가장 최신 로그를 확인하세요.
-
----
-
-## References
-- Airflow: <https://airflow.apache.org/docs/>
-- dbt: <https://docs.getdbt.com/>
-- Superset: <https://superset.apache.org/docs/intro/>
-- LangChain SQL: <https://python.langchain.com/docs/use_cases/sql/>
-- pgvector: <https://github.com/pgvector/pgvector>
-- SDV: <https://sdv.dev/>
-
----
+| Topic | Link |
+|---|---|
+| Portfolio draft | [docs/portfolio_draft.md](docs/portfolio_draft.md) |
+| Korean company submission portfolio | [docs/korean_company_portfolio_submission.md](docs/korean_company_portfolio_submission.md) |
+| Korean submission HTML export | [docs/adinsight_portfolio_submission_ko.html](docs/adinsight_portfolio_submission_ko.html) |
+| Korean submission DOCX export | [docs/adinsight_portfolio_submission_ko.docx](docs/adinsight_portfolio_submission_ko.docx) |
+| Korean job application snippets | [docs/korean_job_application_snippets.md](docs/korean_job_application_snippets.md) |
+| Portfolio one-pager | [docs/portfolio_one_pager.md](docs/portfolio_one_pager.md) |
+| English README | [README.en.md](README.en.md) |
+| Project blueprint | [docs/adinsight_project_blueprint.md](docs/adinsight_project_blueprint.md) |
+| Session logs | [docs/session_log](docs/session_log) |
+| Text2SQL v2 design | [docs/analysis/stage6_llm_text2sql_v2_design.md](docs/analysis/stage6_llm_text2sql_v2_design.md) |
+| Text2SQL eval report | [docs/analysis/stage6_text2sql_after_fixes_eval_report.md](docs/analysis/stage6_text2sql_after_fixes_eval_report.md) |
+| Failure cases | [docs/analysis/stage6_text2sql_v2_failure_cases.md](docs/analysis/stage6_text2sql_v2_failure_cases.md) |
+| AWS architecture | [docs/architecture/aws_target_architecture.md](docs/architecture/aws_target_architecture.md) |
+| Interview flashcards | [docs/interview_flashcards.md](docs/interview_flashcards.md) |
+| Selected Korean resume bullets | [docs/resume_selected_bullets_ko.md](docs/resume_selected_bullets_ko.md) |
+| Resume bullets | [docs/resume_bullets.md](docs/resume_bullets.md) |
 
 ## License
-MIT (see `LICENSE`). 공개 데이터셋 출처·라이선스는 각 적재 DAG 코드 헤더에 명시.
+
+MIT. Secrets are expected to live in `.env` only and must not be committed.
