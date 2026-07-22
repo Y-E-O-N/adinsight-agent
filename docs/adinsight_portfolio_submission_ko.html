@@ -188,6 +188,63 @@ export는 로컬에 <code>pdflatex</code> 또는 다른 pandoc PDF engine이
 필요하다.</p>
 </blockquote>
 <hr />
+<h2 id="초-요약">0. 30초 요약</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>프로젝트 기간</td>
+<td>2026.04 - 2026.07</td>
+</tr>
+<tr>
+<td>프로젝트 형태</td>
+<td>처음부터 끝까지 혼자 진행한 개인 포트폴리오 프로젝트</td>
+</tr>
+<tr>
+<td>담당 범위</td>
+<td>데이터 수집, raw schema, dbt 모델링, Airflow DAG, Superset
+dashboard, ROAS model comparison, FastAPI serving, Text2SQL
+validator/gateway/eval, CI, 제출 문서화</td>
+</tr>
+<tr>
+<td>핵심 기술</td>
+<td>Python, SQL, Airflow, PostgreSQL, dbt, Superset, FastAPI, GitHub
+Actions, OpenAI/Gemini gateway</td>
+</tr>
+<tr>
+<td>핵심 성과 1</td>
+<td>Airflow daily adaptive run 1회에서 <code>1,725</code>건 수집,
+<code>1,410</code>건 신규 적재</td>
+</tr>
+<tr>
+<td>핵심 성과 2</td>
+<td>ROAS benchmark model MAE를 baseline <code>0.0892</code>에서 linear
+model <code>0.0474</code>로 개선하고 FastAPI artifact serving 구현</td>
+</tr>
+<tr>
+<td>핵심 성과 3</td>
+<td>Text2SQL v2에 SQL validator, timeout, audit, provider fallback을
+붙이고 OpenAI <code>24/24 + 14/14</code>, Gemini
+<code>24/24 + 12/14</code> eval 결과 확보</td>
+</tr>
+</tbody>
+</table>
+<p>한 줄 요약:</p>
+<blockquote>
+<p>인플루언서 광고 수집 데이터를 결제 전환과 campaign ROI 관점으로
+모델링하고, Airflow/dbt 기반 데이터 파이프라인부터 Superset, FastAPI,
+Text2SQL gateway까지 연결한 개인 데이터 엔지니어링 프로젝트입니다.</p>
+</blockquote>
+<hr />
 <h2 id="제출-패키지">0. 제출 패키지</h2>
 <p>한국 기업 데이터 엔지니어 포지션 기준으로는 아래 3개를 함께 제출하는
 구성이 가장 안전하다.</p>
@@ -248,6 +305,10 @@ export는 로컬에 <code>pdflatex</code> 또는 다른 pandoc PDF engine이
 합성 결제 전환 이벤트를 결합해 campaign ROI와 ROAS를 분석하며, Superset
 dashboard, FastAPI serving, guarded Text2SQL API까지 연결한 데이터
 엔지니어링 포트폴리오 프로젝트입니다.</p>
+<p>이 프로젝트는 팀 프로젝트가 아니라 <strong>기획, 설계, 구현, 검증,
+문서화까지 처음부터 끝까지 혼자 진행한 개인 프로젝트</strong>입니다.
+따라서 아래 산출물의 담당 범위는 별도 표기가 없는 한 모두 본인이 직접
+수행한 범위입니다.</p>
 <p>핵심 흐름:</p>
 <pre class="text"><code>Airflow ingestion
   -&gt; Postgres raw/staging
@@ -258,6 +319,10 @@ dashboard, FastAPI serving, guarded Text2SQL API까지 연결한 데이터
   -&gt; Text2SQL gateway/eval/audit</code></pre>
 <hr />
 <h2 id="지원-직무-매칭">2. 지원 직무 매칭</h2>
+<p>데이터 엔지니어 지원용 문서이므로, 핵심 강조점은 LLM 자체가 아니라
+<strong>수집-적재-모델링-품질-서빙으로 이어지는 데이터 제품화
+흐름</strong>입니다. Text2SQL은 이 데이터 플랫폼 위에 붙인 소비
+인터페이스이자 운영/검증 경계로 설명합니다.</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -281,7 +346,7 @@ dashboard, FastAPI serving, guarded Text2SQL API까지 연결한 데이터
 </tr>
 <tr>
 <td>데이터 품질 관리</td>
-<td>dbt tests, expected-SQL eval, negative Text2SQL eval</td>
+<td>dbt tests, idempotency check, expected-SQL baseline</td>
 </tr>
 <tr>
 <td>BI/분석 서빙</td>
@@ -294,22 +359,83 @@ monitor</td>
 <code>/query/v2</code></td>
 </tr>
 <tr>
-<td>ML/feature workflow 이해</td>
-<td>ROAS feature tables, model comparison, artifact-backed serving</td>
-</tr>
-<tr>
 <td>운영/관측성</td>
-<td>provider cost, latency, fallback reason, audit JSONL</td>
+<td>CI, audit JSONL, provider cost/latency/fallback reason</td>
 </tr>
 <tr>
 <td>클라우드 전환 사고</td>
 <td>MWAA, RDS/Aurora, S3, ECS Fargate, CloudWatch, QuickSight
 mapping</td>
 </tr>
+<tr>
+<td>AI/LLM 데이터 인터페이스</td>
+<td>Text2SQL validator, gateway, 정답형/안전성 질의 평가</td>
+</tr>
 </tbody>
 </table>
 <hr />
-<h2 id="담당-역할과-문제-정의">3. 담당 역할과 문제 정의</h2>
+<h2 id="내가-직접-구현한-범위">3. 내가 직접 구현한 범위</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>범위</th>
+<th>직접 구현한 내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>데이터 수집</td>
+<td>Apify 기반 Instagram 수집 함수, Airflow smoke/daily/backfill
+DAG</td>
+</tr>
+<tr>
+<td>저장/적재</td>
+<td>PostgreSQL raw schema, source lineage table, upsert/load flow</td>
+</tr>
+<tr>
+<td>변환/모델링</td>
+<td>dbt staging, intermediate, marts, features, ai_native 레이어</td>
+</tr>
+<tr>
+<td>분석/BI</td>
+<td>Superset dataset, chart, dashboard, export, screenshot evidence</td>
+</tr>
+<tr>
+<td>ML workflow</td>
+<td>ROAS feature table, model comparison, model artifact export</td>
+</tr>
+<tr>
+<td>API serving</td>
+<td>FastAPI <code>/health</code>, <code>/predict/campaign-roas</code>,
+<code>/query</code>, <code>/query/v2</code></td>
+</tr>
+<tr>
+<td>Text2SQL safety</td>
+<td>expected-SQL registry, SQL validator, statement timeout, 안전성 질의
+평가, audit log</td>
+</tr>
+<tr>
+<td>Provider gateway</td>
+<td>mock/Ollama/OpenAI/Gemini/dual fallback gateway boundary</td>
+</tr>
+<tr>
+<td>품질/운영</td>
+<td>GitHub Actions CI, <code>ruff</code>, <code>pytest</code>, portfolio
+metric/evidence 문서화</td>
+</tr>
+<tr>
+<td>제출 자산</td>
+<td>README, 영문 README, 한국 기업 제출용 문서, DOCX/HTML export, 이력서
+bullet, 면접 flashcards</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="담당-역할과-문제-정의">4. 담당 역할과 문제 정의</h2>
 <h3 id="문제">문제</h3>
 <p>인플루언서 광고 성과는 게시물 반응, 캠페인 attribution, 결제 전환,
 ROAS 지표가 분리되어 있어 “어떤 캠페인이 성과가 좋았는지”를 빠르게
@@ -321,8 +447,8 @@ ROAS 지표가 분리되어 있어 “어떤 캠페인이 성과가 좋았는지
 synthetic payment benchmark로 만든다.</li>
 <li>dbt로 campaign-grain ROI mart와 feature table을 만든다.</li>
 <li>Superset dashboard와 FastAPI endpoint로 소비 경로를 만든다.</li>
-<li>Text2SQL API를 붙이되, generated SQL은 validator와 audit boundary를
-통과해야만 실행한다.</li>
+<li>데이터 소비 인터페이스로 Text2SQL API를 붙이되, generated SQL은
+validator와 audit boundary를 통과해야만 실행한다.</li>
 </ol>
 <h3 id="주요-의사결정">주요 의사결정</h3>
 <table>
@@ -360,7 +486,7 @@ synthetic payment benchmark로 만든다.</li>
 </tbody>
 </table>
 <hr />
-<h2 id="시스템-아키텍처">4. 시스템 아키텍처</h2>
+<h2 id="시스템-아키텍처">5. 시스템 아키텍처</h2>
 <pre class="text"><code>[Ingestion]
   Airflow DAGs + Apify collector + synthetic payment generator
       |
@@ -382,7 +508,7 @@ synthetic payment benchmark로 만든다.</li>
 <li><code>docs/images/05_campaign_roas_prediction_monitor.png</code></li>
 </ul>
 <hr />
-<h2 id="데이터-모델링">5. 데이터 모델링</h2>
+<h2 id="데이터-모델링">6. 데이터 모델링</h2>
 <h3 id="dbt-레이어">dbt 레이어</h3>
 <table>
 <colgroup>
@@ -460,12 +586,8 @@ synthetic payment benchmark로 만든다.</li>
 </tbody>
 </table>
 <hr />
-<h2 id="파이프라인과-품질-관리">6. 파이프라인과 품질 관리</h2>
+<h2 id="파이프라인과-품질-관리">7. 파이프라인과 품질 관리</h2>
 <table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
 <thead>
 <tr>
 <th>항목</th>
@@ -499,7 +621,7 @@ synthetic payment benchmark로 만든다.</li>
 </tr>
 <tr>
 <td>Text2SQL 평가</td>
-<td>positive expected-SQL set + negative/content-safety set</td>
+<td>정답형 질의 set + 안전성 질의 set</td>
 </tr>
 <tr>
 <td>CI</td>
@@ -514,7 +636,7 @@ synthetic payment benchmark로 만든다.</li>
 <li><code>git diff --check</code> pass</li>
 </ul>
 <hr />
-<h2 id="주요-성과-지표">7. 주요 성과 지표</h2>
+<h2 id="주요-성과-지표">8. 주요 성과 지표</h2>
 <table>
 <colgroup>
 <col style="width: 42%" />
@@ -529,8 +651,8 @@ synthetic payment benchmark로 만든다.</li>
 <tbody>
 <tr>
 <td>Phase 2B daily adaptive run</td>
-<td style="text-align: right;"><code>items_collected_total=1725</code>,
-<code>inserted_total=1410</code></td>
+<td style="text-align: right;"><code>1,725</code>건 수집,
+<code>1,410</code>건 신규 적재</td>
 </tr>
 <tr>
 <td>Synthetic payment benchmark</td>
@@ -562,12 +684,12 @@ linear model MAE <code>0.0474</code></td>
 </tr>
 <tr>
 <td>OpenAI Text2SQL eval</td>
-<td style="text-align: right;">positive <code>24/24</code>, negative
+<td style="text-align: right;">정답형 <code>24/24</code>, 안전성
 <code>14/14</code></td>
 </tr>
 <tr>
 <td>Gemini Text2SQL eval</td>
-<td style="text-align: right;">positive <code>24/24</code>, negative
+<td style="text-align: right;">정답형 <code>24/24</code>, 안전성
 <code>12/14</code></td>
 </tr>
 <tr>
@@ -577,8 +699,64 @@ linear model MAE <code>0.0474</code></td>
 </tr>
 </tbody>
 </table>
+<h3 id="채용자-관점의-해석">채용자 관점의 해석</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>성과 지표</th>
+<th>채용자가 이해할 수 있는 의미</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1,725</code>건 수집, <code>1,410</code>건 신규 적재</td>
+<td>Airflow daily DAG가 실제 수집 작업을 수행하고, 신규 데이터와 기존
+데이터를 구분해 적재한 증거</td>
+</tr>
+<tr>
+<td>synthetic payment <code>498</code> events</td>
+<td>실제 결제 데이터를 공개하지 않고도 campaign ROI mart, feature table,
+prediction monitor를 검증할 수 있는 benchmark 데이터셋을 만든 것</td>
+</tr>
+<tr>
+<td>campaign ROI mart <code>30</code> rows</td>
+<td>캠페인 단위 grain을 명확히 정의해 BI와 API가 같은 지표를 보도록 만든
+것</td>
+</tr>
+<tr>
+<td>prediction monitor MAE <code>0.0799</code>, bias
+<code>0.0000</code></td>
+<td>모델 예측 결과를 dashboard에서 운영 지표처럼 모니터링할 수 있게 만든
+것</td>
+</tr>
+<tr>
+<td>ROAS MAE <code>0.0892 -&gt; 0.0474</code></td>
+<td>단순 baseline보다 나은 benchmark model을 고르고, 그 결과를
+artifact로 저장해 API serving까지 연결한 것</td>
+</tr>
+<tr>
+<td>expected-SQL <code>24/24 PASS</code></td>
+<td>자연어 질문을 검증된 SQL 기준선으로 평가할 수 있는 regression
+baseline을 만든 것</td>
+</tr>
+<tr>
+<td>OpenAI/Gemini eval 결과</td>
+<td>LLM을 단순 호출하지 않고 provider별 정확도, 안전성, 비용 차이를 같은
+기준으로 비교한 것</td>
+</tr>
+<tr>
+<td>provider cost comparison</td>
+<td>모델 선택을 감이 아니라 request-level cost/latency 관측값으로 설명할
+수 있게 만든 것</td>
+</tr>
+</tbody>
+</table>
 <hr />
-<h2 id="api와-text2sql">8. API와 Text2SQL</h2>
+<h2 id="api와-text2sql">9. API와 Text2SQL</h2>
 <h3 id="fastapi-endpoints">FastAPI endpoints</h3>
 <table>
 <thead>
@@ -606,6 +784,10 @@ linear model MAE <code>0.0474</code></td>
 </tr>
 </tbody>
 </table>
+<p>이 섹션은 데이터 엔지니어링 본체라기보다 <strong>모델링된 데이터를
+어떻게 안전하게 소비하게 만들었는지</strong>를 보여주는 확장 영역입니다.
+핵심 구현은 generated SQL을 무조건 신뢰하지 않고, 데이터 플랫폼의
+table/column contract와 validator를 통해 통제하는 점입니다.</p>
 <h3 id="text2sql-guardrails">Text2SQL guardrails</h3>
 <p><code>/query/v2</code>는 provider가 만든 SQL을 바로 실행하지 않는다.
 아래 boundary를 통과해야 한다.</p>
@@ -641,7 +823,7 @@ linear model MAE <code>0.0474</code></td>
 <tr>
 <td>OpenAI</td>
 <td>fallback</td>
-<td>negative safety와 속도가 더 안정적</td>
+<td>안전성 질의 평가와 속도가 더 안정적</td>
 </tr>
 <tr>
 <td>deterministic registry</td>
@@ -651,7 +833,7 @@ linear model MAE <code>0.0474</code></td>
 </tbody>
 </table>
 <hr />
-<h2 id="트러블슈팅과-설계-학습">9. 트러블슈팅과 설계 학습</h2>
+<h2 id="트러블슈팅과-설계-학습">10. 트러블슈팅과 설계 학습</h2>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -671,7 +853,7 @@ linear model MAE <code>0.0474</code></td>
 </tr>
 <tr>
 <td>generated SQL hallucination</td>
-<td>validator, allowlist, timeout, refusal, negative eval 추가</td>
+<td>validator, allowlist, timeout, refusal, 안전성 질의 평가 추가</td>
 </tr>
 <tr>
 <td>provider별 응답 shape 차이</td>
@@ -689,7 +871,7 @@ linear model MAE <code>0.0474</code></td>
 </tbody>
 </table>
 <hr />
-<h2 id="한계와-후속-개선">10. 한계와 후속 개선</h2>
+<h2 id="한계와-후속-개선">11. 한계와 후속 개선</h2>
 <h3 id="한계">한계</h3>
 <ul>
 <li>결제/ROAS label은 synthetic benchmark다.</li>
@@ -712,7 +894,56 @@ cost distribution 측정</li>
 <li>README 기반 PDF export 자동화</li>
 </ol>
 <hr />
-<h2 id="제출-시-요약-문장">11. 제출 시 요약 문장</h2>
+<h2 id="면접-질문-유도-포인트">12. 면접 질문 유도 포인트</h2>
+<p>면접관이 아래 질문을 던지면, 이 프로젝트의 설계 의도를 가장 잘 설명할
+수 있습니다.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>예상 질문</th>
+<th>답변 방향</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>왜 raw 데이터를 그대로 보존했나요?</td>
+<td>raw는 외부 입력 증거이고, downstream 로직 변경 시 staging 이후를
+재빌드할 수 있기 때문입니다.</td>
+</tr>
+<tr>
+<td>왜 합성 결제 데이터를 사용했나요?</td>
+<td>실제 결제 데이터는 민감하므로 공개 포트폴리오에서는 synthetic
+benchmark로 pipeline/modeling/serving pattern을 검증했습니다.</td>
+</tr>
+<tr>
+<td>왜 복잡한 모델 대신 simple model을 썼나요?</td>
+<td>labeled row가 25개뿐이라 복잡한 모델 성능을 주장하는 것보다
+leave-one-out simple model 비교가 더 방어 가능했습니다.</td>
+</tr>
+<tr>
+<td>dbt 모델 grain은 어떻게 정했나요?</td>
+<td>campaign ROI는 campaign grain, prediction monitor는 campaign scoring
+snapshot grain으로 분리해 BI/API 해석이 흔들리지 않게 했습니다.</td>
+</tr>
+<tr>
+<td>generated SQL hallucination은 어떻게 막았나요?</td>
+<td><code>/query</code> baseline, <code>/query/v2</code> validator,
+table/column allowlist, timeout, 안전성 질의 평가, audit log로 실행
+경계를 만들었습니다.</td>
+</tr>
+<tr>
+<td>AWS로 옮긴다면 무엇이 바뀌나요?</td>
+<td>Airflow는 MWAA, Postgres는 RDS/Aurora 또는 Redshift, FastAPI는 ECS
+Fargate + ALB, logs는 CloudWatch로 대응합니다.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="제출-시-요약-문장">13. 제출 시 요약 문장</h2>
 <p>지원서 프로젝트 설명란에는 아래 문장을 사용한다.</p>
 <blockquote>
 <p>Airflow, Postgres, dbt, Superset, FastAPI로 인플루언서 광고 수집
@@ -723,7 +954,7 @@ gateway, OpenAI/Gemini fallback, request-level cost/latency
 observability까지 포함해 평가했습니다.</p>
 </blockquote>
 <hr />
-<h2 id="조사-기준">12. 조사 기준</h2>
+<h2 id="조사-기준">14. 조사 기준</h2>
 <p>이 문서 형식은 아래 기준을 반영했다.</p>
 <ul>
 <li>한국 기업 지원서에서는 이력서/자기소개서/포트폴리오를 PDF로 첨부하는

@@ -11,8 +11,8 @@
 |---|---|
 | 프로젝트명 | AdInsight Agent |
 | 진행 기간 | 2026.04 - 2026.07 |
-| 형태 | 개인 포트폴리오 프로젝트 |
-| 역할 | 데이터 수집, DB 설계, dbt 모델링, Airflow DAG, Superset dashboard, FastAPI serving, Text2SQL eval/gateway, 문서화 |
+| 형태 | 처음부터 끝까지 혼자 진행한 개인 포트폴리오 프로젝트 |
+| 역할 | 데이터 수집, DB 설계, dbt 모델링, Airflow DAG, Superset dashboard, ROAS model comparison, FastAPI serving, Text2SQL eval/gateway, CI, 문서화 |
 | 도메인 | 인플루언서 광고 성과 분석, campaign ROI, ROAS prediction |
 | 주요 기술 | Python, SQL, Airflow, PostgreSQL, dbt, Superset, FastAPI, GitHub Actions |
 | AI/LLM 기술 | Text2SQL, SQL validator, OpenAI/Gemini gateway, provider fallback, eval framework |
@@ -25,15 +25,15 @@
 
 ### 100자 내외
 
-Airflow, dbt, FastAPI, Text2SQL로 인플루언서 광고 데이터를 campaign ROI/ROAS 분석 플랫폼으로 모델링한 데이터 엔지니어링 프로젝트입니다.
+Airflow, PostgreSQL, dbt로 인플루언서 광고 데이터를 campaign ROI/ROAS 분석 플랫폼으로 모델링한 개인 데이터 엔지니어링 프로젝트입니다.
 
 ### 300자 내외
 
-AdInsight Agent는 Instagram 인플루언서 광고 수집 데이터와 합성 결제 이벤트를 결합해 campaign ROI, ROAS prediction, Superset monitoring, FastAPI serving, guarded Text2SQL API까지 구현한 데이터 엔지니어링 포트폴리오 프로젝트입니다. Airflow ingestion, dbt layered mart, API serving, Text2SQL eval/gateway, CI를 하나의 end-to-end 흐름으로 구성했습니다.
+AdInsight Agent는 Instagram 인플루언서 광고 수집 데이터와 합성 결제 이벤트를 결합해 campaign ROI, ROAS prediction, Superset monitoring, FastAPI serving까지 연결한 개인 데이터 엔지니어링 프로젝트입니다. Airflow ingestion, PostgreSQL raw schema, dbt layered mart, API serving, Text2SQL guardrail, CI를 하나의 end-to-end 흐름으로 구성했습니다.
 
 ### 700자 내외
 
-AdInsight Agent는 인플루언서 광고 집행 데이터를 결제 전환과 campaign ROI 관점으로 분석하기 위해 만든 데이터 엔지니어링 포트폴리오 프로젝트입니다. Airflow DAG로 Apify 기반 Instagram 수집과 daily/backfill 파이프라인을 구성하고, PostgreSQL raw schema에 원본을 보존한 뒤 dbt로 staging, intermediate, marts, features, ai_native 레이어를 모델링했습니다. 합성 결제 이벤트를 기반으로 campaign ROI mart와 ROAS prediction monitor를 만들었고, NumPy 기반 모델 비교 후 `linear_regression_numpy_v1` artifact를 FastAPI `/predict/campaign-roas`로 서빙했습니다. 또한 deterministic `/query`와 generated-SQL `/query/v2`를 분리하고, SQL validator, statement timeout, audit log, OpenAI/Gemini provider fallback, positive/negative Text2SQL eval을 구현했습니다.
+AdInsight Agent는 인플루언서 광고 집행 데이터를 결제 전환과 campaign ROI 관점으로 분석하기 위해 처음부터 끝까지 혼자 진행한 데이터 엔지니어링 포트폴리오 프로젝트입니다. Airflow DAG로 Apify 기반 Instagram 수집과 daily/backfill 파이프라인을 구성하고, PostgreSQL raw schema에 원본을 보존한 뒤 dbt로 staging, intermediate, marts, features, ai_native 레이어를 모델링했습니다. 합성 결제 이벤트를 기반으로 campaign ROI mart와 ROAS prediction monitor를 만들었고, leave-one-out model comparison 후 benchmark artifact를 FastAPI `/predict/campaign-roas`로 서빙했습니다. 또한 deterministic `/query`와 generated-SQL `/query/v2`를 분리하고, SQL validator, statement timeout, audit log, provider fallback, Text2SQL 평가 체계를 구현했습니다.
 
 ---
 
@@ -41,10 +41,10 @@ AdInsight Agent는 인플루언서 광고 집행 데이터를 결제 전환과 c
 
 ### 이력서 bullet 4개 버전
 
-- Airflow, PostgreSQL, dbt 기반으로 Instagram 수집 데이터와 합성 결제 이벤트를 `raw -> staging -> intermediate -> marts -> features -> ai_native` 레이어로 모델링했습니다.
-- campaign ROI mart와 ROAS prediction monitor를 구축해 `30` campaign rows, prediction monitor `25` rows, MAE `0.0799`, bias `0.0000` 기준의 분석/모니터링 흐름을 만들었습니다.
-- ROAS model comparison에서 objective-mean baseline MAE `0.0892` 대비 `linear_regression_numpy_v1` MAE `0.0474`를 기록하고, 저장된 model artifact를 FastAPI endpoint로 서빙했습니다.
-- Text2SQL v2에 SQL validator, statement timeout, audit log, provider cost/latency tracking, OpenAI/Gemini fallback을 구현하고, latest eval에서 OpenAI positive `24/24`, negative `14/14`, Gemini positive `24/24`, negative `12/14`를 기록했습니다.
+- Airflow, PostgreSQL, dbt 기반으로 Instagram 수집 데이터와 합성 결제 이벤트를 `raw -> staging -> intermediate -> marts -> features -> ai_native` 레이어로 모델링하고, campaign ROI/ROAS 분석 플랫폼을 구축했습니다.
+- Apify 수집, raw loader, daily/backfill DAG, dbt run/test를 연결해 수집-적재-변환 파이프라인을 구성했으며, daily adaptive run 1회에서 `1,725`건 수집과 `1,410`건 신규 적재를 기록했습니다.
+- Campaign ROI mart와 ROAS prediction monitor를 구축하고, leave-one-out model comparison을 통해 baseline MAE `0.0892` 대비 linear model MAE `0.0474`의 benchmark artifact를 FastAPI로 서빙했습니다.
+- Text2SQL v2에 SQL validator, statement timeout, audit log, provider cost/latency tracking, Gemini -> OpenAI fallback을 구현하고, 24개 정답형 질의와 14개 안전성 질의 기준으로 provider 평가를 수행했습니다.
 
 ### 이력서 bullet 6개 버전
 
@@ -53,7 +53,7 @@ AdInsight Agent는 인플루언서 광고 집행 데이터를 결제 전환과 c
 - 합성 결제 attribution/payment events를 기반으로 campaign-grain ROI mart를 만들고, Superset dashboard와 export asset으로 시각화했습니다.
 - ROAS model comparison을 leave-one-out 방식으로 수행해 baseline MAE `0.0892`에서 linear model MAE `0.0474`로 개선된 benchmark artifact를 만들었습니다.
 - FastAPI로 `/health`, `/predict/campaign-roas`, `/query`, `/query/v2` endpoint를 구현하고, model artifact serving과 natural-language analytics API를 연결했습니다.
-- Text2SQL v2 gateway에 SQL validator, timeout, audit, provider usage/cost parsing, Gemini primary + OpenAI fallback을 구현하고 GitHub Actions `ruff`/`pytest` 품질 게이트를 추가했습니다.
+- Text2SQL v2 gateway에 SQL validator, timeout, audit, provider usage/cost parsing, Gemini -> OpenAI fallback을 구현하고 GitHub Actions `ruff`/`pytest` 품질 게이트를 추가했습니다.
 
 ---
 
@@ -65,7 +65,7 @@ AdInsight Agent는 인플루언서 광고 집행 데이터를 결제 전환과 c
 
 ### 역할
 
-개인 프로젝트로 데이터 수집, raw schema 설계, dbt 모델링, Airflow DAG, Superset dashboard, ROAS model comparison, FastAPI serving, Text2SQL gateway/eval, CI와 문서화를 모두 담당했습니다.
+처음부터 끝까지 혼자 진행한 개인 프로젝트로, 데이터 수집, raw schema 설계, dbt 모델링, Airflow DAG, Superset dashboard, ROAS model comparison, FastAPI serving, Text2SQL gateway/eval, CI와 문서화를 모두 담당했습니다.
 
 ### 액션
 
@@ -73,7 +73,7 @@ Airflow DAG로 수집/백필/일일 스코어링 파이프라인을 구성하고
 
 ### 결과
 
-Phase 2B daily adaptive run에서 `items_collected_total=1725`, `inserted_total=1410`을 기록했고, synthetic payment benchmark는 `498` events, net payment KRW `6,329,923.59`를 생성했습니다. Campaign ROI mart는 `30` campaign rows를 만들었고, ROAS model comparison은 baseline MAE `0.0892` 대비 linear model MAE `0.0474`를 기록했습니다. Text2SQL latest eval은 OpenAI positive `24/24`, negative `14/14`, Gemini positive `24/24`, negative `12/14`이며, GitHub Actions 기반 `ruff`와 `pytest` 품질 게이트를 구성했습니다.
+Daily adaptive run 1회에서 `1,725`건을 수집하고 `1,410`건을 신규 적재했으며, synthetic payment benchmark로 `498`개 결제 이벤트와 net payment KRW `6,329,923.59`를 생성했습니다. Campaign ROI mart는 `30` campaign rows를 만들었고, ROAS model comparison은 baseline MAE `0.0892` 대비 linear model MAE `0.0474`를 기록했습니다. Text2SQL은 24개 정답형 질의와 14개 안전성 질의 기준으로 provider를 평가했고, GitHub Actions 기반 `ruff`와 `pytest` 품질 게이트를 구성했습니다.
 
 ---
 
@@ -114,7 +114,7 @@ Python 3.11, SQL, Apache Airflow, PostgreSQL 16, dbt-postgres, Apache Superset, 
 
 ### AI/데이터 플랫폼 직무 연결
 
-LLM을 데이터 플랫폼에 붙일 때 가장 중요한 것은 모델 성능만이 아니라 안전한 실행 경계라고 생각합니다. AdInsight에서는 deterministic expected-SQL baseline, SQL validator, statement timeout, negative eval, audit log, provider fallback을 구현해 generated SQL이 무조건 실행되지 않도록 설계했습니다.
+LLM을 데이터 플랫폼에 붙일 때 가장 중요한 것은 모델 성능만이 아니라 안전한 실행 경계라고 생각합니다. AdInsight에서는 deterministic expected-SQL baseline, SQL validator, statement timeout, 안전성 질의 평가, audit log, provider fallback을 구현해 generated SQL이 무조건 실행되지 않도록 설계했습니다.
 
 ### 클라우드/운영 직무 연결
 

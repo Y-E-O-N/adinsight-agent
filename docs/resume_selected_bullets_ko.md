@@ -5,9 +5,9 @@
 ## 최종 4개 Bullet
 
 - Airflow, PostgreSQL, dbt 기반으로 Instagram 수집 데이터와 합성 결제 이벤트를 `raw -> staging -> intermediate -> marts -> features -> ai_native` 레이어로 모델링하고, campaign ROI/ROAS 분석 플랫폼을 구축했습니다.
-- Apify 수집, raw loader, daily/backfill DAG, dbt run/test를 연결해 수집-적재-변환 파이프라인을 구성하고, Phase 2B daily adaptive run에서 `items_collected_total=1725`, `inserted_total=1410`을 기록했습니다.
-- ROAS model comparison을 leave-one-out 방식으로 수행해 objective-mean baseline MAE `0.0892` 대비 `linear_regression_numpy_v1` MAE `0.0474`를 기록했고, 저장된 model artifact를 FastAPI `/predict/campaign-roas`로 서빙했습니다.
-- Text2SQL v2에 SQL validator, statement timeout, audit log, provider cost/latency tracking, Gemini primary + OpenAI fallback을 구현하고, latest eval에서 OpenAI positive `24/24`, negative `14/14`, Gemini positive `24/24`, negative `12/14`를 기록했습니다.
+- Apify 수집, raw loader, daily/backfill DAG, dbt run/test를 연결해 수집-적재-변환 파이프라인을 구성했으며, daily adaptive run 1회에서 `1,725`건 수집과 `1,410`건 신규 적재를 기록했습니다.
+- Campaign ROI mart와 ROAS prediction monitor를 구축하고, leave-one-out model comparison을 통해 baseline MAE `0.0892` 대비 linear model MAE `0.0474`의 benchmark artifact를 FastAPI로 서빙했습니다.
+- Text2SQL v2에 SQL validator, statement timeout, audit log, provider cost/latency tracking, Gemini -> OpenAI fallback을 구현하고, 24개 정답형 질의와 14개 안전성 질의 기준으로 provider 평가를 수행했습니다.
 
 ## 짧은 프로젝트 설명
 

@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/Y-E-O-N/adinsight-agent/actions/workflows/ci.yml)
 
-> A data engineering portfolio project that connects influencer campaign data to payment conversion, campaign ROI, ROAS prediction, Superset monitoring, and guarded Text2SQL APIs.
+> A solo data engineering portfolio project that connects influencer campaign data to payment conversion, campaign ROI, ROAS prediction, Superset monitoring, and guarded Text2SQL APIs.
 
-AdInsight is a local analytics platform built around Instagram collection data and synthetic payment events. The project demonstrates an end-to-end data engineering workflow rather than a single dashboard: `Airflow ingestion -> dbt semantic marts -> ROAS model artifact -> FastAPI serving -> Text2SQL gateway/eval -> portfolio evidence`.
+AdInsight is a local analytics platform built around Instagram collection data and synthetic payment events. From April 2026 to July 2026, I designed, implemented, validated, and documented the full workflow end to end: `Airflow ingestion -> dbt semantic marts -> ROAS model artifact -> FastAPI serving -> Text2SQL gateway/eval -> portfolio evidence`.
 
 ![AdInsight architecture](docs/images/00_architecture.svg)
 
@@ -14,22 +14,23 @@ AdInsight is a local analytics platform built around Instagram collection data a
 |---|---|
 | Problem | Influencer ad performance data is fragmented across post engagement, campaign attribution, payment conversion, and ROAS metrics. |
 | Solution | A reproducible local platform using Airflow, Postgres, dbt, Superset, FastAPI, and a Text2SQL gateway. |
+| Ownership | Solo project covering planning, data modeling, ingestion, transformation, serving, evaluation, CI, and documentation. |
 | Differentiator | Immutable raw layer, idempotent ingestion, layered dbt marts, synthetic payment benchmark, ROAS artifact serving, SQL validation, provider fallback, and CI. |
 | Boundary | Payment and ROAS labels are synthetic benchmark data. Model results show the evaluation and serving pattern, not production forecasting accuracy. |
 
 ## Key Results
 
 | Area | Result |
-|---|---:|
-| Apify daily adaptive run | `items_collected_total=1725`, `inserted_total=1410` |
-| Synthetic payment benchmark | `498` payment events, net payment KRW `6,329,923.59` |
-| Campaign ROI mart | `30` campaign rows, max ROAS `0.5969` |
-| ROAS prediction monitor | `25` rows, MAE `0.0799`, bias `0.0000` |
-| ROAS model comparison | baseline MAE `0.0892` -> linear model MAE `0.0474` |
-| Deterministic Text2SQL baseline | expected-SQL registry `24/24 PASS` |
-| External Text2SQL eval | OpenAI `24/24` positive + `14/14` negative, Gemini `24/24` positive + `12/14` negative |
-| Provider cost scope | Gemini `$0.064098` vs OpenAI `$0.103027` over the same 38-case eval scope |
-| Quality gate | latest documented gate: `ruff` pass, `pytest 82 passed`, `git diff --check` pass |
+|---|---|
+| Ingestion/load run | Collected `1,725` items and inserted `1,410` new rows in one daily adaptive run. |
+| Synthetic payment benchmark | Generated `498` payment events with net payment KRW `6,329,923.59`. |
+| Campaign ROI mart | Built `30` campaign-level rows with max ROAS `0.5969`. |
+| ROAS prediction monitor | Evaluated `25` synthetic labeled rows with MAE `0.0799` and bias `0.0000`. |
+| ROAS model comparison | Improved from baseline MAE `0.0892` to linear model MAE `0.0474`. |
+| Deterministic Text2SQL baseline | Passed the curated expected-SQL registry at `24/24`. |
+| External Text2SQL eval | OpenAI passed `24/24` answerable questions and `14/14` safety questions; Gemini passed `24/24` and `12/14`. |
+| Provider cost scope | Gemini `$0.064098` vs OpenAI `$0.103027` over the same 38-case eval scope. |
+| Quality gate | Documented `ruff` pass, `pytest 82 passed`, and `git diff --check` pass. |
 
 ## Demo Assets
 
@@ -118,7 +119,7 @@ AdInsight keeps deterministic and generated-SQL paths separate.
 | `/query` | deterministic baseline using curated expected SQL | exact-match registry, reviewed SELECT only |
 | `/query/v2` | generated-SQL serving boundary | provider contract, SQL validator, statement timeout, audit log, fallback |
 
-The v2 gateway supports `mock`, `ollama`, `openai`, `gemini`, and `dual` backends. The demo path uses Gemini primary, OpenAI fallback, and deterministic registry final fallback.
+The v2 gateway supports `mock`, `ollama`, `openai`, `gemini`, and `dual` backends. The demo path uses Gemini first, OpenAI fallback, and deterministic registry final fallback.
 
 `/query/v2` exposes request-level `provider_summary` fields:
 
@@ -129,9 +130,9 @@ The v2 gateway supports `mock`, `ollama`, `openai`, `gemini`, and `dual` backend
 - fallback status and reason
 - attempt providers
 
-Latest documented external-provider result:
+Documented external-provider result:
 
-| Provider | Positive | Negative | Estimated cost | Provider elapsed |
+| Provider | Answerable questions | Safety questions | Estimated cost | Provider elapsed |
 |---|---:|---:|---:|---:|
 | OpenAI `gpt-5.4-mini-2026-03-17` | `24/24` | `14/14` | `$0.103027` | `124.799s` |
 | Gemini `gemini-3.1-flash-lite` | `24/24` | `12/14` | `$0.064098` | `145.363s` |

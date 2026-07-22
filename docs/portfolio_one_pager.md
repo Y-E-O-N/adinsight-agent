@@ -1,10 +1,10 @@
-# AdInsight Agent - Data Engineering Portfolio One-Pager
+# AdInsight Agent - 데이터 엔지니어 포트폴리오 원페이지
 
 ## 1. Project Summary
 
-AdInsight는 인플루언서 광고 집행 데이터를 결제 전환, campaign ROI, ROAS prediction, Superset monitoring, guarded Text2SQL API까지 연결한 로컬 데이터 플랫폼입니다.
+AdInsight는 인플루언서 광고 집행 데이터를 결제 전환, campaign ROI, ROAS prediction, Superset monitoring, guarded Text2SQL API까지 연결한 개인 데이터 엔지니어링 프로젝트입니다.
 
-이 프로젝트의 목적은 단일 기능 데모가 아니라 데이터 엔지니어링 end-to-end 흐름을 증명하는 것입니다.
+프로젝트 기간은 `2026.04 - 2026.07`이며, 기획, 데이터 모델링, 파이프라인 구현, API serving, Text2SQL 검증, CI, 문서화를 처음부터 끝까지 혼자 진행했습니다. 목적은 단일 기능 데모가 아니라 데이터 엔지니어링 end-to-end 흐름을 증명하는 것입니다.
 
 ```text
 Airflow ingestion
@@ -20,29 +20,25 @@ Airflow ingestion
 
 | Area | Implementation |
 |---|---|
-| Ingestion | Apify 기반 Instagram 수집, raw loader, daily/backfill Airflow DAG |
-| Modeling | dbt `raw -> staging -> intermediate -> marts -> features -> ai_native` layered warehouse |
-| BI | Superset creator review dashboard, campaign ROAS prediction monitor |
-| ML workflow | synthetic payment attribution 기반 ROAS model comparison and artifact export |
-| Serving | FastAPI `/health`, `/predict/campaign-roas`, `/query`, `/query/v2` |
-| Text2SQL | deterministic expected-SQL baseline, generated-SQL v2 gateway, SQL validator, negative eval |
-| Operations | provider cost/latency/fallback observability, audit JSONL, GitHub Actions CI |
-| Cloud mapping | MWAA, RDS/Aurora, S3, ECS Fargate, ALB, CloudWatch, QuickSight target design |
+| Ingestion | Apify 기반 Instagram 수집, raw loader, daily/backfill Airflow DAG를 직접 구현 |
+| Modeling | dbt `raw -> staging -> intermediate -> marts -> features -> ai_native` layered warehouse 설계 |
+| BI | Superset creator review dashboard, campaign ROAS prediction monitor 구성 |
+| ML workflow | 합성 결제 attribution 기반 ROAS model comparison, benchmark artifact export |
+| Serving | FastAPI `/health`, `/predict/campaign-roas`, `/query`, `/query/v2` 구현 |
+| Text2SQL | deterministic expected-SQL baseline, generated-SQL v2 gateway, SQL validator, 안전성 질의 평가 |
+| Operations | provider cost/latency/fallback observability, audit JSONL, GitHub Actions CI 구성 |
+| Cloud mapping | MWAA, RDS/Aurora, S3, ECS Fargate, ALB, CloudWatch, QuickSight target design 정리 |
 
 ## 3. Key Results
 
-| Metric | Result |
-|---|---:|
-| Phase 2B daily adaptive run | `items_collected_total=1725`, `inserted_total=1410` |
-| Synthetic payment benchmark | `498` payment events, net payment KRW `6,329,923.59` |
-| Campaign ROI mart | `30` campaign rows, max ROAS `0.5969` |
-| Prediction monitor | `25` rows, MAE `0.0799`, bias `0.0000` |
-| ROAS model comparison | baseline MAE `0.0892` -> linear model MAE `0.0474` |
-| deterministic Text2SQL baseline | expected-SQL registry `24/24 PASS` |
-| OpenAI Text2SQL eval | positive `24/24`, negative `14/14` |
-| Gemini Text2SQL eval | positive `24/24`, negative `12/14` |
-| Provider cost comparison | Gemini `$0.064098` vs OpenAI `$0.103027` over 38 cases |
-| Latest documented quality gate | `ruff` pass, `pytest 82 passed`, `git diff --check` pass |
+| Recruiter-readable result | Evidence |
+|---|---|
+| 하루 실행 단위의 수집-적재 파이프라인에서 `1,725`건을 수집하고 `1,410`건을 신규 적재했습니다. | Phase 2B daily adaptive run |
+| 광고 성과 분석용 mart를 만들고 `30`개 campaign row, 최대 ROAS `0.5969`까지 조회 가능한 분석 테이블을 구성했습니다. | Campaign ROI mart |
+| 단순 평균 baseline보다 낮은 오차의 ROAS model artifact를 만들고 API serving까지 연결했습니다. | baseline MAE `0.0892` -> linear MAE `0.0474` |
+| 자연어 질의 baseline은 검증된 SQL 기준 `24/24 PASS`로 고정하고, generated SQL은 별도 validator와 안전성 평가로 통제했습니다. | deterministic `/query`, guarded `/query/v2` |
+| OpenAI/Gemini provider를 같은 38개 질의로 비교하고 비용, 지연시간, fallback 이유를 request 단위로 관측했습니다. | Gemini `$0.064098`, OpenAI `$0.103027` |
+| 코드 품질은 CI에서 `ruff`, `pytest 82 passed`, `git diff --check` 기준으로 관리했습니다. | GitHub Actions quality gate |
 
 ## 4. Strongest Engineering Decisions
 
@@ -52,7 +48,7 @@ Airflow ingestion
 | Use layered dbt models | Business metrics, feature tables, and ai_native marts have explicit grain and ownership. |
 | Use simple ROAS model first | With 25 synthetic labeled rows, linear/LOO validation is more defensible than overclaiming a boosting model. |
 | Split `/query` and `/query/v2` | deterministic baseline remains stable while generated SQL gets its own validator, timeout, audit, and fallback. |
-| Gemini primary + OpenAI fallback | Gemini was cheaper in the measured scope; OpenAI was cleaner on safety and faster overall. |
+| Gemini first + OpenAI fallback | Gemini was cheaper in the measured scope; OpenAI was cleaner on safety and faster overall. |
 
 ## 5. Demo Flow
 
@@ -79,4 +75,4 @@ Demo references:
 
 ## 7. Resume-Ready Version
 
-Built AdInsight, an end-to-end influencer campaign analytics platform combining Airflow ingestion, dbt semantic marts, Superset dashboards, ROAS prediction artifact serving, FastAPI APIs, and guarded Text2SQL evaluation with OpenAI/Gemini provider fallback, request-level cost observability, and CI quality gates.
+Airflow, PostgreSQL, dbt 기반으로 Instagram 수집 데이터와 합성 결제 이벤트를 `raw -> staging -> intermediate -> marts -> features -> ai_native` 레이어로 모델링하고, Superset dashboard, ROAS prediction artifact serving, FastAPI API, guarded Text2SQL evaluation까지 연결한 개인 데이터 엔지니어링 프로젝트를 처음부터 끝까지 구현했습니다.

@@ -23,33 +23,25 @@ AdInsight는 Instagram 수집 데이터와 합성 결제 이벤트를 결합해 
 
 | 영역 | 결과 |
 |---|---:|
-| Apify daily adaptive run | `items_collected_total=1725`, `inserted_total=1410` |
+| Apify daily adaptive run | `1,725` items collected, `1,410` new rows inserted |
 | Synthetic payment benchmark | `498` payment events, net payment KRW `6,329,923.59` |
 | Campaign ROI mart | `30` campaign rows, max ROAS `0.5969` |
 | ROAS prediction monitor | `25` rows, MAE `0.0799`, bias `0.0000` |
 | ROAS model comparison | baseline MAE `0.0892` -> linear model MAE `0.0474` |
 | deterministic Text2SQL baseline | expected-SQL registry `24/24 PASS` |
-| external Text2SQL eval | OpenAI `24/24` positive + `14/14` negative, Gemini `24/24` positive + `12/14` negative |
+| external Text2SQL eval | OpenAI answerable `24/24` + safety `14/14`, Gemini answerable `24/24` + safety `12/14` |
 | provider cost scope | Gemini `$0.064098` vs OpenAI `$0.103027` over the same 38-case eval scope |
-| quality gate | latest documented gate: `ruff` pass, `pytest 82 passed`, `git diff --check` pass |
+| quality gate | documented gate: `ruff` pass, `pytest 82 passed`, `git diff --check` pass |
 
 ## Demo Assets
 
 | 자산 | 위치 |
 |---|---|
-| Text2SQL demo GIF | [docs/images/06_text2sql_demo.gif](docs/images/06_text2sql_demo.gif) |
-| Demo evidence | [docs/analysis/stage6_text2sql_demo_evidence.md](docs/analysis/stage6_text2sql_demo_evidence.md) |
 | Korean company submission portfolio | [docs/korean_company_portfolio_submission.md](docs/korean_company_portfolio_submission.md) |
 | Korean submission HTML export | [docs/adinsight_portfolio_submission_ko.html](docs/adinsight_portfolio_submission_ko.html) |
 | Korean submission DOCX export | [docs/adinsight_portfolio_submission_ko.docx](docs/adinsight_portfolio_submission_ko.docx) |
 | Korean job application snippets | [docs/korean_job_application_snippets.md](docs/korean_job_application_snippets.md) |
-| Portfolio one-pager | [docs/portfolio_one_pager.md](docs/portfolio_one_pager.md) |
-| 3-5 minute demo script | [docs/demo_script_3min.md](docs/demo_script_3min.md) |
-| API examples | [docs/api/query_v2_request_response_examples.md](docs/api/query_v2_request_response_examples.md) |
-| Interview talking points | [docs/interview_talking_points.md](docs/interview_talking_points.md) |
-| Interview flashcards | [docs/interview_flashcards.md](docs/interview_flashcards.md) |
 | Selected Korean resume bullets | [docs/resume_selected_bullets_ko.md](docs/resume_selected_bullets_ko.md) |
-| Resume bullets | [docs/resume_bullets.md](docs/resume_bullets.md) |
 
 ## Architecture
 
@@ -164,7 +156,7 @@ AdInsight keeps two Text2SQL paths separate.
 | `/query` | deterministic baseline using curated expected SQL | exact-match registry, reviewed SELECT only |
 | `/query/v2` | generated-SQL serving boundary | provider contract, SQL validator, statement timeout, audit log, fallback |
 
-The v2 gateway supports `mock`, `ollama`, `openai`, `gemini`, and `dual` backends. The product demo path uses Gemini primary, OpenAI fallback, and deterministic registry final fallback.
+The v2 gateway supports `mock`, `ollama`, `openai`, `gemini`, and `dual` backends. The product demo path uses Gemini first, OpenAI fallback, and deterministic registry final fallback.
 
 ```bash
 curl -s -X POST http://127.0.0.1:8000/query/v2 \
@@ -309,6 +301,11 @@ adinsight-agent/
 | Text2SQL eval report | [docs/analysis/stage6_text2sql_after_fixes_eval_report.md](docs/analysis/stage6_text2sql_after_fixes_eval_report.md) |
 | Failure cases | [docs/analysis/stage6_text2sql_v2_failure_cases.md](docs/analysis/stage6_text2sql_v2_failure_cases.md) |
 | AWS architecture | [docs/architecture/aws_target_architecture.md](docs/architecture/aws_target_architecture.md) |
+| Text2SQL demo GIF | [docs/images/06_text2sql_demo.gif](docs/images/06_text2sql_demo.gif) |
+| Demo evidence | [docs/analysis/stage6_text2sql_demo_evidence.md](docs/analysis/stage6_text2sql_demo_evidence.md) |
+| 3-5 minute demo script | [docs/demo_script_3min.md](docs/demo_script_3min.md) |
+| API examples | [docs/api/query_v2_request_response_examples.md](docs/api/query_v2_request_response_examples.md) |
+| Interview talking points | [docs/interview_talking_points.md](docs/interview_talking_points.md) |
 | Interview flashcards | [docs/interview_flashcards.md](docs/interview_flashcards.md) |
 | Selected Korean resume bullets | [docs/resume_selected_bullets_ko.md](docs/resume_selected_bullets_ko.md) |
 | Resume bullets | [docs/resume_bullets.md](docs/resume_bullets.md) |
